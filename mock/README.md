@@ -21,7 +21,7 @@ Run from this directory.
 
 | Path | Purpose |
 |---|---|
-| `src/contract.ts` | Types only: CSV rows, `Scenario`, `Results`, `ChartDef`, `ChartProps`. It is the interface between compute, charts and the album shell, so a change affects all three. |
+| `src/contract.ts` | Types only: CSV rows, `Scenario`, `Results`, `ChartDef`, `ChartProps`. It is the interface between compute, charts and the page shell, so a change affects all three. |
 | `src/charts/registry.ts` | `chartRegistry`, the ordered list of `ChartDef`s |
 | `public/data/` | Fixture CSVs per spec 7.3 (invented placeholder data) |
 | `src/App.tsx` | The page: loads the tables once, holds the one `Scenario` the knobs edit, calls `compute()` (throttled while a slider is dragged) and lays out the shell |
