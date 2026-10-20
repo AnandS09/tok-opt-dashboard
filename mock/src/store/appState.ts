@@ -21,6 +21,8 @@ export type AppAction =
   | { type: "example_loaded"; exampleId: string; response: ScenarioResponse }
   | { type: "example_failed"; message: string }
   | { type: "scenario_edited"; update: (scenario: Scenario) => Scenario }
+  /** A sentence answer: applied to the live scenario and to what Reset restores, so Undo keeps it. */
+  | { type: "answer_edited"; update: (scenario: Scenario) => Scenario }
   | { type: "scenario_reset" }
   /** The guided questions are answered: their scenario becomes what Reset restores, no example is active. */
   | { type: "scenario_committed"; answered: string[] };
@@ -60,6 +62,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, loadingExample: false, exampleError: action.message };
     case "scenario_edited":
       return state.scenario ? { ...state, scenario: action.update(state.scenario) } : state;
+    case "answer_edited":
+      return state.scenario && state.response
+        ? {
+            ...state,
+            scenario: action.update(state.scenario),
+            response: { ...state.response, scenario: action.update(state.response.scenario) },
+          }
+        : state;
     case "scenario_reset":
       return state.response ? { ...state, scenario: clone(state.response.scenario) } : state;
     case "scenario_committed":

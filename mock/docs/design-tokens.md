@@ -77,8 +77,7 @@
 | C1 "Saved" fill vs the card | `saved` #c9d6dd | surface | 1.48 | 3:1 | FAIL alone: the block always has its outline |
 | C1 "Saved" outline vs the card / vs its fill | `accent-strong` #526a77 | surface / saved | 5.70 / 3.84 | 3:1 | PASS |
 | C1 "Saved" fill vs the spend segment next to it | `saved` #c9d6dd | accent | 3.05 | 3:1 | PASS |
-| Budget line vs its halo | `budget-line` #222222 | surface | 15.91 | 3:1 | PASS |
-| Budget halo vs the fills it crosses | #ffffff | today-3 / today-1 / accent | 6.69 / 12.63 / 4.53 | 3:1 | PASS |
+| Budget line (drawn under the bars, so only on the card) | `budget-line` #222222 | surface | 15.91 | 3:1 | PASS |
 | "Saved" label, inside or outside the block | `text` #222222 | saved / surface | 10.72 / 15.91 | 4.5:1 | PASS |
 | C1 Infravana bar: 1px white separator between spend segments | #ffffff | accent | 4.53 | 3:1 | PASS |
 | Drawer panel edge vs scrimmed page (50%) | #ffffff | scrim over white / bg / muted | 3.19 / 3.28 / 3.45 | 3:1 | PASS (at 40% it was 2.41 / 2.49 / 2.65, so raised) |
@@ -122,7 +121,7 @@ The page is for executives, so the charts carry only what that reader needs. Eve
 - A 1px `--color-series-separator` stroke (`--chart-separator-width`) separates stacked segments.
 - **Savings are one "Saved" block** at the end of the With bar: a `--color-saved` fill with a `--chart-savings-outline-width` `--color-accent-strong` outline. The fill alone is 1.48:1 against the card, so the outline is never dropped. Its label is `--color-text`. When the label does not fit inside the block, it goes to the right of the bar, or above the block when the budget line would cross it.
 - **Labels inside a segment** read "Name $X", else "$X", else none. A segment too narrow for a label is still named in its tooltip and in the screen-reader table. There are no leader lines, chips or label list.
-- **Budget line**: a dashed `--color-budget-line` line at `--chart-budget-line-width` over a `--chart-budget-halo-width` `--color-surface` halo, labelled "Budget $X" in `--color-text-secondary`. The line alone is 1.26:1 on today-1, so the halo is never dropped.
+- **Budget line**: a dashed `--color-budget-line` line at `--chart-budget-line-width`, labelled "Budget $X" in `--color-text-secondary`. It is drawn under the bars, so it shows only on the card (15.91:1) and never crosses a fill (1.26:1 on today-1) or a label inside a bar. An outside "Saved" label has a `--color-surface` background, so the line does not run through it.
 - X-axis labels hide on overlap (`hideOverlap`), so ticks never run together on a phone.
 
 **C3, price per million tokens.** Grouped bars by model size, "Today" in `--color-today-2` and "With Infravana" in `--color-accent`, with value labels above the bars and a legend. Only the model sizes priced on both sides are shown: a group with one bar would read as free or missing. If no size is priced on both sides, the sizes priced on either side are shown.
@@ -154,7 +153,7 @@ Arial's figures are already fixed-width by default. `tabular-nums` makes sure th
 | Group | Tokens |
 |---|---|
 | Spacing (4px base) | `--space-1` 4px, `-2` 8px, `-3` 12px, `-4` 16px, `-5` 24px, `-6` 32px, `-7` 48px, `-8` 64px |
-| Chart strokes (3) | `--chart-separator-width` 1px, `--chart-savings-outline-width` 1.5px, `--chart-budget-line-width` 1.5px, `--chart-budget-halo-width` 6px |
+| Chart strokes (3) | `--chart-separator-width` 1px, `--chart-savings-outline-width` 1.5px, `--chart-budget-line-width` 1.5px |
 | Chart size | `--chart-stage-height` 320px, the canvas height in a chart card |
 | Chart type (G-5) | Chart code reads text sizes from `--font-size-xs` (12px) and `--font-size-sm` (14px) via `tokens.ts`, never literals. The value is a rem string, so convert it with the root font size (`parseFloat(getComputedStyle(document.documentElement).fontSize)`). **Use only these two:** `xs` for axis ticks, sub-labels, the budget label and tooltips; `sm` for category labels and data labels. Line height = `ceil(size x --line-height-tight)`, which is 15 for xs and 17 for sm. Bold labels use `--font-weight-bold`. Tooltip padding = `--space-2` / `--space-3` (8 / 12). Animation duration = `--duration-fade`, read in ms. |
 | Radii | `--radius-sm` 4px (inputs, buttons), `--radius-md` 8px (cards), `--radius-lg` 12px, `--radius-pill` 999px (example chips) |
@@ -211,7 +210,6 @@ Arial's figures are already fixed-width by default. `tabular-nums` makes sure th
   --chart-separator-width: 1px;
   --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
   --chart-budget-line-width: 1.5px;
-  --chart-budget-halo-width: 6px;         /* surface-colour underlay, so the line reads on any fill it crosses */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */

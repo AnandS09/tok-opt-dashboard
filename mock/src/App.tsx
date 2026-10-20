@@ -15,7 +15,6 @@ import type { Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
-import { setBudget, setSpeed, setUsers, setWork, workOf } from "./store/intake";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
@@ -101,6 +100,9 @@ export default function App() {
   const edit = useCallback((update: (s: Scenario) => Scenario) => {
     dispatch({ type: "scenario_edited", update });
   }, []);
+  const answer = useCallback((update: (s: Scenario) => Scenario) => {
+    dispatch({ type: "answer_edited", update });
+  }, []);
 
   // Every knob change recomputes locally through compute(), throttled while a slider is dragged.
   const liveScenario = useThrottledValue(scenario, RECOMPUTE_MS);
@@ -183,7 +185,7 @@ export default function App() {
     body = (
       <>
         <section className="situation card" aria-label="Your situation" ref={situationRef} tabIndex={-1}>
-          <IntakeSentence tables={tables} scenario={scenario} onEdit={edit} />
+          <IntakeSentence tables={tables} scenario={scenario} onEdit={answer} />
           <details className="finetune">
             <summary>Fine-tune the assumptions</summary>
             <KnobRail
@@ -191,17 +193,7 @@ export default function App() {
               scenario={scenario}
               openShare={openShare}
               onEdit={edit}
-              onReset={() => {
-                // Undo fine-tuning restores the assumptions, not the answers in the sentence above it.
-                const answers = scenario;
-                dispatch({ type: "scenario_reset" });
-                edit((s) => {
-                  const { users, budget_usd_per_quarter } = answers.baseline;
-                  const kept = setSpeed(setBudget(setUsers(s, users), budget_usd_per_quarter), answers.latency_class);
-                  const work = workOf(answers);
-                  return workOf(kept) === work ? kept : setWork(kept, work, tables);
-                });
-              }}
+              onReset={() => dispatch({ type: "scenario_reset" })}
             />
           </details>
           <div className="situation__foot">
