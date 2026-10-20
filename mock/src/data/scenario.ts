@@ -69,6 +69,7 @@ class Reader {
     return {
       users: this.number(`${path}.users`, o.users),
       budget_usd_per_quarter: this.number(`${path}.budget_usd_per_quarter`, o.budget_usd_per_quarter),
+      ...(o.customers === undefined ? {} : { customers: this.number(`${path}.customers`, o.customers) }),
     };
   }
 

@@ -291,6 +291,7 @@ function validateReferences(t: Tables): void {
     checkModelMixCell(CASE_STUDIES.file, "model_mix_json", lineOf(i), r.model_mix_json),
   );
 
+  const customerWorkloads = new Set(t.workloads.filter((w) => w.basis === "customer").map((w) => w.workload_id));
   const shareSums = new Map<string, number>();
   t.baseline_providers.forEach((r, i) => {
     const file = BASELINE_PROVIDERS.file;
@@ -298,11 +299,14 @@ function validateReferences(t: Tables): void {
     if ((r.offer_id === null) === (r.plan_id === null)) {
       throw new Error(`${file}: columns "offer_id" and "plan_id" on line ${lineOf(i)}: fill exactly one`);
     }
-    if (r.stage === "seats") {
+    // Nobody buys seats for customers: customer workloads are bought per token on every stage.
+    if (r.stage === "seats" && !customerWorkloads.has(r.workload_id)) {
       if (r.plan_id === null) throw new Error(`${file}: column "plan_id" on line ${lineOf(i)} is required for stage seats`);
       need(file, "plan_id", i, r.plan_id, ids.plans, SEAT_PLANS.file);
     } else {
-      if (r.offer_id === null) throw new Error(`${file}: column "offer_id" on line ${lineOf(i)} is required for stage ${r.stage}`);
+      if (r.offer_id === null) {
+        throw new Error(`${file}: column "offer_id" on line ${lineOf(i)} is required for stage ${r.stage} and customer workloads`);
+      }
       need(file, "offer_id", i, r.offer_id, ids.offers, MODEL_OFFERS.file);
     }
     const key = `${r.stage}|${r.workload_id}`;

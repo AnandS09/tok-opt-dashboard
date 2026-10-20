@@ -14,6 +14,7 @@ import type {
   OfferChannel,
   Stage,
   Verdict,
+  WorkloadBasis,
 } from "../contract";
 
 export type ColumnKind = "string" | "number" | "string?" | "number?";
@@ -39,6 +40,7 @@ export const CHANNELS = [
 export const CURVE_PROVENANCES = ["measured", "modelled"] as const satisfies readonly CurveProvenance[];
 export const LATENCY_CLASSES = ["interactive", "standard", "batch"] as const satisfies readonly LatencyClass[];
 export const VERDICTS = ["ok", "off_topic", "unsafe", "unclear"] as const satisfies readonly Verdict[];
+export const WORKLOAD_BASES = ["employee", "customer"] as const satisfies readonly WorkloadBasis[];
 export const DEMAND_UNITS = ["people", "workflows"] as const;
 
 const SEAT_CAP_PATTERN = /cap_mtok_per_user_month=(\d+(?:\.\d+)?)/;
@@ -143,7 +145,9 @@ export const WORKLOADS: TableSpec = {
     tok_out_per_user_day: "number",
     quality_floor: "number",
     default_model_mix: "string",
+    basis: "string",
   },
+  enums: { basis: WORKLOAD_BASES },
 };
 
 export const BASELINE_PROVIDERS: TableSpec = {

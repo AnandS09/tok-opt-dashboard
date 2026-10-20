@@ -16,6 +16,7 @@ Run from this directory.
 | `npm run dev` | Dev server |
 | `npm run build` | Typecheck, then production build into `dist/` |
 | `npm run typecheck` | `tsc --noEmit` for `src/` and `vite.config.ts` |
+| `node scripts/check-demand.mjs` | Checks demand per basis: S1, S2 and the chip-design example still give their recorded numbers, and the customer count scales only customer workloads. Prints `check-demand: ok` or fails with the broken assertion. |
 
 ## Layout
 
@@ -33,7 +34,8 @@ Run from this directory.
 ## How the shell behaves
 
 - The data folder is fetched once at page load (`loadTables`). Changing an input only calls `compute(scenario, tables)`; nothing is fetched. The example chips fetch one scenario file each.
-- The page opens on four one-click questions (team size, budget, main work, response speed). They write into the scenario of the first example. Once answered, they become an editable sentence at the top, with everything else under a collapsed "Fine-tune the assumptions". An example chip skips the questions. No language model is called.
+- The page opens on the company type (five cards, plus a contact link for compute sellers). It pre-fills the work, how the company buys AI and a customer count, and the questions that follow adapt to it: the work (multi-select, Continue), team size only when team work is picked, customers only when customer work is picked, budget and response speed. A progress bar, Back and chips of the answers so far (each jumps back to its step) sit above the question, and "Your estimate" beside it (a bar pinned to the bottom on narrow screens) recomputes after every answer. The answers write into the scenario of the first example. Once answered, they become an editable sentence at the top (the work blank opens a checkbox popover), with everything else under a collapsed "Fine-tune the assumptions". An example chip skips the questions and loads its scenario file unchanged. No language model is called.
+- Picked work splits evenly within its basis (team work over the team, customer work over the customers), and the model mix is the share-weighted blend of the picked workloads' usual mixes. The fine-tune sliders set exact shares, one group per basis.
 - A scaling example (one with `target`) is shown at its target size.
 - The result is a hero card (the saving in dollars, then as a percentage and a multiple), then the charts in `chartRegistry` order as stacked cards, limited to the ids the scenario lists, then a contact call to action. `CONTACT_URL` in `App.tsx` is a placeholder.
 - A chart component must fill the width of its parent; its canvas height is `--chart-stage-height`.

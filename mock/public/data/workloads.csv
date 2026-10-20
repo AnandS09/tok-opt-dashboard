@@ -1,5 +1,9 @@
-workload_id,label,tok_in_per_user_day,tok_out_per_user_day,quality_floor,default_model_mix
-software_design,Software design,2650000,175000,78,"{""frontier"":0.6,""mid"":0.3,""small"":0.1,""open_weight_share"":0.2}"
-hardware_design,Hardware design,2000000,130000,79,"{""frontier"":0.7,""mid"":0.3,""small"":0.0,""open_weight_share"":0.1}"
-support,Support and operations,600000,50000,65,"{""frontier"":0.2,""mid"":0.4,""small"":0.4,""open_weight_share"":0.4}"
-research,Research and analysis,1000000,80000,74,"{""frontier"":0.5,""mid"":0.4,""small"":0.1,""open_weight_share"":0.2}"
+workload_id,label,tok_in_per_user_day,tok_out_per_user_day,quality_floor,default_model_mix,basis
+software_design,Software engineering,2650000,175000,78,"{""frontier"":0.6,""mid"":0.3,""small"":0.1,""open_weight_share"":0.2}",employee
+hardware_design,Hardware design,2000000,130000,79,"{""frontier"":0.7,""mid"":0.3,""small"":0.0,""open_weight_share"":0.1}",employee
+support,Staff help desk,600000,50000,65,"{""frontier"":0.2,""mid"":0.4,""small"":0.4,""open_weight_share"":0.4}",employee
+research,Research and analysis,1000000,80000,74,"{""frontier"":0.5,""mid"":0.4,""small"":0.1,""open_weight_share"":0.2}",employee
+customer_service,Customer-service agents,2000,200,66,"{""frontier"":0.2,""mid"":0.4,""small"":0.4,""open_weight_share"":0.5}",customer
+product_ai,AI features in the product,3000,300,75,"{""frontier"":0.4,""mid"":0.4,""small"":0.2,""open_weight_share"":0.4}",customer
+documents,Documents and compliance,1200000,60000,77,"{""frontier"":0.5,""mid"":0.4,""small"":0.1,""open_weight_share"":0.2}",employee
+ops_agents,Ops agents,1500000,100000,72,"{""frontier"":0.3,""mid"":0.5,""small"":0.2,""open_weight_share"":0.3}",employee

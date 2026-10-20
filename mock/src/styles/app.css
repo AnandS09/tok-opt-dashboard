@@ -210,15 +210,122 @@ a {
 /* ---- Guided questions ---- */
 
 .intake {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: start;
+  gap: var(--space-5);
   padding: var(--space-6);
 }
 
+.intake__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
 .intake__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+}
+
+.intake__progress {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.intake__progress::-webkit-progress-bar {
+  background: var(--color-surface-muted);
+}
+
+.intake__progress::-webkit-progress-value {
+  background: var(--color-accent-strong);
+}
+
+.intake__progress::-moz-progress-bar {
+  background: var(--color-accent-strong);
+}
+
+.intake__answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intake__note {
+  margin-top: calc(var(--space-2) * -1);
+  color: var(--color-text-secondary);
+}
+
+.intake__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.intake__nav > .button--primary {
+  margin-left: auto;
+}
+
+.intake__aside {
+  align-self: flex-start;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.estimate {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-md);
+}
+
+.estimate__title {
+  font-weight: var(--font-weight-bold);
+}
+
+.estimate__note {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.estimate__figures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.estimate__figures dt {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.estimate__figures dd {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: var(--font-numeric);
+}
+
+.estimate__saving dd {
+  color: var(--color-accent-strong);
 }
 
 .intake__title {
@@ -251,6 +358,20 @@ a {
 .choice:hover {
   background: var(--color-accent-soft);
   border-color: var(--color-accent-strong);
+}
+
+.choice[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-strong);
+  box-shadow: inset 0 0 0 1px var(--color-accent-strong);
+}
+
+.choice__icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .choice__label {
@@ -293,6 +414,22 @@ a {
   font: inherit;
   font-weight: var(--font-weight-bold);
   cursor: pointer;
+}
+
+.popover {
+  min-width: 240px;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-body);
+}
+
+.popover > .button {
+  margin-top: var(--space-3);
 }
 
 .finetune > summary {
@@ -744,6 +881,35 @@ th {
   height: 320px;
 }
 
+/* ---- Narrow screens: the estimate becomes a bar pinned to the bottom ---- */
+
+@media (max-width: 720px) {
+  .intake {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .estimate {
+    top: auto;
+    bottom: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+  }
+
+  .estimate__title {
+    font-size: var(--font-size-sm);
+  }
+
+  .estimate__figures {
+    flex-direction: row;
+    gap: var(--space-3);
+  }
+}
+
 /* ---- Phones ---- */
 
 @media (max-width: 600px) {
@@ -757,6 +923,10 @@ th {
 
   .intake__title {
     font-size: var(--font-size-xl);
+  }
+
+  .estimate__figures dd {
+    font-size: var(--font-size-md);
   }
 
   .sentence {

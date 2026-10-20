@@ -15,6 +15,7 @@ import type { Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
+import type { CompanyType } from "./store/intake";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
@@ -44,6 +45,8 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   // The guided questions show until they are answered or an example is picked.
   const [answered, setAnswered] = useState(false);
+  // Null until the visitor picks one; each example names its own.
+  const [company, setCompany] = useState<CompanyType | null>(null);
   const loadSeq = useRef(0);
 
   const { tables, response, scenario } = state;
@@ -117,10 +120,12 @@ export default function App() {
 
   const pickExample = (example: Example) => {
     setAnswered(true);
+    setCompany(example.company);
     void openExample(example);
   };
   const startOver = () => {
     setAnswered(false);
+    setCompany(null);
     void openExample(EXAMPLES[0]);
   };
 
@@ -160,6 +165,11 @@ export default function App() {
       <>
         <IntakeQuestions
           tables={tables}
+          scenario={scenario}
+          results={results}
+          company={company}
+          contactUrl={CONTACT_URL}
+          onCompany={setCompany}
           onEdit={edit}
           onDone={() => {
             dispatch({ type: "scenario_committed", answered: ANSWERED });
@@ -173,7 +183,9 @@ export default function App() {
     body = (
       <>
         <section className="situation card" aria-label="Your situation">
-          <IntakeSentence tables={tables} scenario={scenario} onEdit={edit} />
+          {company ? (
+            <IntakeSentence tables={tables} scenario={scenario} company={company} onCompany={setCompany} onEdit={edit} />
+          ) : null}
           <details className="finetune">
             <summary>Fine-tune the assumptions</summary>
             <KnobRail

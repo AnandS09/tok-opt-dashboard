@@ -54,20 +54,20 @@
     },
     "quality.csv": {
       "version": "0.1.0-placeholder",
-      "row_count": 49,
-      "checksum": "sha256:f3f6da98ab66af637f97372dd16085b5c291ea5f3e087c7a61f36a7a85e0fa9a",
+      "row_count": 77,
+      "checksum": "sha256:18f9a05a9be2e5cf1c7ad4109c580fc1d5407687725f9d9257306c1bdc63965d",
       "placeholder": true
     },
     "workloads.csv": {
       "version": "0.1.0-placeholder",
-      "row_count": 4,
-      "checksum": "sha256:19df21cbe72b5e8ef1778173fb59706bb5c98ec807b57b49c0694735a538ce25",
+      "row_count": 8,
+      "checksum": "sha256:8100194d5034252d4ca70ea997da64a8b51bea6851ceda27d87d8ef3bb4d789c",
       "placeholder": true
     },
     "baseline_providers.csv": {
       "version": "0.1.0-placeholder",
-      "row_count": 12,
-      "checksum": "sha256:fb7eabd50fb53456ed8b8943653b5ef34497fb355f05c33df6ef234861c54a39",
+      "row_count": 24,
+      "checksum": "sha256:f743d1f3e81b70482d7d4c2b79654fd96de39d241df079eff00a7b3d57afde62",
       "placeholder": true
     },
     "case_studies.csv": {

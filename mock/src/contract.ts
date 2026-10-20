@@ -50,6 +50,13 @@ export type OfferChannel =
 /** Spec 7.1 `latency_class`. */
 export type LatencyClass = "interactive" | "standard" | "batch";
 
+/**
+ * `workloads.csv` `basis`: what a workload's demand scales with. `employee`
+ * work scales with `ScenarioState.users`, `customer` work (AI in a product
+ * sold to customers) with `ScenarioState.customers`.
+ */
+export type WorkloadBasis = "employee" | "customer";
+
 /** Spec 7.1 `unit`. */
 export type DemandUnit = "people" | "workflows";
 
@@ -196,6 +203,8 @@ export interface WorkloadRow {
   quality_floor: number;
   /** JSON text of a ModelMix. */
   default_model_mix: string;
+  /** For `customer` rows the two token columns are per customer per day, not per user. */
+  basis: WorkloadBasis;
 }
 
 /**
@@ -284,6 +293,8 @@ export interface Tables {
 export interface ScenarioState {
   users: number;
   budget_usd_per_quarter: number;
+  /** Customers using AI in the product; absent means none. Scales `customer` workloads only. */
+  customers?: number;
 }
 
 /**
@@ -308,7 +319,10 @@ export interface Scenario {
   baseline: ScenarioState;
   /** Present only for scaling prompts (S2); its presence triggers chart C7. */
   target?: ScenarioState;
-  /** Keys are `workload_id`s from workloads.csv; values sum to 1. */
+  /**
+   * Keys are `workload_id`s from workloads.csv. Values sum to 1 within each
+   * `basis`: employee shares split the users, customer shares the customers.
+   */
   workload_mix: Record<string, number>;
   model_mix: ModelMix;
   /** Free-text model names the user mentioned, e.g. ["opus", "fable"]. */
