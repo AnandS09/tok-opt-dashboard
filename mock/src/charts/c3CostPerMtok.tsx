@@ -161,7 +161,7 @@ const COST_HOW_COMPUTED =
   "This is the price of a million tokens (the small pieces of text that models read and write), grouped by size of model: flagship, mid-size and small. " +
   "For each group it shows what you pay today next to what the same work costs with " +
   `${BRAND}, with answers needed just as fast on both sides. ` +
-  "Only the model sizes your team uses are shown. Every price comes from the data files, and in this mock all of it is illustrative.";
+  "Only the model sizes your team uses are shown. All prices here are illustrative.";
 
 /** Header first, then one row per bar drawn; a class with no value on a side has no row for it. */
 export function costPerMtokCsv(results: Results): string {

@@ -138,6 +138,15 @@
 
 ## 3a. Infravana C1 bar segments (one accent, no tints)
 
+> **Executive page (PR #1).** The stacked-card page for executives draws C1 more simply than sections 3a to 3e
+> describe: no patterns, provenance borders or badges (3b), label chips (3c), leader lines or label list (3e).
+> Every figure is an illustrative placeholder, which the one footer line says, so a per-part provenance cue
+> carries no extra information for this audience. Today segments use `--color-today-3` and `--color-today-1`,
+> so white labels on them pass 4.5:1 (6.69 and 12.63). Savings are one `--color-saved` block with a
+> `--color-accent-strong` outline (5.70:1 against the card); its label goes to the right of the bar when it
+> does not fit inside. A segment too narrow for a label is named in the tooltip and the screen-reader table.
+> Sections 3a to 3e still describe the analyst view.
+
 **Rule: the Infravana bar uses `--color-accent` and `--color-accent-strong` only. Segments are told apart by white separators, patterns and direct labels. Savings are drawn hollow.** The same rule applies to the Infravana panels in C7.
 
 | Segment kind | Fill | Cue | Label |

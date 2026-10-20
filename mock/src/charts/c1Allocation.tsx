@@ -60,6 +60,8 @@ interface Piece {
   usd: number;
   color: string;
   textColor: string;
+  border: string;
+  borderWidth: number;
   seg: PlannedSegment | null;
 }
 
@@ -67,8 +69,10 @@ function piecesOf(a: AllocationResult, t: Tokens): { today: Piece[]; infravana: 
   const today = planBar(a.today, "today").map((seg, i) => ({
     label: seg.label,
     usd: seg.usd,
-    color: i % 2 === 0 ? t.today2 : t.today3,
+    color: i % 2 === 0 ? t.today3 : t.today1,
     textColor: t.surface,
+    border: t.separator,
+    borderWidth: t.separatorWidth,
     seg,
   }));
   const planned = planBar(a.infravana, "infravana");
@@ -79,10 +83,23 @@ function piecesOf(a: AllocationResult, t: Tokens): { today: Piece[]; infravana: 
       usd: seg.usd,
       color: i % 2 === 0 ? t.accent : t.accentStrong,
       textColor: t.surface,
+      border: t.separator,
+      borderWidth: t.separatorWidth,
       seg,
     }));
   const saved = planned.filter((seg) => seg.tone !== "spend").reduce((sum, seg) => sum + seg.usd, 0);
-  if (saved > 0) infravana.push({ label: SAVED_LABEL, usd: saved, color: t.saved, textColor: t.text, seg: null });
+  // The light fill alone is too faint against the card (1.48:1); the accent-strong outline gives the edge.
+  if (saved > 0) {
+    infravana.push({
+      label: SAVED_LABEL,
+      usd: saved,
+      color: t.saved,
+      textColor: t.text,
+      border: t.accentStrong,
+      borderWidth: t.savingsOutlineWidth,
+      seg: null,
+    });
+  }
   return { today, infravana, saved };
 }
 
@@ -112,13 +129,23 @@ export function buildAllocationOption(
     return textWidth(short, t.fontSm, t.weightBold, t.fontSans) <= room ? short : "";
   };
 
+  /** True when a label right of the With bar would sit on the budget line; it then goes above its block. */
+  const crossesBudget = (text: string): boolean => {
+    const start = a.total_usd * pxPer;
+    const end = start + t.space2 + textWidth(text, t.fontSm, t.weightBold, t.fontSans);
+    return a.budget_usd * pxPer >= start && a.budget_usd * pxPer <= end + t.space2;
+  };
+
   const all = [
     ...today.map((p) => ({ p, side: "today" as const })),
     ...infravana.map((p) => ({ p, side: "infravana" as const })),
   ];
 
   const series: BarSeriesOption[] = all.map(({ p, side }, index) => {
-    const text = stage ? fit(p) : "";
+    const inside = stage ? fit(p) : "";
+    // "Saved" keeps its name: when it does not fit inside the block, it goes to the right of the bar.
+    const outside = stage && p.seg === null && !inside.startsWith(SAVED_LABEL);
+    const text = outside ? `${SAVED_LABEL} ${fmtUsdSig(p.usd)}` : inside;
     const item: BarSeriesOption = {
       type: "bar",
       name: p.label,
@@ -126,13 +153,13 @@ export function buildAllocationOption(
       barWidth: "46%",
       silent: !stage,
       emphasis: { disabled: true },
-      itemStyle: { color: p.color, borderColor: t.separator, borderWidth: t.separatorWidth },
+      itemStyle: { color: p.color, borderColor: p.border, borderWidth: p.borderWidth },
       data: side === "today" ? [p.usd, null] : [null, p.usd],
       label: {
         show: text !== "",
-        position: "inside",
+        position: outside ? (crossesBudget(text) ? "top" : "right") : "inside",
         formatter: text,
-        color: p.textColor,
+        color: outside ? t.text : p.textColor,
         fontSize: t.fontSm,
         fontWeight: t.weightBold,
       },
@@ -191,7 +218,12 @@ export function buildAllocationOption(
       min: 0,
       max: axisMax,
       show: stage,
-      axisLabel: { color: t.textSecondary, fontSize: t.fontXs, formatter: (v: number) => fmtUsd(v) },
+      axisLabel: {
+        color: t.textSecondary,
+        fontSize: t.fontXs,
+        hideOverlap: true,
+        formatter: (v: number) => fmtUsd(v),
+      },
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: { lineStyle: { color: t.grid } },
@@ -207,8 +239,8 @@ export function buildAllocationOption(
         margin: t.space3,
         formatter: (value: string) =>
           value === INFRAVANA_LABEL
-            ? `{inf|${value}}\n{sub|${fmtUsdSig(spent)} spent}`
-            : `{today|${value}}\n{sub|${fmtUsdSig(a.total_usd)} spent}`,
+            ? `{inf|${value}}\n{sub|${fmtUsdSig(spent)} cost}`
+            : `{today|${value}}\n{sub|${fmtUsdSig(a.total_usd)} cost}`,
         rich: {
           today: rich(t.text),
           inf: rich(t.accentStrong),
@@ -253,11 +285,11 @@ export function allocationCaption(results: Results): string {
 
 const ALLOCATION_HOW_COMPUTED =
   "Both bars cover the same work: what your team's AI use costs in a quarter. " +
-  "The top bar splits today's cost by who you pay: a seat plan, an API provider, a cloud platform, or hardware you run yourself. " +
+  "The top bar splits today's cost by who you pay: a seat plan, a pay-as-you-go provider, a cloud platform, or hardware you run yourself. " +
   `The ${BRAND} bar buys the same work from the cheapest options that still meet your quality and speed needs, ` +
   "and the light block at its end is the money you no longer spend. " +
   "Part of it comes from buying the same model at a better price, and part from moving some work to cheaper models or hardware. " +
-  "The dashed line is your budget. Every price comes from the data files, and in this mock all of it is illustrative."
+  "The dashed line is your budget. All prices here are illustrative."
 
 /** Header first, then exactly the segments drawn (small ones as one "Other" row) and the budget marker. */
 export function allocationCsv(results: Results): string {

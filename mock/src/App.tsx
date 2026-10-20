@@ -45,6 +45,7 @@ export default function App() {
   // The guided questions show until they are answered or an example is picked.
   const [answered, setAnswered] = useState(false);
   const loadSeq = useRef(0);
+  const situationRef = useRef<HTMLElement>(null);
 
   const { tables, response, scenario } = state;
 
@@ -64,21 +65,24 @@ export default function App() {
     };
   }, []);
 
+  /** Loads an example; true once it is the scenario on the page. */
   const openExample = useCallback(
-    async (example: Example) => {
-      if (!tables) return;
+    async (example: Example): Promise<boolean> => {
+      if (!tables) return false;
       const seq = ++loadSeq.current;
       dispatch({ type: "example_loading", exampleId: example.id });
       try {
         const loaded = await loadScenario(DATA_URL, example.scenarioId);
-        if (seq !== loadSeq.current) return;
+        if (seq !== loadSeq.current) return false;
         dispatch({
           type: "example_loaded",
           exampleId: example.id,
           response: atTarget(loaded),
         });
+        return true;
       } catch (error) {
         if (seq === loadSeq.current) dispatch({ type: "example_failed", message: messageOf(error) });
+        return false;
       }
     },
     [tables],
@@ -115,13 +119,18 @@ export default function App() {
     [response],
   );
 
+  // The questions (and the focused control) are gone once answered: focus moves to the answers.
+  useEffect(() => {
+    if (answered) situationRef.current?.focus();
+  }, [answered]);
+
   const pickExample = (example: Example) => {
     setAnswered(true);
     void openExample(example);
   };
-  const startOver = () => {
-    setAnswered(false);
-    void openExample(EXAMPLES[0]);
+  // The questions show only once the default scenario is back, so a late load never overwrites an answer.
+  const startOver = async () => {
+    if (await openExample(EXAMPLES[0])) setAnswered(false);
   };
 
   const openShare = results && liveScenario ? openShareOf(results, liveScenario) : null;
@@ -172,7 +181,7 @@ export default function App() {
   } else if (response && scenario) {
     body = (
       <>
-        <section className="situation card" aria-label="Your situation">
+        <section className="situation card" aria-label="Your situation" ref={situationRef} tabIndex={-1}>
           <IntakeSentence tables={tables} scenario={scenario} onEdit={edit} />
           <details className="finetune">
             <summary>Fine-tune the assumptions</summary>
@@ -186,7 +195,7 @@ export default function App() {
           </details>
           <div className="situation__foot">
             <Examples activeId={state.exampleId} onPick={pickExample} />
-            <button type="button" className="link-button" onClick={startOver}>
+            <button type="button" className="link-button" onClick={() => void startOver()}>
               Start over
             </button>
           </div>
@@ -233,7 +242,6 @@ export default function App() {
           tables={tables}
           response={response}
           stage={scenario.stage_today}
-          section="assumptions"
           onClose={() => setPanelOpen(false)}
         />
       ) : null}

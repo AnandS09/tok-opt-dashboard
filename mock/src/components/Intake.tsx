@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LatencyClass, Scenario, Tables } from "../contract";
 import { fmtInt, LATENCY_LABEL } from "./format";
 import { fmtUsd } from "../shared/format";
@@ -77,6 +77,12 @@ export function IntakeQuestions({ tables, onEdit, onDone }: QuestionsProps) {
   const [step, setStep] = useState(0);
   const id = QUESTIONS[step];
   const q = question(id, tables);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // Each pick replaces the focused button, so focus moves to the new question for keyboard and screen-reader users.
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, [step]);
 
   const pick = (value: string) => {
     onEdit((s) => q.apply(s, value));
@@ -89,7 +95,7 @@ export function IntakeQuestions({ tables, onEdit, onDone }: QuestionsProps) {
       <p className="intake__step">
         Question {step + 1} of {QUESTIONS.length}
       </p>
-      <h2 id="intake-title" className="intake__title">
+      <h2 id="intake-title" className="intake__title" ref={titleRef} tabIndex={-1}>
         {q.title}
       </h2>
       <div className="choices" role="group" aria-labelledby="intake-title">
@@ -153,14 +159,14 @@ export function IntakeSentence({ tables, scenario, onEdit }: SentenceProps) {
         choices={withCurrent(TEAM_SIZES, users).map((n) => ({ value: String(n), label: fmtInt(n) }))}
         onChange={(v) => onEdit((s) => setUsers(s, Number(v)))}
       />{" "}
-      people spending{" "}
+      people with a budget of{" "}
       <Blank
         label="Budget per quarter"
         value={String(budget)}
         choices={withCurrent(BUDGETS, budget).map((n) => ({ value: String(n), label: fmtUsd(n) }))}
         onChange={(v) => onEdit((s) => setBudget(s, Number(v)))}
       />{" "}
-      a quarter, mostly on{" "}
+      a quarter, used {work === MIX ? "on" : "only on"}{" "}
       <Blank label="Main work" value={work} choices={works} onChange={(v) => onEdit((s) => setWork(s, v, tables))} />, and
       need answers{" "}
       <Blank

@@ -20,35 +20,20 @@ interface ResultNoticesProps {
 }
 
 /**
- * State banners that depend on the results, in the amber notice family:
- * the infeasible budget (Today side, spec 5) and a quality floor that Today's
- * own model does not meet.
+ * State banners that depend on the results, in the amber notice family: a
+ * quality floor that Today's own model does not meet. A budget that does not
+ * cover the work is the hero's first line instead (HeadlineStrip).
  */
 export function ResultNotices({ results, tables }: ResultNoticesProps) {
-  // One rounding rule (nearest percent) for the trigger, title and body, so a shortfall that
-  // displays as 100% raises no banner and the title never disagrees with the body.
-  const { demand_tokens, today_tokens, infravana_tokens } = results.tokens_bought;
-  const todayPct = Math.round((today_tokens / demand_tokens) * 100);
-  const infravanaPct = Math.min(100, Math.round((infravana_tokens / demand_tokens) * 100));
   const unmet = (results.floor_unmet_workloads ?? []).map(
     (id) => tables.workloads.find((w) => w.workload_id === id)?.label ?? id,
   );
+  if (unmet.length === 0) return null;
 
   return (
-    <>
-      {unmet.length > 0 ? (
-        <Notice title="No model meets this quality bar">
-          For {joinList(unmet.map((label) => label.toLowerCase()))}, the model used today scores below the
-          minimum quality you set. Lower "Minimum model quality" to compare.
-        </Notice>
-      ) : null}
-      {todayPct < 100 ? (
-        <Notice title={`Today, this budget covers only ${todayPct}% of the work`}>
-          {infravanaPct < 100
-            ? `With InfraVana it covers ${infravanaPct}%.`
-            : "With InfraVana it covers all of it."}
-        </Notice>
-      ) : null}
-    </>
+    <Notice title="Today's model is below this quality bar">
+      For {joinList(unmet.map((label) => label.toLowerCase()))}, the model used today scores below the
+      minimum quality you set. Lower "Minimum model quality" to compare.
+    </Notice>
   );
 }
