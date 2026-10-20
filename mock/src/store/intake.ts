@@ -15,7 +15,7 @@ export interface Company {
   /** The title inside the sentence, with its article: "We are <sentence>". */
   sentence: string;
   line: string;
-  /** Workloads this kind of company picks from, in the order shown. */
+  /** Workloads this kind of company picks from; the cards show them in workloads.csv order. */
   workloads: string[];
   stage: Stage;
   teamSizes: number[];
@@ -110,11 +110,17 @@ export function hasBasis(s: Scenario, tables: Tables, basis: WorkloadBasis): boo
   return tables.workloads.some((w) => w.basis === basis && (s.workload_mix[w.workload_id] ?? 0) > 0);
 }
 
-/** The steps for the scenario as it stands: team size only with team work, customers only with customer work. */
-export function stepsFor(s: Scenario, tables: Tables): StepId[] {
+/**
+ * The steps for a company type, fixed once it is picked so the step count
+ * never moves: team size only when it offers team work, customers only when
+ * it offers customer work.
+ */
+export function stepsFor(company: Company, tables: Tables): StepId[] {
+  const offered = (basis: WorkloadBasis) =>
+    tables.workloads.some((w) => w.basis === basis && company.workloads.includes(w.workload_id));
   const steps: StepId[] = ["company", "work"];
-  if (hasBasis(s, tables, "employee")) steps.push("users");
-  if (hasBasis(s, tables, "customer")) steps.push("customers");
+  if (offered("employee")) steps.push("users");
+  if (offered("customer")) steps.push("customers");
   steps.push("budget", "speed");
   return steps;
 }

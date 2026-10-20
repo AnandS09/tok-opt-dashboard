@@ -112,7 +112,7 @@ export function KnobRail({ openShare, tables, scenario, onEdit, onReset }: KnobR
         {customerWork ? (
           <div className="field">
             <label className="field__label" htmlFor="knob-customers">
-              Customers
+              Customers or subscribers
             </label>
             <input
               id="knob-customers"

@@ -289,7 +289,7 @@ export function allocationCaption(results: Results): string {
 }
 
 const ALLOCATION_HOW_COMPUTED =
-  "Both bars cover the same work: what your team's AI use costs in a quarter. " +
+  "Both bars cover the same work: what all your AI use costs in a quarter. " +
   "The top bar splits today's cost by who you pay: a seat plan, a pay-as-you-go provider, a cloud platform, or hardware you run yourself. " +
   `The ${BRAND} bar buys the same work for less, and the light block at its end is the money you no longer spend. ` +
   "Part of it comes from buying the same model at a better price. " +

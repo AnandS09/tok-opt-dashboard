@@ -69,14 +69,15 @@ function workLabels(ids: string[], tables: Tables): string {
 
 interface EstimateProps {
   results: Results | null;
-  started: boolean;
+  /** Shown instead of the figures, which would be stale or empty. */
+  note: string | null;
 }
 
 /** The live estimate beside the questions: what `compute()` gives for the answers so far. */
-function Estimate({ results, started }: EstimateProps) {
+function Estimate({ results, note }: EstimateProps) {
   let body;
-  if (!started) {
-    body = <p className="estimate__note">Pick your company type to start.</p>;
+  if (note) {
+    body = <p className="estimate__note">{note}</p>;
   } else if (!results) {
     body = <p className="estimate__note">Working it out...</p>;
   } else {
@@ -145,9 +146,10 @@ export function IntakeQuestions({
     titleRef.current?.focus();
   }, [current]);
 
-  const steps = stepsFor(scenario, tables);
-  const index = Math.max(0, steps.indexOf(current));
   const info = company ? companyOf(company) : null;
+  // Before a type is picked the total is not known yet.
+  const steps: StepId[] = info ? stepsFor(info, tables) : ["company"];
+  const index = Math.max(0, steps.indexOf(current));
   const customerWord = info?.customerWord ?? "customers";
   const { users, budget_usd_per_quarter: budget, customers = 0 } = scenario.baseline;
 
@@ -157,8 +159,8 @@ export function IntakeQuestions({
     if (step === "work") setPicked(selectedWorkloads(scenario, tables));
     setCurrent(step);
   };
-  const advance = (done: StepId[] = answered) => {
-    setAnswered(done.includes(current) ? done : [...done, current]);
+  const advance = () => {
+    setAnswered(answered.includes(current) ? answered : [...answered, current]);
     if (index === steps.length - 1) onDone();
     else setCurrent(steps[index + 1]);
   };
@@ -171,7 +173,9 @@ export function IntakeQuestions({
     onEdit((s) => setCompany(s, c, tables));
     setPicked(c.workloads);
     // Another type offers other work, so the later answers start again.
-    advance(company === c.id ? answered : []);
+    const kept = company === c.id ? answered : [];
+    setAnswered(kept.includes("company") ? kept : [...kept, "company"]);
+    setCurrent("work");
   };
   const toggle = (id: string) => {
     const next = picked.includes(id) ? picked.filter((p) => p !== id) : [...picked, id];
@@ -264,8 +268,8 @@ export function IntakeQuestions({
     <section className="intake card" aria-labelledby="intake-title">
       <div className="intake__main">
         <label className="intake__step">
-          Step {index + 1} of {steps.length}
-          <progress className="intake__progress" value={index + 1} max={steps.length} />
+          {info ? `Step ${index + 1} of ${steps.length}` : "Step 1"}
+          <progress className="intake__progress" value={info ? index + 1 : 0} max={steps.length} />
         </label>
         {chips.length > 0 ? (
           <ul className="intake__answers" aria-label="Your answers so far">
@@ -319,7 +323,16 @@ export function IntakeQuestions({
           </a>
         ) : null}
       </div>
-      <Estimate results={results} started={company !== null} />
+      <Estimate
+        results={results}
+        note={
+          company === null
+            ? "Pick your company type to start."
+            : stuck
+              ? "Pick at least one kind of work."
+              : null
+        }
+      />
     </section>
   );
 }
