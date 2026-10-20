@@ -7,7 +7,8 @@
 
 | Token | Value | Source | Use |
 |---|---|---|---|
-| `--color-bg` | `#fafafa` | site `body { background }` | Page background |
+| `--color-bg` | `#f3f6f8` | cool off-white, a tint of the accent hue | Page background |
+| `--color-bg-top` | `#e6edf1` | accent tint | Top of the page gradient, fading into `--color-bg` over 30rem |
 | `--color-surface` | `#ffffff` | spec 14 ("cards white") | Cards, chart canvas |
 | `--color-surface-muted` | `#f2f2f2` | new | Muted panels, hover rows |
 | `--color-text` | `#222222` | site `body { color }` | Body text, headline numbers, focus ring, **links (always underlined)** |
@@ -18,15 +19,18 @@
 | `--color-grid` | `#ebebeb` | new | Chart gridlines (decorative) |
 | `--color-skeleton` | `#ebebeb` | new | Loading skeleton blocks |
 | **`--color-accent`** | **`#5f7a89`** | **logo pixel sample** (median of all 107,258 coloured pixels) | "With Infravana" fills, thick lines (3px or more), large text |
-| `--color-accent-strong` | `#526a77` | accent darkened along the same hue (HSL lightness 0.455 to 0.395) | "With Infravana" **text** (labels, favourable deltas), thin lines (2px or less), markers, the outline of the C1 "Saved" block. **Never generic links.** |
-| `--color-accent-hover` | `#445762` | accent-strong darkened again (HSL lightness 0.335) | Hover and pressed state of Infravana-coloured controls (primary button) |
-| `--color-accent-soft` | `#e8eef1` | new | Hero card and pressed example chip background |
+| `--color-accent-strong` | `#526a77` | accent darkened along the same hue (HSL lightness 0.455 to 0.395) | "With Infravana" **text** (labels, favourable deltas), thin lines (2px or less), markers, **Never generic links.** |
+| `--color-accent-deep` | `#3f5562` | accent darkened along its hue | Primary buttons (white text 7.82:1) |
+| `--color-accent-hover` | `#33454f` | accent-deep darkened again | Hover and pressed state of primary buttons (white text 9.98:1) |
+| `--color-hero-end` | `#d5e2e9` | accent tint | End of the hero card gradient, which starts at `--color-accent-soft` |
+| `--color-positive` | `#1f6b5e` | calm teal, the one positive accent | **Savings only:** the hero saving figure and the C1 "Saved" outline |
+| `--color-accent-soft` | `#e8eef1` | new | Start of the hero gradient, pressed example chip and choice-card hover |
 | `--color-today-1` | `#333333` | new | "Today" C1 segment 2, 4, ... (white label inside) |
 | `--color-today-2` | `#888888` | new | "Today" bars in C3 and C5, whose labels sit outside the bar. **No white label on it** (3.54:1). |
 | `--color-today-3` | `#5c5c5c` | new | "Today" C1 segment 1, 3, ... (white label inside) |
 | `--color-today-4` | `#474747` | new | Spare "today" grey |
 | `--color-series-separator` | `var(--color-surface)` (#ffffff) | alias (already in `tokens.css`) | 1px stroke between stacked C1 spend segments (3) |
-| `--color-saved` | `#c9d6dd` | light accent tint | C1 "Saved" block fill, always with the `--color-accent-strong` outline (3) |
+| `--color-saved` | `#d3ece6` | light tint of `--color-positive` | C1 "Saved" block fill, always with the `--color-positive` outline (3) |
 | `--color-budget-line` | `var(--color-text)` (#222222) | new alias | C1 budget line (3) |
 | `--color-scrim` | `color-mix(in srgb, var(--color-text) 50%, transparent)` (#909090 over white, #8e8e8e over bg) | new | Drawer backdrop |
 | `--color-notice-bg` | `#fff6dd` | new (proposal) | Infeasible-budget, rejected-prompt and attempts-exhausted banners |
@@ -48,7 +52,7 @@
 
 ## 2. Contrast (WCAG 2.x AA)
 
-**Method.** I linearised each sRGB channel, took L = 0.2126R + 0.7152G + 0.0722B, and computed the ratio as (L1 + 0.05) / (L2 + 0.05). Ratios come from a stdlib Python script run on the exact hex values above. Thresholds: 4.5:1 for normal text, and 3:1 for large text, chart marks and UI components.
+**Method.** I linearised each sRGB channel, took L = 0.2126R + 0.7152G + 0.0722B, and computed the ratio as (L1 + 0.05) / (L2 + 0.05). Ratios come from a stdlib Python script run on the exact hex values above. Thresholds: 4.5:1 for normal text, and 3:1 for large text, chart marks and UI components. The "bg" columns were measured on the earlier flat `#fafafa`; the page now uses `--color-bg` `#f3f6f8` under a `--color-bg-top` gradient, and the "Text on the page gradient" row gives those values (all still pass; `border-strong` is 3.27 on bg and 3.00 on bg-top).
 
 | Use | Foreground | On | Ratio(s) | Needs | Result |
 |---|---|---|---|---|---|
@@ -56,7 +60,6 @@
 | Secondary text, captions, axis labels | `text-secondary` #595959 | bg / surface / surface-muted | 6.71 / 7.00 / 6.26 | 4.5:1 | PASS |
 | Links (underlined, body text colour) | `text` #222222 | bg / surface / surface-muted | 15.24 / 15.91 / 14.21 | 4.5:1 | PASS |
 | "With Infravana" text: labels, favourable deltas and check mark | `accent-strong` #526a77 | bg / surface / surface-muted | 5.46 / 5.70 / 5.09 | 4.5:1 | PASS |
-| Accent hover (text or frame) | `accent-hover` #445762 | bg / surface / surface-muted | 7.22 / 7.54 / 6.73 | 4.5:1 | PASS |
 | White label on accent-hover | #ffffff | accent-hover | 7.54 | 4.5:1 | PASS |
 | **Brand accent as small text** | `accent` #5f7a89 | bg / surface / surface-muted | **4.34** / 4.53 / **4.05** | 4.5:1 | **FAIL, adjusted:** text uses accent-strong |
 | Brand accent as large text (24px+, or 18.66px+ bold) | `accent` #5f7a89 | bg / surface / surface-muted | 4.34 / 4.53 / 4.05 | 3:1 | PASS |
@@ -74,11 +77,16 @@
 | 1px white segment separator vs C1 today greys | #ffffff | today-3 / today-1 | 6.69 / 12.63 | 3:1 | PASS |
 | White label inside a C1 today segment | #ffffff | today-3 / today-1 | 6.69 / 12.63 | 4.5:1 | PASS |
 | White label on today-2 (not allowed) | #ffffff | today-2 | 3.54 | 4.5:1 | FAIL: today-2 carries no label inside |
-| C1 "Saved" fill vs the card | `saved` #c9d6dd | surface | 1.48 | 3:1 | FAIL alone: the block always has its outline |
-| C1 "Saved" outline vs the card / vs its fill | `accent-strong` #526a77 | surface / saved | 5.70 / 3.84 | 3:1 | PASS |
-| C1 "Saved" fill vs the spend segment next to it | `saved` #c9d6dd | accent | 3.05 | 3:1 | PASS |
+| C1 "Saved" fill vs the card | `saved` #d3ece6 | surface | 1.24 | 3:1 | FAIL alone: the block always has its outline |
+| C1 "Saved" outline vs the card / vs its fill | `positive` #1f6b5e | surface / saved | 6.32 / 5.09 | 3:1 | PASS |
+| C1 "Saved" fill vs the spend segment next to it | `saved` #d3ece6 | accent | 3.65 | 3:1 | PASS |
 | Budget line (drawn under the bars, so only on the card) | `budget-line` #222222 | surface | 15.91 | 3:1 | PASS |
-| "Saved" label, inside or outside the block | `text` #222222 | saved / surface | 10.72 / 15.91 | 4.5:1 | PASS |
+| "Saved" label, inside or outside the block | `text` #222222 | saved / surface | 12.81 / 15.91 | 4.5:1 | PASS |
+| Hero saving figure (large, bold) | `positive` #1f6b5e | accent-soft / hero-end | 5.40 / 4.78 | 3:1 (large) | PASS, and above 4.5 |
+| Hero coverage figure (large, bold) | `accent-strong` #526a77 | accent-soft / hero-end | 4.86 / 4.31 | 3:1 (large) | PASS |
+| Hero body and secondary text | `text` / `text-secondary` | hero-end | 12.03 / 5.30 | 4.5:1 | PASS |
+| Primary button text / hover | #ffffff | accent-deep / accent-hover | 7.82 / 9.98 | 4.5:1 | PASS |
+| Text on the page gradient | `text` / `text-secondary` / `accent-strong` | bg-top / bg | 13.45 / 5.92 / 4.81 on bg-top; 14.66 / 6.45 / 5.25 on bg | 4.5:1 | PASS |
 | C1 Infravana bar: 1px white separator between spend segments | #ffffff | accent | 4.53 | 3:1 | PASS |
 | Drawer panel edge vs scrimmed page (50%) | #ffffff | scrim over white / bg / muted | 3.19 / 3.28 / 3.45 | 3:1 | PASS (at 40% it was 2.41 / 2.49 / 2.65, so raised) |
 | Input, slider and axis line | `border-strong` #888888 | bg / surface / surface-muted | 3.40 / 3.54 / 3.17 | 3:1 | PASS |
@@ -119,7 +127,7 @@ The page is for executives, so the charts carry only what that reader needs. Eve
 - **Today segments** alternate `--color-today-3` and `--color-today-1`, so a white label inside passes 4.5:1 (6.69 / 12.63). `--color-today-2` is never used under a white label (3.54:1).
 - **With Infravana spend segments** alternate `--color-accent` and `--color-accent-strong`, with white labels (4.53 / 5.70).
 - A 1px `--color-series-separator` stroke (`--chart-separator-width`) separates stacked segments.
-- **Savings are one "Saved" block** at the end of the With bar: a `--color-saved` fill with a `--chart-savings-outline-width` `--color-accent-strong` outline. The fill alone is 1.48:1 against the card, so the outline is never dropped. Its label is `--color-text`. When the label does not fit inside the block, it goes to the right of the bar, or above the block when the budget line would cross it.
+- **Savings are one "Saved" block** at the end of the With bar: a `--color-saved` fill with a `--chart-savings-outline-width` `--color-positive` outline. The fill alone is 1.24:1 against the card, so the outline is never dropped. `--color-positive` marks saved money only; "With Infravana" bars stay slate. Its label is `--color-text`. When the label does not fit inside the block, it goes to the right of the bar, or above the block when the budget line would cross it.
 - **Labels inside a segment** read "Name $X", else "$X", else none. A segment too narrow for a label is still named in its tooltip and in the screen-reader table. There are no leader lines, chips or label list.
 - **Budget line**: a dashed `--color-budget-line` line at `--chart-budget-line-width`, labelled "Budget $X" in `--color-text-secondary`. It is drawn under the bars, so it shows only on the card (15.91:1) and never crosses a fill (1.26:1 on today-1) or a label inside a bar. An outside "Saved" label has a `--color-surface` background, so the line does not run through it.
 - X-axis labels hide on overlap (`hideOverlap`), so ticks never run together on a phone.
@@ -156,15 +164,15 @@ Arial's figures are already fixed-width by default. `tabular-nums` makes sure th
 | Chart strokes (3) | `--chart-separator-width` 1px, `--chart-savings-outline-width` 1.5px, `--chart-budget-line-width` 1.5px |
 | Chart size | `--chart-stage-height` 320px, the canvas height in a chart card |
 | Chart type (G-5) | Chart code reads text sizes from `--font-size-xs` (12px) and `--font-size-sm` (14px) via `tokens.ts`, never literals. The value is a rem string, so convert it with the root font size (`parseFloat(getComputedStyle(document.documentElement).fontSize)`). **Use only these two:** `xs` for axis ticks, sub-labels, the budget label and tooltips; `sm` for category labels and data labels. Line height = `ceil(size x --line-height-tight)`, which is 15 for xs and 17 for sm. Bold labels use `--font-weight-bold`. Tooltip padding = `--space-2` / `--space-3` (8 / 12). Animation duration = `--duration-fade`, read in ms. |
-| Radii | `--radius-sm` 4px (inputs, buttons), `--radius-md` 8px (cards), `--radius-lg` 12px, `--radius-pill` 999px (example chips) |
-| Shadow | `--shadow-card`: very soft, two layers at 4% black. `--shadow-stage`: slightly lifted, for the "mounted print" stage, which also gets a 1px `--color-border` frame and a `--space-3` white mat. |
+| Radii | `--radius-sm` 4px (inputs, buttons, logo tile), `--radius-md` 8px (choice cards), `--radius-lg` 12px (cards), `--radius-pill` 999px (example chips) |
+| Shadow | `--shadow-card`: soft and wide, two layers of the slate ink at 4% and 6%, on every card. `--shadow-stage`: slightly lifted, for the chart drawer. Chart cards also get a 3px `--color-accent` top border. |
 | Motion | `--duration-fade` 180ms, `--ease-standard`. Both drop to 0ms under `prefers-reduced-motion`. |
 | Scrim | `--color-scrim` = `color-mix(in srgb, var(--color-text) 50%, transparent)` behind the drawer. Raised from the built 40%, so that the white drawer panel reaches at least 3:1 against the dimmed page: 3.19 over white, 3.28 over bg, 3.45 over muted. At 40% it was 2.41–2.65. |
 | Focus | 2px `--color-text` outline with a 2px offset. |
 
 ## 6. Implementation notes
 
-- **Logo placement.** The JPEG background is about `#f9f9f9`, not white or transparent. On `--color-bg` it blends in. On a white card it would show a faint box, so place it on `--color-bg` only.
+- **Logo placement.** The JPEG background is about `#f9f9f9`, not white or transparent, so on the tinted page it would show a faint box. The header puts it on a `--color-surface` tile with `--radius-sm`, so the box reads as intended.
 - **Logo file size.** The file is 930 KB at 1024px. That is fine for the mock but heavy for a header icon in production. A resized derivative is follow-up work.
 - **Chart colours must be read from these CSS variables, not copied as hex into chart code.** ECharts draws to canvas and cannot use `var()`. Read the values once with `getComputedStyle(document.documentElement).getPropertyValue('--color-accent')` and pass them in, so this file stays the single source.
 
@@ -173,7 +181,8 @@ Arial's figures are already fixed-width by default. `tabular-nums` makes sure th
 ```css
 :root {
   /* Surfaces */
-  --color-bg: #fafafa;              /* infravana.ai body background */
+  --color-bg: #f3f6f8;              /* cool off-white, a tint of the accent hue */
+  --color-bg-top: #e6edf1;          /* top of the page gradient, fading into --color-bg */
   --color-surface: #ffffff;
   --color-surface-muted: #f2f2f2;
   --color-skeleton: #ebebeb;
@@ -190,10 +199,15 @@ Arial's figures are already fixed-width by default. `tabular-nums` makes sure th
 
   /* Infravana accent: the only chart hue */
   --color-accent: #5f7a89;          /* sampled from logo.jpeg; fills, lines >=3px, large text */
-  --color-accent-strong: #526a77;   /* With-Infravana text, lines <=2px, markers, C1 "saved" outline; never generic links */
-  --color-accent-hover: #445762;    /* hover/pressed on Infravana-coloured controls */
+  --color-accent-strong: #526a77;   /* With-Infravana text, lines <=2px, markers; never generic links */
+  --color-accent-deep: #3f5562;     /* primary buttons: white text 7.82:1 */
+  --color-accent-hover: #33454f;    /* hover/pressed on primary buttons: white text 9.98:1 */
   --color-accent-soft: #e8eef1;     /* tinted card and selected-card background */
-  --color-saved: #c9d6dd;           /* C1 "saved" block: light accent tint, reads as money not spent */
+  --color-hero-end: #d5e2e9;        /* end of the hero card gradient (from --color-accent-soft) */
+
+  /* Savings: the one positive accent, only for money saved */
+  --color-positive: #1f6b5e;        /* hero saving figure, C1 "Saved" outline: 6.32:1 on white, 4.78:1 on hero-end */
+  --color-saved: #d3ece6;           /* C1 "Saved" fill, always with the --color-positive outline */
 
   /* "Today" series: greys, always with a direct label */
   --color-today-1: #333333;
@@ -254,7 +268,7 @@ Arial's figures are already fixed-width by default. `tabular-nums` makes sure th
   --radius-pill: 999px;
 
   /* Shadow */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 6px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 2px rgba(31, 45, 54, 0.04), 0 6px 20px rgba(31, 45, 54, 0.06);
   --shadow-stage: 0 2px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
 
   /* Motion */

@@ -127,9 +127,9 @@ export default function App() {
     if (answered) situationRef.current?.focus();
   }, [answered]);
 
-  const pickExample = (example: Example) => {
-    setAnswered(true);
-    void openExample(example);
+  // The dashboard opens only once the example is loaded; a failed load leaves the questions as they were.
+  const pickExample = async (example: Example) => {
+    if (await openExample(example)) setAnswered(true);
   };
   // The questions show only once the default scenario is back, so a late load never overwrites an answer.
   const startOver = async () => {
@@ -178,7 +178,12 @@ export default function App() {
             setAnswered(true);
           }}
         />
-        <Examples activeId={null} onPick={pickExample} />
+        <Examples activeId={null} onPick={(example) => void pickExample(example)} />
+        {state.exampleError ? (
+          <Notice title="That example could not be opened" role="alert">
+            {state.exampleError}
+          </Notice>
+        ) : null}
       </>
     );
   } else if (response && scenario) {
@@ -197,7 +202,7 @@ export default function App() {
             />
           </details>
           <div className="situation__foot">
-            <Examples activeId={state.exampleId} onPick={pickExample} />
+            <Examples activeId={state.exampleId} onPick={(example) => void pickExample(example)} />
             <button type="button" className="link-button" onClick={() => void startOver()}>
               Start over
             </button>

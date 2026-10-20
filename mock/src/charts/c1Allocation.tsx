@@ -88,14 +88,14 @@ function piecesOf(a: AllocationResult, t: Tokens): { today: Piece[]; infravana: 
       seg,
     }));
   const saved = planned.filter((seg) => seg.tone !== "spend").reduce((sum, seg) => sum + seg.usd, 0);
-  // The light fill alone is too faint against the card (1.48:1); the accent-strong outline gives the edge.
+  // The light fill alone is too faint against the card (1.24:1); the positive outline (6.32:1) gives the edge.
   if (saved > 0) {
     infravana.push({
       label: SAVED_LABEL,
       usd: saved,
       color: t.saved,
       textColor: t.text,
-      border: t.accentStrong,
+      border: t.positive,
       borderWidth: t.savingsOutlineWidth,
       seg: null,
     });

@@ -18,6 +18,7 @@ export type ColourKey =
   | "accent"
   | "accentStrong"
   | "saved"
+  | "positive"
   | "today1"
   | "today2"
   | "today3"
@@ -57,6 +58,7 @@ export const COLOUR_VARS: Record<ColourKey, string> = {
   accent: "--color-accent",
   accentStrong: "--color-accent-strong",
   saved: "--color-saved",
+  positive: "--color-positive",
   today1: "--color-today-1",
   today2: "--color-today-2",
   today3: "--color-today-3",

@@ -35,7 +35,7 @@ export function HeadlineStrip({ results, contactUrl }: HeadlineStripProps) {
   return (
     <section className="hero card" aria-label="Result">
       {!short && savedPct > 0 ? <p className="hero__lead">For the same AI work</p> : null}
-      <p className="hero__figure">{figure}</p>
+      <p className={short || savedPct <= 0 ? "hero__figure" : "hero__figure hero__figure--saving"}>{figure}</p>
       {savedPct > 0 ? (
         <ul className="hero__stats">
           {short ? (
