@@ -37,18 +37,7 @@
 | `--color-notice-text` | `#6b4a00` | new (proposal) | Banner heading |
 | `--color-notice-border` | `#a07a1a` | new (proposal) | Banner border |
 
-**Delta colours: none, by design.** Red and green would bring in more hues and break spec 14's rule that Infravana is the only coloured element. They also fail for red-green colour-blind users.
-
-**One "favours Infravana" marker, whatever the number's direction.** Arrows are not used, because "−38% cost" with a down arrow reads as bad even though it is good.
-
-| Delta | Marker | Colour | Hidden text for screen readers |
-|---|---|---|---|
-| Favours Infravana ("2.4x tokens", "−38% cost", "+12 pts quality") | A check mark before the number: inline SVG, 0.75em, `aria-hidden="true"` | `--color-accent-strong` for both the mark and the number | "(favours Infravana)" |
-| Favours today, or no change | No marker | `--color-text` | "(favours today)" or "(no change)" |
-
-- **The number keeps its own sign.** The sign says the direction and the check mark says who it favours, so the two are never mixed up.
-- **Why SVG and not the ✓ character.** U+2713 is not reliably in Arial and would fall back to a different font. The SVG renders the same everywhere.
-- **Colour is not what carries the meaning.** accent-strong vs `#222` is only 2.79:1, so the check mark's presence is the cue and colour only backs it up.
+**Delta colours: one positive teal, for saved money only.** `--color-positive` marks the hero saving figure and the C1 "Saved" block, nothing else. There is no red: a cost that went up is shown in plain text. Saved money is never told apart by colour alone, since its label always says "Saved" or "less".
 
 ## 2. Contrast (WCAG 2.x AA)
 
@@ -60,7 +49,7 @@
 | Secondary text, captions, axis labels | `text-secondary` #595959 | bg / surface / surface-muted | 6.71 / 7.00 / 6.26 | 4.5:1 | PASS |
 | Links (underlined, body text colour) | `text` #222222 | bg / surface / surface-muted | 15.24 / 15.91 / 14.21 | 4.5:1 | PASS |
 | "With Infravana" text: labels, favourable deltas and check mark | `accent-strong` #526a77 | bg / surface / surface-muted | 5.46 / 5.70 / 5.09 | 4.5:1 | PASS |
-| White label on accent-hover | #ffffff | accent-hover | 7.54 | 4.5:1 | PASS |
+| White label on accent-hover | #ffffff | accent-hover | 9.98 | 4.5:1 | PASS |
 | **Brand accent as small text** | `accent` #5f7a89 | bg / surface / surface-muted | **4.34** / 4.53 / **4.05** | 4.5:1 | **FAIL, adjusted:** text uses accent-strong |
 | Brand accent as large text (24px+, or 18.66px+ bold) | `accent` #5f7a89 | bg / surface / surface-muted | 4.34 / 4.53 / 4.05 | 3:1 | PASS |
 | Notice banner text | `notice-text` #6b4a00 | notice-bg | 7.48 | 4.5:1 | PASS |
