@@ -7,7 +7,7 @@ import {
   STAGE_LABEL,
 } from "./format";
 
-/** One extracted value, as the "Understood" strip and the assumptions panel show it. */
+/** One scenario value, as the Assumptions drawer shows it. */
 export interface Understood {
   key: string;
   label: string;
@@ -69,11 +69,11 @@ export function understoodItems(scenario: Scenario, tables: Tables): Understood[
     {
       key: "model_mix",
       label: "Models",
-      value: `frontier ${fmtShare(scenario.model_mix.frontier)}, mid ${fmtShare(
+      value: `flagship models ${fmtShare(scenario.model_mix.frontier)}, mid-size models ${fmtShare(
         scenario.model_mix.mid,
-      )}, small ${fmtShare(scenario.model_mix.small)}; ${fmtShare(
+      )}, small models ${fmtShare(scenario.model_mix.small)}; ${fmtShare(
         scenario.model_mix.open_weight_share,
-      )} open-weight`,
+      )} on open models`,
       aliases: ["model_mix"],
     },
   );
@@ -97,13 +97,13 @@ export function understoodItems(scenario: Scenario, tables: Tables): Understood[
       label: "Hardware",
       value:
         scenario.tiers_allowed === "all"
-          ? "all tiers in the data"
+          ? "all hardware"
           : joinList(scenario.tiers_allowed.map(hwLabel)),
       aliases: ["tiers_allowed"],
     },
     {
       key: "latency_class",
-      label: "Latency",
+      label: "Response speed",
       value: `answers ${LATENCY_LABEL[scenario.latency_class]}`,
       aliases: ["latency_class"],
     },

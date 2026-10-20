@@ -12,7 +12,7 @@
 | `--color-surface` | `#ffffff` | spec 14 ("cards white") | Cards, chart canvas |
 | `--color-surface-muted` | `#f2f2f2` | new | Muted panels, hover rows |
 | `--color-text` | `#222222` | site `body { color }` | Body text, headline numbers, focus ring, **links (always underlined)** |
-| `--color-text-secondary` | `#595959` | site `p { opacity: .75 }` on `#222`, flattened onto white | Captions, axis labels, "Understood" strip |
+| `--color-text-secondary` | `#595959` | site `p { opacity: .75 }` on `#222`, flattened onto white | Captions, axis labels, hints, the Assumptions drawer's notes |
 | `--color-text-disabled` | `#888888` | new | Greyed-out hardware tier (spec 10) |
 | `--color-border` | `#e0e0e0` | spec 14 ("1px light-grey border") | Card frame (decorative) |
 | `--color-border-strong` | `#888888` | new | Input outlines, slider tracks, axis lines |
