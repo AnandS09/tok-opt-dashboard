@@ -71,6 +71,8 @@ interface ChartFrameProps {
   subtitle?: string;
   /** Always shown, above the chart (the C5 delta label). */
   header?: ReactNode;
+  /** Stage only: content under the chart and above the badges, given the chart's pixel size (C1's label list). */
+  renderList?: (width: number, height: number) => ReactNode;
 }
 
 /**
@@ -78,9 +80,9 @@ interface ChartFrameProps {
  * provenance badges (stage only), a hidden data table for screen readers, and
  * the thumb rules (non-interactive, nothing but the picture).
  */
-export function ChartFrame({ size, ariaLabel, build, badges, table, subtitle, header }: ChartFrameProps) {
+export function ChartFrame({ size, ariaLabel, build, badges, table, subtitle, header, renderList }: ChartFrameProps) {
   const stage = size === "stage";
-  const { ref, error } = useEChart(build);
+  const { ref, error, size: chartSize } = useEChart(build);
   const badgeTexts = stage ? badgeLabels(badges) : [];
 
   return (
@@ -119,6 +121,7 @@ export function ChartFrame({ size, ariaLabel, build, badges, table, subtitle, he
           This chart could not be drawn. {error}
         </p>
       ) : null}
+      {stage && renderList ? renderList(chartSize.width, chartSize.height) : null}
       {badgeTexts.length > 0 ? (
         <ul
           aria-label="Data provenance"
@@ -157,6 +160,3 @@ export function ChartFrame({ size, ariaLabel, build, badges, table, subtitle, he
     </div>
   );
 }
-
-/** Screen-reader-only text, exported for the delta label. */
-export const visuallyHidden = srOnly;

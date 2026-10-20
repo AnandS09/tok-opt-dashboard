@@ -8,7 +8,9 @@ import type { ChartDef, ChartProps, CostPerMtokRow, Provenance, Results } from "
 import { baseOption, tooltipChrome } from "./base";
 import { ChartFrame } from "./ChartFrame";
 import type { BadgeItem } from "./ChartFrame";
-import { capitalize, esc, fmtUsdPerMtok, PROVENANCE_TEXT, toCsvText } from "./format";
+import { channelLabel } from "../shared/format";
+import { esc, fmtUsdPerMtok, PROVENANCE_TEXT, pricesTogether, toCsvText } from "./format";
+import { provenanceBorder } from "./provenanceStyle";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
@@ -32,7 +34,7 @@ function provenanceOf(row: CostPerMtokRow, side: SideKey): Provenance {
 
 /** Category label: the class name, plus a note when a side has no value (absent, never zero). */
 function classLabel(row: CostPerMtokRow): string {
-  const name = capitalize(row.model_class);
+  const name = channelLabel(row.model_class);
   const today = row.today_usd_per_mtok === null;
   const infravana = row.infravana_usd_per_mtok === null;
   if (today && infravana) return `${name}\n(not used here)`;
@@ -63,22 +65,27 @@ export function buildCostPerMtokOption(
       barGap: "12%",
       silent: !stage,
       emphasis: { disabled: true },
-      itemStyle: { color: colour[key], borderColor: t.separator, borderWidth: 1 },
-      data: rows.map((r) => valueOf(r, key)),
+      // A null stays null: ECharts draws no bar for it, never a bar at zero.
+      data: rows.map((r) => {
+        const value = valueOf(r, key);
+        return value === null
+          ? null
+          : { value, itemStyle: { color: colour[key], ...provenanceBorder(provenanceOf(r, key), false, t) } };
+      }),
       label: {
         show: stage,
         position: "top",
-        fontSize: 12,
+        fontSize: t.fontXs,
         color: t.text,
-        lineHeight: 16,
+        lineHeight: t.lineXs,
         formatter: (p) => {
           const value = fmtUsdPerMtok(Number(p.value));
           if (p.dataIndex !== firstIndex) return value;
           return key === "infravana" ? `{inf|With\n${BRAND}}\n${value}` : `{today|${TODAY_LABEL}}\n${value}`;
         },
         rich: {
-          today: { color: t.text, fontWeight: "bold", fontSize: 12, lineHeight: 16 },
-          inf: { color: t.accentStrong, fontWeight: "bold", fontSize: 12, lineHeight: 16 },
+          today: { color: t.text, fontWeight: t.weightBold, fontSize: t.fontXs, lineHeight: t.lineXs },
+          inf: { color: t.accentStrong, fontWeight: t.weightBold, fontSize: t.fontXs, lineHeight: t.lineXs },
         },
       },
     };
@@ -99,7 +106,7 @@ export function buildCostPerMtokOption(
             const value = valueOf(row, side.key);
             if (value === null) return "";
             return [
-              `<strong>${esc(capitalize(row.model_class))} models</strong> (${esc(side.name)})`,
+              `<strong>${esc(channelLabel(row.model_class))} models</strong> (${esc(side.name)})`,
               `${fmtUsdPerMtok(value)} per million tokens`,
               `At the ${esc(results.cost_per_mtok.latency_class)} latency target`,
               `Data: ${PROVENANCE_TEXT[provenanceOf(row, side.key)]}`,
@@ -114,10 +121,10 @@ export function buildCostPerMtokOption(
       axisTick: { show: false },
       axisLine: { lineStyle: { color: t.borderStrong } },
       axisLabel: {
-        margin: 10,
+        margin: t.space3,
         color: t.text,
-        fontSize: 13,
-        lineHeight: 18,
+        fontSize: t.fontSm,
+        lineHeight: t.lineSm,
         formatter: (_value: string, index: number) => (rows[index] ? classLabel(rows[index]) : ""),
       },
     },
@@ -126,7 +133,7 @@ export function buildCostPerMtokOption(
       min: 0,
       max: maxValue > 0 ? maxValue * 1.25 : 1,
       show: stage,
-      axisLabel: { color: t.textSecondary, fontSize: 12, formatter: (v: number) => fmtUsdPerMtok(v) },
+      axisLabel: { color: t.textSecondary, fontSize: t.fontXs, formatter: (v: number) => fmtUsdPerMtok(v) },
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: { lineStyle: { color: t.grid } },
@@ -148,9 +155,11 @@ export function costPerMtokCaption(results: Results): string {
   if (both.length === 0) {
     return `At the ${latency_class} latency target there is no model class with a price on both sides to compare.`;
   }
+  // Every price of the sentence has the same number of decimals.
+  const price = pricesTogether(both.flatMap((r) => [r.today_usd_per_mtok ?? 0, r.infravana_usd_per_mtok ?? 0]));
   const parts = both.map(
     (r) =>
-      `${fmtUsdPerMtok(r.today_usd_per_mtok ?? 0)} today and ${fmtUsdPerMtok(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${r.model_class} models`,
+      `${price(r.today_usd_per_mtok ?? 0)} today and ${price(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${r.model_class} models`,
   );
   return `At the ${latency_class} latency target, a million tokens costs ${parts.join(", ")}.`;
 }
@@ -159,7 +168,8 @@ const COST_HOW_COMPUTED =
   "This is the price of a million tokens (the small pieces of text that models read and write), grouped by size of model: frontier, mid and small. " +
   "For each group it shows what you pay today next to what the same work costs with " +
   `${BRAND}, at the same speed target on both sides. ` +
-  "A group your scenario does not use is left out of the chart rather than shown as zero. " +
+  "A group your scenario does not use stays on the chart, marked as not used, with no bar rather than a bar at zero. " +
+  "A dashed outline on a bar marks a figure that comes from a model, and a dotted outline marks one reported by a vendor. " +
   "Every price comes from the data files, and in this mock all of it is invented placeholder data.";
 
 /** Header first, then one row per bar drawn; a class with no value on a side has no row for it. */
@@ -180,7 +190,7 @@ function badgeItems(results: Results): BadgeItem[] {
   for (const r of results.cost_per_mtok.by_model_class) {
     for (const { key, name } of SIDES) {
       if (valueOf(r, key) === null) continue;
-      items.push({ series: name, part: capitalize(r.model_class), provenance: provenanceOf(r, key) });
+      items.push({ series: name, part: channelLabel(r.model_class), provenance: provenanceOf(r, key) });
     }
   }
   return items;
@@ -196,7 +206,7 @@ export function CostPerMtokChart({ results, size }: ChartProps) {
     SIDES.map(({ key, name }) => {
       const value = valueOf(r, key);
       return [
-        capitalize(r.model_class),
+        channelLabel(r.model_class),
         name,
         value === null ? "not used" : fmtUsdPerMtok(value),
         value === null ? "" : PROVENANCE_TEXT[provenanceOf(r, key)],

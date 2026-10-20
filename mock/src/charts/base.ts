@@ -1,30 +1,27 @@
 import type { Tokens } from "./tokens";
 
-/** True when the visitor asked for less motion (design tokens, motion). */
-function prefersReducedMotion(): boolean {
-  return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
 /**
  * Options every chart shares: the font, and a short draw-in animation at
  * stage size only (thumbnails redraw as knobs move, so they never animate).
+ * The duration is the `--duration-fade` token, which the stylesheet sets to
+ * zero for visitors who asked for less motion.
  */
-export function baseOption(tokens: Tokens, stage: boolean) {
+export function baseOption(t: Tokens, stage: boolean) {
   return {
-    animation: stage && !prefersReducedMotion(),
-    animationDuration: 180,
-    textStyle: { fontFamily: tokens.fontSans },
+    animation: stage && t.durationFade > 0,
+    animationDuration: t.durationFade,
+    textStyle: { fontFamily: t.fontSans },
   };
 }
 
 /** Tooltip chrome shared by the stage charts. */
-export function tooltipChrome(tokens: Tokens) {
+export function tooltipChrome(t: Tokens) {
   return {
     confine: true,
-    backgroundColor: tokens.surface,
-    borderColor: tokens.border,
+    backgroundColor: t.surface,
+    borderColor: t.border,
     borderWidth: 1,
-    padding: [8, 10],
-    textStyle: { color: tokens.text, fontFamily: tokens.fontSans, fontSize: 12 },
+    padding: [t.space2, t.space3],
+    textStyle: { color: t.text, fontFamily: t.fontSans, fontSize: t.fontXs },
   };
 }

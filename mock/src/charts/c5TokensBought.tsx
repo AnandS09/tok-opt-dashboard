@@ -6,9 +6,12 @@ import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
-import { ChartFrame, visuallyHidden } from "./ChartFrame";
+import { Favours } from "../components/Favours";
+import { ChartFrame } from "./ChartFrame";
 import type { BadgeItem } from "./ChartFrame";
-import { esc, fmtMultiple, fmtTokens, fmtUsd, PROVENANCE_TEXT, toCsvText } from "./format";
+import { fmtMultiple, fmtTokens, fmtTokensSig, fmtUsd, fmtUsdSig } from "../shared/format";
+import { esc, PROVENANCE_TEXT, toCsvText } from "./format";
+import { filledStyle } from "./provenanceStyle";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
@@ -28,22 +31,22 @@ export function buildTokensBoughtOption(
     { name: TODAY_LABEL, tokens: b.today_tokens, provenance: b.provenance.today },
     { name: INFRAVANA_LABEL, tokens: b.infravana_tokens, provenance: b.provenance.infravana },
   ];
-  const edge = { borderColor: t.separator, borderWidth: 1 };
   const bars: BarSeriesOption = {
     type: "bar",
     barWidth: "42%",
     silent: !stage,
     emphasis: { disabled: true },
     data: [
-      { value: b.today_tokens, itemStyle: { ...edge, color: t.today1 } },
-      { value: b.infravana_tokens, itemStyle: { ...edge, color: t.accent } },
+      { value: b.today_tokens, itemStyle: filledStyle(t.today1, b.provenance.today, t) },
+      { value: b.infravana_tokens, itemStyle: filledStyle(t.accent, b.provenance.infravana, t) },
     ],
     label: {
       show: stage,
       position: "top",
       color: t.text,
-      fontSize: 14,
-      fontWeight: "bold",
+      fontSize: t.fontSm,
+      lineHeight: t.lineSm,
+      fontWeight: t.weightBold,
       formatter: (p) => `${fmtTokens(Number(p.value))} tokens`,
     },
   };
@@ -72,11 +75,11 @@ export function buildTokensBoughtOption(
       axisTick: { show: false },
       axisLine: { lineStyle: { color: t.borderStrong } },
       axisLabel: {
-        margin: 10,
+        margin: t.space3,
         formatter: (value: string) => (value === INFRAVANA_LABEL ? `{inf|${value}}` : `{today|${value}}`),
         rich: {
-          today: { color: t.text, fontSize: 13, fontWeight: "bold" },
-          inf: { color: t.accentStrong, fontSize: 13, fontWeight: "bold" },
+          today: { color: t.text, fontSize: t.fontSm, lineHeight: t.lineSm, fontWeight: t.weightBold },
+          inf: { color: t.accentStrong, fontSize: t.fontSm, lineHeight: t.lineSm, fontWeight: t.weightBold },
         },
       },
     },
@@ -85,7 +88,7 @@ export function buildTokensBoughtOption(
       min: 0,
       max: Math.max(b.today_tokens, b.infravana_tokens) * 1.2,
       show: stage,
-      axisLabel: { color: t.textSecondary, fontSize: 12, formatter: (v: number) => fmtTokens(v) },
+      axisLabel: { color: t.textSecondary, fontSize: t.fontXs, formatter: (v: number) => fmtTokens(v) },
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: { lineStyle: { color: t.grid } },
@@ -101,19 +104,24 @@ export function buildTokensBoughtOption(
 export function tokensBoughtCaption(results: Results): string {
   const b = results.tokens_bought;
   const multiple = results.headline.tokens_multiple;
-  const budget = fmtUsd(b.budget_usd);
-  const today = fmtTokens(b.today_tokens);
-  const infravana = fmtTokens(b.infravana_tokens);
+  const budget = fmtUsdSig(b.budget_usd);
+  // Dollar figures and token counts all carry three significant digits.
+  const tokens = fmtTokensSig;
+  const shown = fmtMultiple(multiple);
   const ratio =
-    fmtMultiple(multiple) === "1.0x" ? "about the same number" : `${fmtMultiple(multiple)} as many`;
-  return `The same ${budget} budget buys ${today} tokens a quarter today and ${infravana} with ${BRAND}, ${ratio}.`;
+    shown === "1.0x"
+      ? "about the same number"
+      : multiple > 1
+        ? `${shown} as many`
+        : `${shown.slice(0, -1)} times the tokens`;
+  return `The same ${budget} budget buys ${tokens(b.today_tokens)} tokens a quarter today and ${tokens(b.infravana_tokens)} with ${BRAND}, ${ratio}.`;
 }
 
 const TOKENS_HOW_COMPUTED =
   "This is how much work the same budget pays for. " +
   "Today, the budget buys tokens (the small pieces of text that models read and write) at the prices of your current set-up. " +
   `With ${BRAND}, the same budget buys tokens from the cheapest options that still meet your quality and speed targets. ` +
-  "The label shows how many times more tokens that is. " +
+  "The label shows how many times as many tokens that is. A dashed outline on a bar marks a figure that comes from a model, and a dotted outline marks one reported by a vendor. " +
   "Every price comes from the data files, and in this mock all of it is invented placeholder data.";
 
 /** Header first, then the two bars and the delta label. */
@@ -129,41 +137,23 @@ export function tokensBoughtCsv(results: Results): string {
   );
 }
 
-const checkStyle = { width: "0.75em", height: "0.75em", flex: "none" } as const;
-
-/** The delta label: the one "favours InfraVana" marker of the design tokens. */
+/** The delta label: the shared "favours InfraVana" marker (check mark, colour and hidden text) around the multiple. */
 function DeltaLabel({ results, stage }: { results: Results; stage: boolean }) {
   const multiple = results.headline.tokens_multiple;
-  const favours = multiple > 1;
+  // Decided on the number as displayed ("1.0x" is no change), as the headline strip does.
+  const shown = Math.round(multiple * 10) / 10;
   return (
     <p
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.3em",
         margin: 0,
         fontSize: stage ? "var(--font-size-xl)" : "var(--font-size-sm)",
         fontWeight: "var(--font-weight-bold)",
         fontVariantNumeric: "tabular-nums lining-nums",
-        color: favours ? "var(--color-accent-strong)" : "var(--color-text)",
       }}
     >
-      {favours ? (
-        <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false" style={checkStyle}>
-          <path
-            d="M1.5 6.5 4.5 9.5 10.5 2.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
-      <span>{fmtMultiple(multiple)} tokens</span>
-      <span style={visuallyHidden}>
-        {favours ? ` (favours ${BRAND})` : multiple === 1 ? " (no change)" : " (favours today)"}
-      </span>
+      <Favours favoursInfravana={shown > 1} noChange={shown === 1}>
+        {fmtMultiple(multiple)} tokens
+      </Favours>
     </p>
   );
 }
