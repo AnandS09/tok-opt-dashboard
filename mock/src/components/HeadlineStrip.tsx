@@ -1,7 +1,8 @@
 import { PROVENANCE_TEXT, worstProvenance } from "../charts/format";
 import type { Results, Scenario, Tables } from "../contract";
 import { Favours } from "./Favours";
-import { fmtMultiple, LATENCY_LABEL } from "./format";
+import { fmtMultiple, fmtPct } from "../shared/format";
+import { LATENCY_LABEL } from "./format";
 
 interface HeadlineStripProps {
   results: Results;
@@ -52,7 +53,7 @@ export function HeadlineStrip({ results, scenario, tables }: HeadlineStripProps)
         <span className="headline__figure">
           <Favours favoursInfravana={saves} noChange={savedPct === 0}>
             {costSign}
-            {Math.abs(savedPct)}% cost
+            {fmtPct(Math.abs(cost_savings_pct))} cost
           </Favours>
         </span>
         {provenance !== "measured" ? <span className="badge">{PROVENANCE_TEXT[provenance]}</span> : null}

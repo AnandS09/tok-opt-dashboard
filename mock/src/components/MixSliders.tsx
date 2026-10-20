@@ -1,4 +1,4 @@
-import { fmtPercent } from "./format";
+import { fmtShare } from "../shared/format";
 
 export interface MixItem {
   key: string;
@@ -29,11 +29,11 @@ export function MixSliders({ idPrefix, items, onChange }: MixSlidersProps) {
             max={100}
             step={1}
             value={Math.round(item.value * 100)}
-            aria-valuetext={fmtPercent(item.value)}
+            aria-valuetext={fmtShare(item.value)}
             onChange={(event) => onChange(item.key, Number(event.target.value) / 100)}
           />
           <output className="slider__value" htmlFor={`${idPrefix}-${item.key}`}>
-            {fmtPercent(item.value)}
+            {fmtShare(item.value)}
           </output>
         </div>
       ))}

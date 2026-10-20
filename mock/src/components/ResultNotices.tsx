@@ -37,10 +37,10 @@ export function ResultNotices({ results, tables }: ResultNoticesProps) {
   return (
     <>
       {unmet.length > 0 ? (
-        <Notice title="The quality floor is above what Today's own model scores">
-          For {joinList(unmet.map((label) => label.toLowerCase()))}, the baseline model itself scores below the
-          quality floor in effect. Both sides use the same floor, so Today does not meet it either. Lower the
-          floor to compare like with like.
+        <Notice title="Neither side meets the quality floor">
+          For {joinList(unmet.map((label) => label.toLowerCase()))}, the model Today buys scores below the
+          quality floor in effect. InfraVana keeps that same proprietary model for the traffic it does not
+          move, so it does not meet the floor either. Lower the floor to compare like with like.
         </Notice>
       ) : null}
       {todayPct < 100 ? (

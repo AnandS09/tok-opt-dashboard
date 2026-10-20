@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import type { ScenarioResponse, Stage, Tables } from "../contract";
 import { Drawer } from "./Drawer";
 import { isAssumed, understoodItems } from "./describe";
-import { fmtPercent, hwLabel, LATENCY_LABEL, STAGE_LABEL } from "./format";
+import { channelLabel, fmtShare, hwLabel } from "../shared/format";
+import { LATENCY_LABEL, STAGE_LABEL } from "./format";
 import { priceDates } from "./priceDates";
 
 export type PanelSection = "assumptions" | "data";
@@ -42,7 +43,7 @@ export function AssumptionsPanel({ tables, response, stage, section, onClose }: 
     if (!offer) return offerId ?? "";
     const model = tables.models.find((m) => m.model_id === offer.model_id);
     const discount = offer.commit_discount_pct > 0 ? `, ${offer.commit_discount_pct}% commit discount` : "";
-    return `${model?.family ?? offer.model_id} via ${offer.channel}${discount}`;
+    return `${model?.family ?? offer.model_id} via ${channelLabel(offer.channel)}${discount}`;
   };
 
   return (
@@ -92,7 +93,7 @@ export function AssumptionsPanel({ tables, response, stage, section, onClose }: 
                 <tr key={i}>
                   <td>{tables.workloads.find((w) => w.workload_id === row.workload_id)?.label ?? row.workload_id}</td>
                   <td>{describeBuy(row.offer_id, row.plan_id)}</td>
-                  <td>{fmtPercent(row.share_default)}</td>
+                  <td>{fmtShare(row.share_default)}</td>
                 </tr>
               ))}
             </tbody>

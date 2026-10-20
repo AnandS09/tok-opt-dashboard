@@ -10,11 +10,10 @@ import type {
   Tables,
 } from "../contract";
 import { rebalance, sameShares } from "../store/mix";
+import { fmtShare, hwLabel } from "../shared/format";
 import {
   fmtInt,
-  fmtPercent,
   HARDWARE_CLASS_LABEL,
-  hwLabel,
   LATENCY_LABEL,
   STAGE_HINT,
   STAGE_LABEL,
@@ -314,9 +313,9 @@ export function KnobRail({ id, openShare, tables, scenario, onEdit, onReset }: K
         />
         {openShare && Math.round(openShare.asked * 100) !== Math.round(openShare.possible * 100) ? (
           <p className="knob__hint knob__hint--strong">
-            {fmtPercent(openShare.asked)} open-weight asked, {fmtPercent(openShare.possible)} possible: the
-            rest has no open-weight model that clears the quality floor, so it stays on the proprietary
-            model.
+            {fmtShare(openShare.asked)} open-weight asked, {fmtShare(openShare.possible)} possible: the
+            rest has no eligible open-weight model in its tier that would be cheaper, so it stays on
+            Today's proprietary model.
           </p>
         ) : null}
         <p className="knob__hint">

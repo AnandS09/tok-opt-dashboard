@@ -439,6 +439,12 @@ a {
   outline-offset: calc(var(--focus-ring-offset) * -1);
 }
 
+/* Checked options are dark, so the ring inside them uses the surface colour. */
+.segmented__option:has(input:checked:focus-visible) {
+  outline-color: var(--color-surface);
+  outline-offset: calc(var(--focus-ring-offset) * -2);
+}
+
 .checks {
   display: flex;
   flex-direction: column;
@@ -759,19 +765,35 @@ th {
   display: none;
 }
 
+/* A 24px target holding a 12px visible dot, so touch targets meet the minimum size. */
 .dot {
-  width: 12px;
-  height: 12px;
+  display: grid;
+  place-items: center;
+  width: var(--space-5);
+  height: var(--space-5);
   padding: 0;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-pill);
+  background: none;
+  border: 0;
   cursor: pointer;
 }
 
-.dot[aria-current="true"] {
+.dot::before {
+  content: "";
+  width: var(--space-3);
+  height: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+.dot[aria-current="true"]::before {
   background: var(--color-accent-strong);
   border-color: var(--color-accent-strong);
+}
+
+.dot[aria-current="true"]:hover::before {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
 .film__strip {
@@ -852,7 +874,7 @@ th {
 .drawer__backdrop {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--color-text) 40%, transparent);
+  background: var(--color-scrim);
 }
 
 .drawer__panel {
@@ -1053,7 +1075,7 @@ th {
 
   .dots {
     display: flex;
-    gap: var(--space-2);
+    gap: 0;
   }
 
   .film__thumbs-toggle {

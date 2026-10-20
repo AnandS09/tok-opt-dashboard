@@ -1,8 +1,6 @@
 import type { Scenario, Tables } from "../contract";
+import { fmtShare, fmtUsd, hwLabel } from "../shared/format";
 import {
-  fmtPercent,
-  fmtUsd,
-  hwLabel,
   joinList,
   LATENCY_LABEL,
   STAGE_LABEL,
@@ -53,16 +51,16 @@ export function understoodItems(scenario: Scenario, tables: Tables): Understood[
       label: "Work",
       value: Object.entries(scenario.workload_mix)
         .filter(([, share]) => share > 0)
-        .map(([id, share]) => `${workloadLabel(tables, id).toLowerCase()} ${fmtPercent(share)}`)
+        .map(([id, share]) => `${workloadLabel(tables, id).toLowerCase()} ${fmtShare(share)}`)
         .join(", "),
       aliases: ["workload_mix"],
     },
     {
       key: "model_mix",
       label: "Models",
-      value: `frontier ${fmtPercent(scenario.model_mix.frontier)}, mid ${fmtPercent(
+      value: `frontier ${fmtShare(scenario.model_mix.frontier)}, mid ${fmtShare(
         scenario.model_mix.mid,
-      )}, small ${fmtPercent(scenario.model_mix.small)}; ${fmtPercent(
+      )}, small ${fmtShare(scenario.model_mix.small)}; ${fmtShare(
         scenario.model_mix.open_weight_share,
       )} open-weight`,
       aliases: ["model_mix"],
