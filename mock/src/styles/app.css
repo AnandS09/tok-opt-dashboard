@@ -829,8 +829,10 @@ th {
 /* ---- Narrow screens: the estimate becomes a bar pinned to the bottom ---- */
 
 @media (max-width: 720px) {
+  /* Flex, not one grid column: a grid item can only stick inside its own row. */
   .intake {
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
   }
 
   .estimate {
