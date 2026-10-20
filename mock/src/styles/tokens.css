@@ -17,40 +17,27 @@
 
   /* Infravana accent: the only chart hue */
   --color-accent: #5f7a89;          /* sampled from logo.jpeg; fills, lines >=3px, large text */
-  --color-accent-strong: #526a77;   /* With-Infravana text + favourable-delta check, lines <=2px, markers, C1 savings outline/pattern, active frame; never generic links */
-  --color-accent-hover: #445762;    /* hover/pressed on active frame and Infravana marks */
+  --color-accent-strong: #526a77;   /* With-Infravana text, lines <=2px, markers, C1 "saved" outline; never generic links */
+  --color-accent-hover: #445762;    /* hover/pressed on Infravana-coloured controls */
   --color-accent-soft: #e8eef1;     /* tinted card and selected-card background */
   --color-saved: #c9d6dd;           /* C1 "saved" block: light accent tint, reads as money not spent */
 
-  /* "Today" series: greys, always with direct label + pattern/marker */
-  --color-today-1: #333333;         /* solid  / circle */
-  --color-today-2: #888888;         /* solid  / square */
-  --color-today-3: #5c5c5c;         /* hatch  / triangle */
-  --color-today-4: #474747;         /* dots   / diamond */
+  /* "Today" series: greys, always with a direct label */
+  --color-today-1: #333333;
+  --color-today-2: #888888;         /* bars without a label inside (white on it is 3.54:1) */
+  --color-today-3: #5c5c5c;
+  --color-today-4: #474747;
   --color-series-separator: var(--color-surface);
 
-  /* Chart-only aliases (sections 3b to 3d) */
-  --color-provenance-on-fill: var(--color-surface);       /* dashed/dotted border on filled bars */
-  --color-provenance-on-hollow: var(--color-accent-strong); /* dashed/dotted outline on hollow savings */
-  --color-chart-chip: var(--color-surface);               /* label chips on bar fills */
+  /* Chart-only aliases */
   --color-budget-line: var(--color-text);
-  --color-budget-halo: var(--color-surface);
-  --color-chart-leader: var(--color-border-strong);      /* leader from outside chip to segment */
   --color-scrim: color-mix(in srgb, var(--color-text) 50%, transparent); /* drawer backdrop; panel edge >=3:1 */
 
   /* Chart strokes: read with getComputedStyle, parse numbers */
   --chart-separator-width: 1px;
-  --chart-savings-outline-width: 1.5px;
-  --chart-provenance-width: 2px;          /* on filled bars; hollow savings keep 1.5px */
-  --chart-dash-modelled: 6 3;             /* dash array: modelled */
-  --chart-dash-vendor: 2 3;               /* dash array: vendor-reported */
+  --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
   --chart-budget-line-width: 1.5px;
-  --chart-budget-halo-width: 6px;         /* even width: same snap centre as the 1.5px line; 2.25px white each side */
-  --chart-leader-width: 1px;
-  --chart-min-segment-width: 4px;         /* narrower segments go to the label list */
-  --chart-narrow-width: 560px;            /* C1 chart width below which the narrow layout applies */
-  --chart-label-tiers: 2;                 /* outside-label tiers above a bar (one below) */
-  --chart-chip-padding: 2px 4px;
+  --chart-budget-halo-width: 6px;         /* surface-colour underlay, so the line reads on any fill it crosses */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */

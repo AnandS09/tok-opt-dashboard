@@ -1,5 +1,6 @@
+import { BRAND } from "../charts/labels";
 import type { Results } from "../contract";
-import { fmtMultiple, fmtPct, fmtUsdSig } from "../shared/format";
+import { fmtMultiple, fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
 
 interface HeadlineStripProps {
   results: Results;
@@ -8,34 +9,51 @@ interface HeadlineStripProps {
 
 /**
  * The hero result (spec 4.1): the saving in money first, then the same fact
- * as a percentage and as "more work for the same budget". Both sides use the
- * same quality and speed settings (spec 9).
+ * as a percentage and as "more work for the same money". When the budget does
+ * not cover the work (spec 5), how much of it the budget covers comes first
+ * instead. Work is moved only to models that meet the quality and speed
+ * asked for (spec 9).
  */
 export function HeadlineStrip({ results, contactUrl }: HeadlineStripProps) {
   const { tokens_multiple, cost_savings_pct } = results.headline;
   const savedPct = Math.round(cost_savings_pct);
   const savedUsd = (results.allocation.total_usd * cost_savings_pct) / 100;
-  const budget = fmtUsdSig(results.allocation.budget_usd);
+  // One rounding rule (nearest percent), so a shortfall that displays as 100% is not one.
+  const { demand_tokens, today_tokens, infravana_tokens } = results.tokens_bought;
+  const todayPct = Math.round((today_tokens / demand_tokens) * 100);
+  const infravanaPct = Math.min(100, Math.round((infravana_tokens / demand_tokens) * 100));
+  const short = todayPct < 100;
+
+  let figure: string;
+  if (short) {
+    const withUs = infravanaPct < 100 ? `${fmtPct(infravanaPct)} with ${BRAND}` : `all of it with ${BRAND}`;
+    figure = `Your ${fmtUsd(results.allocation.budget_usd)} covers ${fmtPct(todayPct)} of this work today, ${withUs}`;
+  } else {
+    figure = savedPct > 0 ? `${fmtUsdSig(savedUsd)} less each quarter` : "About the same cost as today";
+  }
 
   return (
     <section className="hero card" aria-label="Result">
+      {!short && savedPct > 0 ? <p className="hero__lead">For the same AI work</p> : null}
+      <p className="hero__figure">{figure}</p>
       {savedPct > 0 ? (
-        <>
-          <p className="hero__lead">For the same AI work</p>
-          <p className="hero__figure">{fmtUsdSig(savedUsd)} less each quarter</p>
-          <ul className="hero__stats">
+        <ul className="hero__stats">
+          {short ? (
             <li>
-              <strong>{fmtPct(savedPct)}</strong> lower cost
+              <strong>{fmtUsdSig(savedUsd)}</strong> less to do all of it
             </li>
-            <li>
-              <strong>{fmtMultiple(tokens_multiple)}</strong> the AI work for the same {budget}
-            </li>
-          </ul>
-        </>
-      ) : (
-        <p className="hero__figure">About the same cost as today</p>
-      )}
-      <p className="hero__basis">Same quality and response speed on both sides.</p>
+          ) : null}
+          <li>
+            <strong>{fmtPct(savedPct)}</strong> lower cost
+          </li>
+          <li>
+            <strong>{fmtMultiple(tokens_multiple)}</strong> the AI work for the same money
+          </li>
+        </ul>
+      ) : null}
+      <p className="hero__basis">
+        InfraVana moves work only to models that meet your minimum quality and response speed.
+      </p>
       <a className="button button--primary" href={contactUrl}>
         Talk to us about your numbers
       </a>

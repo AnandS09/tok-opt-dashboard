@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { LatencyClass, Results, Scenario, Tables } from "../contract";
 import { fmtInt, joinList, LATENCY_LABEL } from "./format";
 import { fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
@@ -138,6 +138,12 @@ export function IntakeQuestions({
   const [answered, setAnswered] = useState<StepId[]>([]);
   /** The work cards switched on; empty until the visitor picks one. */
   const [picked, setPicked] = useState<string[]>([]);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // Each pick replaces the focused button, so focus moves to the new question for keyboard and screen-reader users.
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, [current]);
 
   const steps = stepsFor(scenario, tables);
   const index = Math.max(0, steps.indexOf(current));
@@ -270,7 +276,7 @@ export function IntakeQuestions({
             ))}
           </ul>
         ) : null}
-        <h2 id="intake-title" className="intake__title">
+        <h2 id="intake-title" className="intake__title" ref={titleRef} tabIndex={-1}>
           {title}
         </h2>
         {current === "work" ? <p className="intake__note">Pick all that apply.</p> : null}
@@ -426,21 +432,21 @@ export function IntakeSentence({ tables, scenario, company, onCompany, onEdit }:
           {info.customerWord}
         </>
       ) : null}
-      , spending{" "}
+      . Our AI budget is{" "}
       <Blank
         label="Budget per quarter"
         value={String(budget)}
         choices={withCurrent(BUDGETS, budget).map((n) => ({ value: String(n), label: fmtUsd(n) }))}
         onChange={(v) => onEdit((s) => setBudget(s, Number(v)))}
       />{" "}
-      a quarter, mostly on{" "}
+      a quarter, used {selected.length > 1 ? "on" : "only on"}{" "}
       <WorkBlank
         tables={tables}
         options={[...info.workloads, ...selected]}
         selected={selected}
         onChange={(ids) => onEdit((s) => setWorkloads(s, ids, tables))}
       />
-      , and need answers{" "}
+      , and answers need to come back{" "}
       <Blank
         label="Response speed"
         value={scenario.latency_class}

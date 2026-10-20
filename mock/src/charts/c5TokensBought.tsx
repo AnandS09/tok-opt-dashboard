@@ -7,7 +7,7 @@ import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
 import { ChartFrame } from "./ChartFrame";
-import { fmtMultiple, fmtTokens, fmtTokensSig, fmtUsd, fmtUsdSig } from "../shared/format";
+import { fmtMultiple, fmtTokens, fmtTokensSig, fmtUsd } from "../shared/format";
 import { esc, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import type { Tokens } from "./tokens";
@@ -100,7 +100,7 @@ export function buildTokensBoughtOption(
 export function tokensBoughtCaption(results: Results): string {
   const b = results.tokens_bought;
   const multiple = results.headline.tokens_multiple;
-  const budget = fmtUsdSig(b.budget_usd);
+  const budget = fmtUsd(b.budget_usd);
   // Dollar figures and token counts all carry three significant digits.
   const tokens = fmtTokensSig;
   const shown = fmtMultiple(multiple);
@@ -117,7 +117,7 @@ const TOKENS_HOW_COMPUTED =
   "This is how much work the same budget pays for. " +
   "Today, the budget buys tokens (the small pieces of text that models read and write) at the prices of your current set-up. " +
   `With ${BRAND}, the same budget buys tokens from the cheapest options that still meet your quality and speed targets. ` +
-  "Every price comes from the data files, and in this mock all of it is illustrative.";
+  "All prices here are illustrative.";
 
 /** Header first, then the two bars and the delta label. */
 export function tokensBoughtCsv(results: Results): string {

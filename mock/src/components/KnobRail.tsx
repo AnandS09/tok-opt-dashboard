@@ -195,7 +195,11 @@ export function KnobRail({ openShare, tables, scenario, onEdit, onReset }: KnobR
             {floorValue}
           </output>
         </div>
-        <p className="knob__hint">Models below this score are never used, on either side.</p>
+        <p className="knob__hint">
+          {scenario.quality_floor === undefined
+            ? "Until you move this, each kind of work keeps its own usual minimum (the highest is shown)."
+            : "InfraVana only moves work to cheaper models that score at least this."}
+        </p>
       </section>
 
       <button type="button" className="link-button finetune__reset" onClick={onReset}>

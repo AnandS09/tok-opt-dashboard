@@ -15,7 +15,7 @@ import type { Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
-import type { CompanyType } from "./store/intake";
+import { selectedWorkloads, setBudget, setCustomers, setSpeed, setUsers, setWorkloads, type CompanyType } from "./store/intake";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
@@ -48,6 +48,7 @@ export default function App() {
   // Null until the visitor picks one; each example names its own.
   const [company, setCompany] = useState<CompanyType | null>(null);
   const loadSeq = useRef(0);
+  const situationRef = useRef<HTMLElement>(null);
 
   const { tables, response, scenario } = state;
 
@@ -67,21 +68,24 @@ export default function App() {
     };
   }, []);
 
+  /** Loads an example; true once it is the scenario on the page. */
   const openExample = useCallback(
-    async (example: Example) => {
-      if (!tables) return;
+    async (example: Example): Promise<boolean> => {
+      if (!tables) return false;
       const seq = ++loadSeq.current;
       dispatch({ type: "example_loading", exampleId: example.id });
       try {
         const loaded = await loadScenario(DATA_URL, example.scenarioId);
-        if (seq !== loadSeq.current) return;
+        if (seq !== loadSeq.current) return false;
         dispatch({
           type: "example_loaded",
           exampleId: example.id,
           response: atTarget(loaded),
         });
+        return true;
       } catch (error) {
         if (seq === loadSeq.current) dispatch({ type: "example_failed", message: messageOf(error) });
+        return false;
       }
     },
     [tables],
@@ -118,15 +122,22 @@ export default function App() {
     [response],
   );
 
+  // The questions (and the focused control) are gone once answered: focus moves to the answers.
+  useEffect(() => {
+    if (answered) situationRef.current?.focus();
+  }, [answered]);
+
   const pickExample = (example: Example) => {
     setAnswered(true);
     setCompany(example.company);
     void openExample(example);
   };
-  const startOver = () => {
-    setAnswered(false);
-    setCompany(null);
-    void openExample(EXAMPLES[0]);
+  // The questions show only once the default scenario is back, so a late load never overwrites an answer.
+  const startOver = async () => {
+    if (await openExample(EXAMPLES[0])) {
+      setAnswered(false);
+      setCompany(null);
+    }
   };
 
   const openShare = results && liveScenario ? openShareOf(results, liveScenario) : null;
@@ -182,7 +193,7 @@ export default function App() {
   } else if (response && scenario) {
     body = (
       <>
-        <section className="situation card" aria-label="Your situation">
+        <section className="situation card" aria-label="Your situation" ref={situationRef} tabIndex={-1}>
           {company ? (
             <IntakeSentence tables={tables} scenario={scenario} company={company} onCompany={setCompany} onEdit={edit} />
           ) : null}
@@ -193,12 +204,23 @@ export default function App() {
               scenario={scenario}
               openShare={openShare}
               onEdit={edit}
-              onReset={() => dispatch({ type: "scenario_reset" })}
+              onReset={() => {
+                // Undo fine-tuning restores the assumptions, not the answers in the sentence above it.
+                const answers = scenario;
+                dispatch({ type: "scenario_reset" });
+                edit((s) => {
+                  const { users, budget_usd_per_quarter, customers } = answers.baseline;
+                  let kept = setSpeed(setBudget(setUsers(s, users), budget_usd_per_quarter), answers.latency_class);
+                  if (customers !== undefined) kept = setCustomers(kept, customers);
+                  const work = selectedWorkloads(answers, tables);
+                  return selectedWorkloads(kept, tables).join() === work.join() ? kept : setWorkloads(kept, work, tables);
+                });
+              }}
             />
           </details>
           <div className="situation__foot">
             <Examples activeId={state.exampleId} onPick={pickExample} />
-            <button type="button" className="link-button" onClick={startOver}>
+            <button type="button" className="link-button" onClick={() => void startOver()}>
               Start over
             </button>
           </div>
@@ -245,7 +267,6 @@ export default function App() {
           tables={tables}
           response={response}
           stage={scenario.stage_today}
-          section="assumptions"
           onClose={() => setPanelOpen(false)}
         />
       ) : null}

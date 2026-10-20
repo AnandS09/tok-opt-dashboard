@@ -449,6 +449,7 @@ a {
 }
 
 .finetune__reset {
+  grid-column: 1 / -1;
   justify-self: start;
   font-size: var(--font-size-sm);
 }
@@ -709,39 +710,6 @@ a {
   align-self: flex-start;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-}
-
-table {
-  position: static !important;
-  width: 100% !important;
-  height: auto !important;
-  margin: var(--space-3) 0 0 !important;
-  overflow: visible !important;
-  clip: auto !important;
-  white-space: normal !important;
-}
-
-.stage__figure--table .stage__chart caption {
-  padding: var(--space-1) 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  text-align: left;
-}
-
-.album__table-toggle {
-  align-self: center;
-  font-size: var(--font-size-sm);
-}
-
-.album__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  justify-content: center;
-}
-
-.datatable__scroll {
-  overflow-x: auto;
 }
 
 table {
