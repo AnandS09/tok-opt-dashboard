@@ -42,6 +42,8 @@ export const sampleResults: Results = {
     provenance: { today: "vendor_reported", infravana: "modelled" },
   },
   quality_floor_by_workload: { software_design: 70 },
+  effective_open_share: 0.3,
+  floor_unmet_workloads: [],
 };
 
 /**
@@ -89,4 +91,6 @@ export const sampleResultsEdge: Results = {
     provenance: { today: "measured", infravana: "measured" },
   },
   quality_floor_by_workload: { support: 60 },
+  effective_open_share: 0,
+  floor_unmet_workloads: [],
 };

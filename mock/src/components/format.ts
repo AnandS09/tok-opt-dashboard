@@ -1,29 +1,8 @@
 import type { HardwareClass, LatencyClass, Stage } from "../contract";
 
-const usdCompact = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  notation: "compact",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 1,
-});
-const usdFull = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
 const integer = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
-export const fmtUsd = (n: number): string => usdCompact.format(n);
-export const fmtUsdFull = (n: number): string => usdFull.format(n);
 export const fmtInt = (n: number): string => integer.format(n);
-export const fmtPercent = (share: number): string => `${Math.round(share * 100)}%`;
-
-/** "2.4x": one decimal, and no trailing ".0" noise below ten. */
-export const fmtMultiple = (n: number): string => `${n >= 10 ? Math.round(n) : n.toFixed(1)}x`;
-
-/** Hardware ids have no label column, so show the id in capitals with spaces. */
-export const hwLabel = (hwId: string): string => hwId.replace(/_/g, " ").toUpperCase();
 
 export const STAGE_LABEL: Record<Stage, string> = {
   seats: "Seats",

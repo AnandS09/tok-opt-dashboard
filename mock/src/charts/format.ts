@@ -1,64 +1,19 @@
 import type { Provenance } from "../contract";
 
-/** Scales n to a unit with three significant digits, e.g. 99318 -> "99.3K". */
-function scaled(n: number, units: readonly [number, string][]): string {
-  const abs = Math.abs(n);
-  for (let i = 0; i < units.length; i++) {
-    const [size, suffix] = units[i];
-    if (abs >= size) {
-      const value = Number((n / size).toPrecision(3));
-      // 999.6K rounds to 1000K: step up to the next unit instead.
-      if (Math.abs(value) >= 1000 && i > 0) continue;
-      return `${value}${suffix}`;
-    }
-  }
-  return String(Math.round(n));
-}
-
-const USD_UNITS: readonly [number, string][] = [
-  [1e9, "B"],
-  [1e6, "M"],
-  [1e3, "K"],
-];
-const TOKEN_UNITS: readonly [number, string][] = [
-  [1e12, "T"],
-  [1e9, "B"],
-  [1e6, "M"],
-  [1e3, "K"],
-];
-
-/** Compact dollars: $99.3K, $1.2M, $850. */
-export function fmtUsd(n: number): string {
-  return `${n < 0 ? "-" : ""}$${scaled(Math.abs(n), USD_UNITS)}`;
-}
-
-/** Whole dollars with thousands separators: $99,318. */
-export function fmtUsdFull(n: number): string {
-  return `$${Math.round(n).toLocaleString("en-US")}`;
-}
-
 /** Price per million tokens: $18.50, $0.021. */
 export function fmtUsdPerMtok(n: number): string {
   return `$${n < 0.1 ? n.toFixed(3) : n.toFixed(2)}`;
 }
 
-/** Compact token counts: 4.9B, 820M. */
-export function fmtTokens(n: number): string {
-  return scaled(n, TOKEN_UNITS);
-}
-
-/** "2.4x", same convention as the headline strip. */
-export function fmtMultiple(n: number): string {
-  return `${n >= 10 ? Math.round(n) : n.toFixed(1)}x`;
-}
-
-/** Whole percent, same rounding as the headline strip. */
-export function fmtPct(n: number): string {
-  return `${Math.round(n)}%`;
-}
-
-export function capitalize(s: string): string {
-  return s.length === 0 ? s : s[0].toUpperCase() + s.slice(1);
+/**
+ * Prices per million tokens of one caption with one number of decimals, enough
+ * that the smallest non-zero price keeps two significant digits and none is
+ * written as zero: $12.47 and $0.44, or $12.47 and $0.034.
+ */
+export function pricesTogether(values: number[]): (n: number) => string {
+  const smallest = Math.min(...values.filter((v) => v > 0));
+  const decimals = Number.isFinite(smallest) ? Math.min(6, Math.max(2, 1 - Math.floor(Math.log10(smallest)))) : 2;
+  return (n) => `$${n.toFixed(decimals)}`;
 }
 
 /** Escapes text for the HTML strings ECharts tooltips accept. */

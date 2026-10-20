@@ -507,18 +507,18 @@ export interface Results {
    * `model_mix.open_weight_share`, and is lower when a workload has no
    * eligible open-weight model or when moving a share would not save money,
    * so the page can say "0.4 asked, 0.3 possible". Always set by
-   * `compute()`; optional in the type so hand-built Results stay valid.
+   * `compute()`.
    */
-  effective_open_share?: number;
+  effective_open_share: number;
   /**
    * The `workload_id`s (in workloads.csv order, only those in the scenario's
    * mix) whose baseline model scores below the quality floor in effect, so
    * the floor shown next to the headline is one Today itself does not meet.
    * A baseline model with no composite score for the workload also counts.
    * Empty when every baseline model meets its floor. Always set by
-   * `compute()`; optional in the type so hand-built Results stay valid.
+   * `compute()`.
    */
-  floor_unmet_workloads?: string[];
+  floor_unmet_workloads: string[];
 }
 
 // ---------------------------------------------------------------------------
