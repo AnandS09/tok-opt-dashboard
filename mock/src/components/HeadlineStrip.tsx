@@ -1,74 +1,62 @@
-import { PROVENANCE_TEXT, worstProvenance } from "../charts/format";
-import type { Results, Scenario, Tables } from "../contract";
-import { Favours } from "./Favours";
-import { fmtMultiple, fmtPct } from "../shared/format";
-import { LATENCY_LABEL } from "./format";
+import { BRAND } from "../charts/labels";
+import type { Results } from "../contract";
+import { fmtMultiple, fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
 
 interface HeadlineStripProps {
   results: Results;
-  scenario: Scenario;
-  tables: Tables;
+  contactUrl: string;
 }
 
 /**
- * The pinned headline strip (spec 4.1): the numbers people screenshot. The
- * quality floor and latency target both sides share are stated next to it
- * (spec 9).
+ * The hero result (spec 4.1): the saving in money first, then the same fact
+ * as a percentage and as "more work for the same money". When the budget does
+ * not cover the work (spec 5), how much of it the budget covers comes first
+ * instead. Work is moved only to models that meet the quality and speed
+ * asked for (spec 9).
  */
-export function HeadlineStrip({ results, scenario, tables }: HeadlineStripProps) {
+export function HeadlineStrip({ results, contactUrl }: HeadlineStripProps) {
   const { tokens_multiple, cost_savings_pct } = results.headline;
-  // Decide marker and sign from the numbers as displayed, so "0% cost" never carries a check mark.
-  const tokensShown = Math.round(tokens_multiple * 10) / 10;
-  const moreTokens = tokensShown > 1;
   const savedPct = Math.round(cost_savings_pct);
-  const saves = savedPct > 0;
-  const costSign = savedPct > 0 ? "\u2212" : savedPct < 0 ? "+" : "";
-  const floors = Object.entries(results.quality_floor_by_workload)
-    .filter(([id]) => (scenario.workload_mix[id] ?? 0) > 0)
-    .map(([, floor]) => floor);
-  const floorText =
-    floors.length === 0
-      ? "its own quality floor"
-      : Math.min(...floors) === Math.max(...floors)
-        ? `a quality floor of ${floors[0]}`
-        : `quality floors of ${Math.min(...floors)} to ${Math.max(...floors)}`;
-  const provenance = worstProvenance([
-    results.allocation.provenance.today,
-    results.allocation.provenance.infravana,
-    results.tokens_bought.provenance.today,
-    results.tokens_bought.provenance.infravana,
-  ]);
-  const latency = tables.manifest.parameters.latency_classes[scenario.latency_class];
+  const savedUsd = (results.allocation.total_usd * cost_savings_pct) / 100;
+  // One rounding rule (nearest percent), so a shortfall that displays as 100% is not one.
+  const { demand_tokens, today_tokens, infravana_tokens } = results.tokens_bought;
+  const todayPct = Math.round((today_tokens / demand_tokens) * 100);
+  const infravanaPct = Math.min(100, Math.round((infravana_tokens / demand_tokens) * 100));
+  const short = todayPct < 100;
+
+  let figure: string;
+  if (short) {
+    const withUs = infravanaPct < 100 ? `${fmtPct(infravanaPct)} with ${BRAND}` : `all of it with ${BRAND}`;
+    figure = `Your ${fmtUsd(results.allocation.budget_usd)} covers ${fmtPct(todayPct)} of this work today, ${withUs}`;
+  } else {
+    figure = savedPct > 0 ? `${fmtUsdSig(savedUsd)} less each quarter` : "About the same cost as today";
+  }
 
   return (
-    <section className="headline" aria-label="Headline">
-      <p className="headline__lead">Same budget</p>
-      <p className="headline__numbers">
-        <span className="headline__figure">
-          <Favours favoursInfravana={moreTokens} noChange={tokensShown === 1}>
-            {fmtMultiple(tokens_multiple)} tokens
-          </Favours>
-        </span>
-        <span className="headline__divider" aria-hidden="true">|</span>
-        <span className="headline__figure">
-          <Favours favoursInfravana={saves} noChange={savedPct === 0}>
-            {costSign}
-            {fmtPct(Math.abs(cost_savings_pct))} cost
-          </Favours>
-        </span>
-        {provenance !== "measured" ? <span className="badge">{PROVENANCE_TEXT[provenance]}</span> : null}
+    <section className="hero card" aria-label="Result">
+      {!short && savedPct > 0 ? <p className="hero__lead">For the same AI work</p> : null}
+      <p className={short || savedPct <= 0 ? "hero__figure" : "hero__figure hero__figure--saving"}>{figure}</p>
+      {savedPct > 0 ? (
+        <ul className="hero__stats">
+          {short ? (
+            <li>
+              <strong>{fmtUsdSig(savedUsd)}</strong> less to do all of it
+            </li>
+          ) : null}
+          <li>
+            <strong>{fmtPct(savedPct)}</strong> lower cost
+          </li>
+          <li>
+            <strong>{fmtMultiple(tokens_multiple)}</strong> the AI work for the same money
+          </li>
+        </ul>
+      ) : null}
+      <p className="hero__basis">
+        InfraVana moves work only to models that meet your minimum quality and response speed.
       </p>
-      <p className="headline__basis">
-        With InfraVana against today. Both sides use {floorText} and the{" "}
-        {LATENCY_LABEL[scenario.latency_class].toLowerCase()} latency target
-        {latency
-          ? ` (at least ${latency.min_tok_s_per_user} tokens per second per user${
-              latency.max_p95_ttft_ms === null ? "" : `, first token within ${latency.max_p95_ttft_ms} ms`
-            })`
-          : ""}
-        .
-      </p>
+      <a className="button button--primary" href={contactUrl}>
+        Talk to us about your numbers
+      </a>
     </section>
   );
 }
-

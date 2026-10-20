@@ -21,16 +21,14 @@ export type OptionBuilder = (tokens: Tokens, dims: Dims) => EChartsCoreOption;
  * disposes it on unmount. Tokens are read at every draw, so a token change
  * shows at the next redraw.
  *
- * Returns the element ref to attach to the chart container, the container's
- * pixel size, and an error message when the chart could not be drawn (for
- * example, missing tokens).
+ * Returns the element ref to attach to the chart container and an error
+ * message when the chart could not be drawn (for example, missing tokens).
  */
 export function useEChart(build: OptionBuilder) {
   const ref = useRef<HTMLDivElement>(null);
   const buildRef = useRef(build);
   const drawRef = useRef<(() => void) | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [size, setSize] = useState<Dims>({ width: 0, height: 0 });
 
   useEffect(() => {
     const el = ref.current;
@@ -49,11 +47,8 @@ export function useEChart(build: OptionBuilder) {
       }
     };
     drawRef.current = draw;
-    const measure = () => setSize((prev) => (prev.width === chart.getWidth() && prev.height === chart.getHeight() ? prev : { width: chart.getWidth(), height: chart.getHeight() }));
-    measure();
     const observer = new ResizeObserver(() => {
       chart.resize();
-      measure();
       // Labels are fitted to the width, so redraw when it changes.
       if (chart.getWidth() !== lastWidth) {
         lastWidth = chart.getWidth();
@@ -73,5 +68,5 @@ export function useEChart(build: OptionBuilder) {
     drawRef.current?.();
   }, [build]);
 
-  return { ref, error, size };
+  return { ref, error };
 }

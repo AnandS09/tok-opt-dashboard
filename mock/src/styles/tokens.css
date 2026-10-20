@@ -1,6 +1,7 @@
 :root {
   /* Surfaces */
-  --color-bg: #fafafa;              /* infravana.ai body background */
+  --color-bg: #f3f6f8;              /* cool off-white, a tint of the accent hue */
+  --color-bg-top: #e6edf1;          /* top of the page gradient, fading into --color-bg */
   --color-surface: #ffffff;
   --color-surface-muted: #f2f2f2;
   --color-skeleton: #ebebeb;
@@ -17,38 +18,32 @@
 
   /* Infravana accent: the only chart hue */
   --color-accent: #5f7a89;          /* sampled from logo.jpeg; fills, lines >=3px, large text */
-  --color-accent-strong: #526a77;   /* With-Infravana text + favourable-delta check, lines <=2px, markers, C1 savings outline/pattern, active frame; never generic links */
-  --color-accent-hover: #445762;    /* hover/pressed on active frame and Infravana marks */
+  --color-accent-strong: #526a77;   /* With-Infravana text, lines <=2px, markers; never generic links */
+  --color-accent-deep: #3f5562;     /* primary buttons: white text 7.82:1 */
+  --color-accent-hover: #33454f;    /* hover/pressed on primary buttons: white text 9.98:1 */
+  --color-accent-soft: #e8eef1;     /* tinted card and selected-card background */
+  --color-hero-end: #d5e2e9;        /* end of the hero card gradient (from --color-accent-soft) */
 
-  /* "Today" series: greys, always with direct label + pattern/marker */
-  --color-today-1: #333333;         /* solid  / circle */
-  --color-today-2: #888888;         /* solid  / square */
-  --color-today-3: #5c5c5c;         /* hatch  / triangle */
-  --color-today-4: #474747;         /* dots   / diamond */
+  /* Savings: the one positive accent, only for money saved */
+  --color-positive: #1f6b5e;        /* hero saving figure, C1 "Saved" outline: 6.32:1 on white, 4.78:1 on hero-end */
+  --color-saved: #d3ece6;           /* C1 "Saved" fill, always with the --color-positive outline */
+
+  /* "Today" series: greys, always with a direct label */
+  --color-today-1: #333333;
+  --color-today-2: #888888;         /* bars without a label inside (white on it is 3.54:1) */
+  --color-today-3: #5c5c5c;
+  --color-today-4: #474747;
   --color-series-separator: var(--color-surface);
 
-  /* Chart-only aliases (sections 3b to 3d) */
-  --color-provenance-on-fill: var(--color-surface);       /* dashed/dotted border on filled bars */
-  --color-provenance-on-hollow: var(--color-accent-strong); /* dashed/dotted outline on hollow savings */
-  --color-chart-chip: var(--color-surface);               /* label chips on bar fills */
+  /* Chart-only aliases */
   --color-budget-line: var(--color-text);
-  --color-budget-halo: var(--color-surface);
-  --color-chart-leader: var(--color-border-strong);      /* leader from outside chip to segment */
   --color-scrim: color-mix(in srgb, var(--color-text) 50%, transparent); /* drawer backdrop; panel edge >=3:1 */
 
   /* Chart strokes: read with getComputedStyle, parse numbers */
   --chart-separator-width: 1px;
-  --chart-savings-outline-width: 1.5px;
-  --chart-provenance-width: 2px;          /* on filled bars; hollow savings keep 1.5px */
-  --chart-dash-modelled: 6 3;             /* dash array: modelled */
-  --chart-dash-vendor: 2 3;               /* dash array: vendor-reported */
+  --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
   --chart-budget-line-width: 1.5px;
-  --chart-budget-halo-width: 6px;         /* even width: same snap centre as the 1.5px line; 2.25px white each side */
-  --chart-leader-width: 1px;
-  --chart-min-segment-width: 4px;         /* narrower segments go to the label list */
-  --chart-narrow-width: 560px;            /* C1 chart width below which the narrow layout applies */
-  --chart-label-tiers: 2;                 /* outside-label tiers above a bar (one below) */
-  --chart-chip-padding: 2px 4px;
+  --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */
   --color-notice-bg: #fff6dd;
@@ -92,7 +87,7 @@
   --radius-pill: 999px;
 
   /* Shadow */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 6px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 2px rgba(31, 45, 54, 0.04), 0 6px 20px rgba(31, 45, 54, 0.06);
   --shadow-stage: 0 2px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
 
   /* Motion */

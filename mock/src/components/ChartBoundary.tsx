@@ -25,7 +25,7 @@ export class ChartBoundary extends Component<Props, { failed: boolean }> {
     if (this.state.failed) {
       return (
         <Notice title="This chart could not be drawn" role="alert">
-          The other charts are unaffected. Try another slide or reset the knobs.
+          The other charts are unaffected. Try changing an answer above.
         </Notice>
       );
     }

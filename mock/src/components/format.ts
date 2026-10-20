@@ -1,30 +1,25 @@
-import type { HardwareClass, LatencyClass, Stage } from "../contract";
+import type { LatencyClass, Stage } from "../contract";
 
 const integer = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
 export const fmtInt = (n: number): string => integer.format(n);
 
 export const STAGE_LABEL: Record<Stage, string> = {
-  seats: "Seats",
-  api: "API",
-  platform: "Platform",
+  seats: "Per-seat plans",
+  api: "Pay as you go",
+  platform: "Cloud contract",
 };
 
 export const STAGE_HINT: Record<Stage, string> = {
-  seats: "Per-user subscriptions",
-  api: "Pay-as-you-go on one provider",
-  platform: "A cloud platform with committed capacity",
+  seats: "A monthly subscription per person",
+  api: "Paying one provider for what you use",
+  platform: "A cloud platform with reserved capacity",
 };
 
 export const LATENCY_LABEL: Record<LatencyClass, string> = {
-  interactive: "Interactive",
-  standard: "Standard",
-  batch: "Batch",
-};
-
-export const HARDWARE_CLASS_LABEL: Record<HardwareClass, string> = {
-  gpu: "GPU",
-  accelerator: "Accelerator",
+  interactive: "instantly, like a chat",
+  standard: "within a few seconds",
+  batch: "overnight",
 };
 
 /** Plain-language list: "a, b and c". */
