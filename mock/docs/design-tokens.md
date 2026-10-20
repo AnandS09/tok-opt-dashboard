@@ -286,6 +286,13 @@ Without the halo, the line is 1.26:1 against today-1 and disappears inside it.
 - Text 15.91 and 7.00 on the white stage; group heading accent-strong 5.70.
 - Swatch fills against the white stage: 3.54–12.63. The hollow swatch outline is 5.70.
 
+**Accepted behaviour as built.** These five rules replace the stricter wording above wherever the two differ.
+- **Narrow side margins.** In the narrow layout the left and right grid margins are **at least** `--space-2` (8px). They grow to half the width of the widest x-axis tick label whenever that is more, so the plot never shrinks and shifts the segments.
+- **Budget label at the canvas edges.** The budget label is centred on the budget line. If that would run past the right edge, the label ends at the line. If it would run past the left edge, it starts at the line. Narrow charts reserve a top margin tall enough for the label (24px).
+- **Leader on a shifted chip.** A chip may be shifted sideways to stay fully on the canvas. Its leader stays at the segment's horizontal midpoint and must meet the chip's near edge somewhere within the chip's width, not necessarily at its middle.
+- **Label-list swatch patterns.** A swatch uses the same pattern family (hatch, dots or cross-hatch), the same pattern colour, the same fill and the same perimeter as its bar part. Pattern spacing may differ from the bar's ECharts decal.
+- **Narrow bar titles** are drawn in `--font-sans`. The colours are `--color-text` for "Today", `--color-accent-strong` for "With InfraVana", and `--color-text-secondary` for the total.
+
 ## 4. Type
 
 | Token | Value | Use |
