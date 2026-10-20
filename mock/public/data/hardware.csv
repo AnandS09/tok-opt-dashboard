@@ -1,0 +1,10 @@
+hw_id,vendor,class,usd_per_hr,hr_price_source,power_kw
+h100,NVIDIA,gpu,2.4,INVENTED PLACEHOLDER: not a quote or a measurement,0.7
+h200,NVIDIA,gpu,3.2,INVENTED PLACEHOLDER: not a quote or a measurement,0.7
+b200,NVIDIA,gpu,5.5,INVENTED PLACEHOLDER: not a quote or a measurement,1.0
+b300,NVIDIA,gpu,7.2,INVENTED PLACEHOLDER: not a quote or a measurement,1.4
+mi300x,AMD,gpu,2.1,INVENTED PLACEHOLDER: not a quote or a measurement,0.75
+mi325x,AMD,gpu,2.7,INVENTED PLACEHOLDER: not a quote or a measurement,1.0
+mi355x,AMD,gpu,5.0,INVENTED PLACEHOLDER: not a quote or a measurement,1.4
+dmatrix_corsair,d-Matrix,accelerator,3.0,INVENTED PLACEHOLDER: not a quote or a measurement,0.6
+rebellions_rebel,Rebellions,accelerator,2.2,INVENTED PLACEHOLDER: not a quote or a measurement,0.45

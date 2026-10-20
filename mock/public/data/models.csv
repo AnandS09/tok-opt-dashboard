@@ -1,0 +1,8 @@
+model_id,family,tier,license,vendor
+frontier_a,Frontier model A,frontier,proprietary,Placeholder vendor 1
+frontier_b,Frontier model B,frontier,proprietary,Placeholder vendor 2
+mid_a,Mid-tier model A,mid,proprietary,Placeholder vendor 1
+open_x,Open-weight model X,mid,open,Placeholder publisher 1
+open_y,Open-weight model Y,mid,open,Placeholder publisher 2
+open_z,Open-weight model Z (small),small,open,Placeholder publisher 1
+open_s,Open-weight model S (small),small,open,Placeholder publisher 2

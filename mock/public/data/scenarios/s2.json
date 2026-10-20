@@ -1,0 +1,49 @@
+{
+  "verdict": "ok",
+  "reason_for_user": "",
+  "scenario": {
+    "baseline": {
+      "users": 50,
+      "budget_usd_per_quarter": 100000
+    },
+    "target": {
+      "users": 100,
+      "budget_usd_per_quarter": 200000
+    },
+    "workload_mix": {
+      "software_design": 0.4,
+      "hardware_design": 0.3,
+      "support": 0.1,
+      "research": 0.2
+    },
+    "model_mix": {
+      "frontier": 0.7,
+      "mid": 0.3,
+      "small": 0.0,
+      "open_weight_share": 0.4
+    },
+    "named_models": [
+      "opus",
+      "fable"
+    ],
+    "stage_today": "platform",
+    "tiers_allowed": "all",
+    "latency_class": "interactive",
+    "unit": "people"
+  },
+  "charts": [
+    "C1",
+    "C3",
+    "C5",
+    "C7",
+    "C4"
+  ],
+  "missing": [
+    "workload_mix",
+    "model_mix",
+    "stage_today",
+    "tiers_allowed",
+    "latency_class"
+  ],
+  "narrative": "A company growing from 50 to 100 people and from 100K to 200K USD a quarter, heavy on two frontier models and weighing an open-weight and proprietary mix. The charts show the plan before and after scaling, and where a better channel and routing change the spend."
+}

@@ -1,0 +1,4 @@
+case_id,label,model_mix_json,description
+frontier_heavy,Frontier-heavy,"{""frontier"":0.8,""mid"":0.15,""small"":0.05,""open_weight_share"":0.0}","Most traffic needs a frontier model, almost all of it proprietary. Illustrative placeholder mix."
+mixed,Frontier and mid-tier mix,"{""frontier"":0.5,""mid"":0.3,""small"":0.2,""open_weight_share"":0.3}","Half frontier, the rest mid-tier and small, with some open-weight. Illustrative placeholder mix."
+open_vs_proprietary,Open-weight heavy,"{""frontier"":0.2,""mid"":0.4,""small"":0.4,""open_weight_share"":0.8}","Most traffic goes to open-weight models, frontier kept for the hardest work. Illustrative placeholder mix."

@@ -1,0 +1,39 @@
+{
+  "verdict": "ok",
+  "reason_for_user": "",
+  "scenario": {
+    "baseline": {
+      "users": 50,
+      "budget_usd_per_quarter": 100000
+    },
+    "workload_mix": {
+      "hardware_design": 0.8,
+      "software_design": 0.2
+    },
+    "model_mix": {
+      "frontier": 0.7,
+      "mid": 0.3,
+      "small": 0.0,
+      "open_weight_share": 0.1
+    },
+    "named_models": [],
+    "stage_today": "api",
+    "tiers_allowed": "all",
+    "latency_class": "interactive",
+    "unit": "people"
+  },
+  "charts": [
+    "C1",
+    "C3",
+    "C5",
+    "C2",
+    "C6"
+  ],
+  "missing": [
+    "model_mix",
+    "stage_today",
+    "tiers_allowed",
+    "latency_class"
+  ],
+  "narrative": "A 50-person chip design company with a 100K USD quarterly budget, about 80 percent hardware design and 20 percent software tooling. The charts compare how that budget is spent today with how it could be spent with InfraVana routing."
+}

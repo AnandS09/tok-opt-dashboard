@@ -1,0 +1,5 @@
+workload_id,label,tok_in_per_user_day,tok_out_per_user_day,quality_floor,default_model_mix
+software_design,Software design,2650000,175000,78,"{""frontier"":0.6,""mid"":0.3,""small"":0.1,""open_weight_share"":0.2}"
+hardware_design,Hardware design,2000000,130000,79,"{""frontier"":0.7,""mid"":0.3,""small"":0.0,""open_weight_share"":0.1}"
+support,Support and operations,600000,50000,65,"{""frontier"":0.2,""mid"":0.4,""small"":0.4,""open_weight_share"":0.4}"
+research,Research and analysis,1000000,80000,74,"{""frontier"":0.5,""mid"":0.4,""small"":0.1,""open_weight_share"":0.2}"

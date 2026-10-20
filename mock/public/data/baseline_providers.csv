@@ -1,0 +1,13 @@
+stage,workload_id,offer_id,plan_id,share_default
+seats,software_design,,seat_v1_team,1.0
+seats,hardware_design,,seat_v1_team,1.0
+seats,research,,seat_v1_team,1.0
+seats,support,,seat_v1_lite,1.0
+api,software_design,frontier_a_direct_global,,1.0
+api,hardware_design,frontier_a_direct_global,,1.0
+api,research,frontier_a_direct_global,,1.0
+api,support,mid_a_direct_global,,1.0
+platform,software_design,frontier_a_bedrock_useast,,1.0
+platform,hardware_design,frontier_a_bedrock_useast,,1.0
+platform,research,frontier_b_bedrock_useast,,1.0
+platform,support,mid_a_bedrock_useast,,1.0
