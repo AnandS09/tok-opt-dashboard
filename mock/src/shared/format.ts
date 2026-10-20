@@ -67,14 +67,20 @@ function threeSignificant(v: number, keepZeros: boolean): string {
 /**
  * Compact form of a non-negative number at three significant digits, in the
  * largest unit that keeps it at or above 1. A value that rounds up to 1000 of
- * a unit moves to the next larger unit ("999.6K" is written "1.00M"), and a
+ * a unit moves to the next larger unit ("999.6K" is written "1.00M", and
+ * 999.6 dollars "1.00K" rather than "1000"), and a
  * non-zero value is never written as zero: below the smallest unit it keeps
  * its three significant digits.
  */
 function compact(abs: number, units: Units, keepZeros: boolean): string {
   let i = units.findIndex(([size]) => abs >= size);
-  if (i === -1) return threeSignificant(abs, keepZeros);
-  if (i > 0 && Number((abs / units[i][0]).toPrecision(3)) >= 1000) i -= 1;
+  if (i === -1) {
+    // Below the smallest unit. A value that rounds up to 1000 (999.6) moves into that unit ("1K"), not "1000".
+    if (Number(abs.toPrecision(3)) < 1000) return threeSignificant(abs, keepZeros);
+    i = units.length - 1;
+  } else if (i > 0 && Number((abs / units[i][0]).toPrecision(3)) >= 1000) {
+    i -= 1;
+  }
   const [size, suffix] = units[i];
   return `${threeSignificant(abs / size, keepZeros)}${suffix}`;
 }

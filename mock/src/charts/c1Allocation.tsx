@@ -92,14 +92,17 @@ function narrowTitles(layout: Layout, t: Tokens) {
       fontFamily: t.fontSans,
       fontSize: t.fontSm,
       textVerticalAlign: "bottom",
+      // zrender text takes its colour from `fill` (the `color` of an ECharts label is not read here), and a
+      // rich piece does not inherit the font family, so each piece names both.
       rich: {
         name: {
-          color: bar.side === "today" ? t.text : t.accentStrong,
+          fill: bar.side === "today" ? t.text : t.accentStrong,
+          fontFamily: t.fontSans,
           fontSize: t.fontSm,
           fontWeight: t.weightBold,
           lineHeight: t.lineSm,
         },
-        total: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
+        total: { fill: t.textSecondary, fontFamily: t.fontSans, fontSize: t.fontXs, lineHeight: t.lineXs },
       },
     },
   }));

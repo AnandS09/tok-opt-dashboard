@@ -26,7 +26,7 @@ import type { Rect } from "../c1Layout";
 import { C1LabelList } from "../c1LabelList";
 import { buildCostPerMtokOption } from "../c3CostPerMtok";
 import { buildTokensBoughtOption } from "../c5TokensBought";
-import { fmtMultiple, fmtPct, fmtUsdSig } from "../../shared/format";
+import { fmtMultiple, fmtPct, fmtTokens, fmtTokensSig, fmtUsd, fmtUsdSig } from "../../shared/format";
 import { PROVENANCE_TEXT } from "../format";
 import { INFRAVANA_LABEL, SAVINGS_LABEL, TODAY_LABEL } from "../labels";
 import { chartRegistry } from "../registry";
@@ -434,6 +434,99 @@ function checkLabelList(results: Results, t: Tokens, dims: Dims, where: string):
   return problems;
 }
 
+/**
+ * The narrow layout's bar titles, read back from the svg: "Today" in the text
+ * colour, "With InfraVana" in accent-strong, each total in the secondary text
+ * colour, every piece in the token font family at the token size. zrender
+ * reads a text colour from `fill`, so an option written with `color` draws the
+ * default dark colour and font; only the svg shows that.
+ */
+export function checkNarrowTitles(results: Results, svg: string, t: Tokens, dims: Dims, where: string): string[] {
+  const layout = layoutAllocation(results, t, dims);
+  if (!layout.narrow) return [];
+  const problems: string[] = [];
+  const family = (t.fontSans).replace(/["']/g, "");
+  const pieces = [...svg.matchAll(/<text([^>]*)>([^<]*)<\/text>/g)].map((m) => ({
+    content: m[2],
+    fill: attr(m[1], "fill")?.toLowerCase(),
+    family: /font-family:([^;]*);/.exec(m[1])?.[1].replace(/&quot;|["']/g, "").trim(),
+    size: Number(/font-size:([\d.]+)px/.exec(m[1])?.[1]),
+  }));
+  const expect = (content: (c: string) => boolean, name: string, fill: string, size: number) => {
+    const found = pieces.filter((p) => content(p.content));
+    if (found.length !== 1) {
+      problems.push(`${where}: ${found.length} "${name}" title pieces drawn, expected 1`);
+      return;
+    }
+    const p = found[0];
+    if (p.fill !== fill.toLowerCase()) problems.push(`${where}: "${name}" drawn in ${p.fill}, expected ${fill}`);
+    if (p.family !== family) problems.push(`${where}: "${name}" drawn in font "${p.family}", expected "${family}"`);
+    if (p.size !== size) problems.push(`${where}: "${name}" drawn at ${p.size}px, expected ${size}px`);
+  };
+  expect((c) => c === TODAY_LABEL, TODAY_LABEL, t.text, t.fontSm);
+  expect((c) => c === INFRAVANA_LABEL, INFRAVANA_LABEL, t.accentStrong, t.fontSm);
+  const totals = pieces.filter((p) => /^\s*\u00b7\s*\$.* total$/.test(p.content));
+  if (totals.length !== 2) problems.push(`${where}: ${totals.length} title totals drawn, expected 2`);
+  for (const p of totals) {
+    if (p.fill !== t.textSecondary.toLowerCase()) problems.push(`${where}: title total drawn in ${p.fill}, expected ${t.textSecondary}`);
+    if (p.family !== family) problems.push(`${where}: title total drawn in font "${p.family}", expected "${family}"`);
+    if (p.size !== t.fontXs) problems.push(`${where}: title total drawn at ${p.size}px, expected ${t.fontXs}px`);
+  }
+  return problems;
+}
+
+/**
+ * Proves the title check can fail: draws C1 narrow, expects no problem, then
+ * restyles pieces of the svg one way at a time (the InfraVana name in the
+ * text colour, a total in the text colour, the default font, the wrong size)
+ * and expects a problem for each.
+ */
+export function selfTestNarrowTitles(results: Results, t: Tokens, dims: Dims): { fails: string[]; applied: string[] } {
+  const svg = renderSvg(buildAllocationOption(results, "stage", t, dims), dims);
+  const fails: string[] = [];
+  const clean = checkNarrowTitles(results, svg, t, dims, "clean");
+  if (clean.length > 0) fails.push(`the unbroken drawing reports problems: ${clean[0]}`);
+  const tag = (content: RegExp) => [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].find((m) => content.test(m[1]))?.[0];
+  const inf = tag(/^With /);
+  const total = tag(/total$/);
+  const edit = (el: string | undefined, f: (e: string) => string): ((s: string) => string) => (s) => (el ? s.replace(el, f(el)) : s);
+  const breaks: [string, (s: string) => string][] = [
+    ["the InfraVana title in the text colour", edit(inf, (e) => e.replace(/fill="[^"]*"/, `fill="${t.text}"`))],
+    ["a total in the text colour", edit(total, (e) => e.replace(/fill="[^"]*"/, `fill="${t.text}"`))],
+    ["a title in the default font", edit(inf, (e) => e.replace(/font-family:[^;]*;/, "font-family:sans-serif;"))],
+    ["a title at the wrong size", edit(total, (e) => e.replace(/font-size:[\d.]+px/, "font-size:20px"))],
+  ];
+  const applied: string[] = [];
+  for (const [name, apply] of breaks) {
+    const broken = apply(svg);
+    if (broken === svg) continue;
+    applied.push(name);
+    if (checkNarrowTitles(results, broken, t, dims, name).length === 0) fails.push(`break "${name}" went unnoticed`);
+  }
+  return { fails, applied };
+}
+
+/** The compact formatters at the edges of their units: roundings that reach 1000 move to the next unit, never "1000". */
+export function checkFormatters(): string[] {
+  const cases: [string, string, string][] = [
+    ["fmtUsd(999.6)", fmtUsd(999.6), "$1K"],
+    ["fmtUsdSig(999.6)", fmtUsdSig(999.6), "$1.00K"],
+    ["fmtTokens(999.6)", fmtTokens(999.6), "1K"],
+    ["fmtTokensSig(999.6)", fmtTokensSig(999.6), "1.00K"],
+    ["fmtUsd(999.4)", fmtUsd(999.4), "$999"],
+    ["fmtUsdSig(999.4)", fmtUsdSig(999.4), "$999"],
+    ["fmtUsd(999500)", fmtUsd(999500), "$1M"],
+    ["fmtUsdSig(999600)", fmtUsdSig(999600), "$1.00M"],
+    ["fmtUsd(999600000)", fmtUsd(999600000), "$1B"],
+    ["fmtTokensSig(999600000000)", fmtTokensSig(999600000000), "1.00T"],
+    ["fmtUsd(0.4)", fmtUsd(0.4), "$0.4"],
+    ["fmtUsd(0)", fmtUsd(0), "$0"],
+    ["fmtUsdSig(1250000)", fmtUsdSig(1250000), "$1.25M"],
+    ["fmtUsd(-999.6)", fmtUsd(-999.6), "-$1K"],
+  ];
+  return cases.filter(([, got, want]) => got !== want).map(([name, got, want]) => `formatter ${name} is "${got}", expected "${want}"`);
+}
+
 function checkCaption(def: ChartDef, results: Results, problems: string[], label: string): void {
   const caption = def.caption(results);
   const where = `${label} ${def.id} caption`;
@@ -566,6 +659,7 @@ export function runChartChecks(label: string, results: Results, tokens: Tokens):
   const problems: string[] = [];
   const notes: string[] = [];
 
+  problems.push(...checkFormatters().map((p) => `${label} ${p}`));
   const ids = chartRegistry.map((c) => c.id).join(",");
   if (ids !== "C1,C5,C3") problems.push(`registry order is ${ids}, expected C1,C5,C3`);
 
@@ -603,6 +697,7 @@ export function runChartChecks(label: string, results: Results, tokens: Tokens):
         checkAllocation(results, size, svg, tokens, dims, problems, `${label} ${dims.width}`);
         if (size === "stage") {
           problems.push(...checkAllocationGeometry(results, svg, tokens, dims, where));
+          problems.push(...checkNarrowTitles(results, svg, tokens, dims, where));
           problems.push(...checkLabelList(results, tokens, dims, where));
         }
       }
