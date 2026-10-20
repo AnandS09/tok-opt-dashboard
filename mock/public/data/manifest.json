@@ -43,7 +43,7 @@
     "model_offers.csv": {
       "version": "0.1.0-placeholder",
       "row_count": 22,
-      "checksum": "sha256:8583f2b3d540b474a1e9c253596a7ec5ef408ede1a5e3bab49fc0bd3c5b9941c",
+      "checksum": "sha256:5aefb30fb27013f04b0aae815b3f039370969f1dc1dd2bcd790f0b43f25955ae",
       "placeholder": true
     },
     "seat_plans.csv": {

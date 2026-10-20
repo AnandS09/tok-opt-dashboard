@@ -33,7 +33,7 @@ export const HARDWARE_CLASSES = ["gpu", "accelerator"] as const satisfies readon
 export const CHANNELS = [
   "direct",
   "bedrock",
-  "azure",
+  "ec2",
   "neocloud",
   "self-host",
 ] as const satisfies readonly OfferChannel[];

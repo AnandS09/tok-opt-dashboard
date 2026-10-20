@@ -36,7 +36,7 @@ export function hwLabel(hwId: string): string {
 /** Plain names for the buying channels in model_offers.csv. */
 const CHANNEL_NAMES: Record<string, string> = {
   direct: "Direct from the model maker",
-  azure: "Microsoft Azure",
+  ec2: "AWS EC2",
   bedrock: "AWS Bedrock",
   neocloud: "Specialist GPU cloud",
   "self-host": "Your own hardware",

@@ -43,7 +43,7 @@ export type HardwareClass = "gpu" | "accelerator";
 export type OfferChannel =
   | "direct"
   | "bedrock"
-  | "azure"
+  | "ec2"
   | "neocloud"
   | "self-host";
 
@@ -388,7 +388,7 @@ export type SavingsSource = "arbitrage" | "routing";
  * A segment of a C1 bar that is money actually spent.
  * `kind` says what `label` names:
  *   - `provider`: anything priced per token: an API channel (offer channel
- *     `direct`, `bedrock`, `azure` or `neocloud`) or a seat plan vendor,
+ *     `direct`, `bedrock`, `ec2` or `neocloud`) or a seat plan vendor,
  *     labelled by channel or vendor name (e.g. "Bedrock", "neocloud").
  *   - `hardware`: only offer channel `self-host`, which is costed from
  *     hardware prices rather than token prices, labelled by hardware id

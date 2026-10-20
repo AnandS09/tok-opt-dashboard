@@ -14,7 +14,7 @@ export const sampleResults: Results = {
     today: [
       { label: "Bedrock", kind: "provider", usd: 52000, provenance: "vendor_reported" },
       { label: "Direct API", kind: "provider", usd: 30300, provenance: "vendor_reported" },
-      { label: "Azure", kind: "provider", usd: 17000, provenance: "vendor_reported" },
+      { label: "AWS EC2", kind: "provider", usd: 17000, provenance: "vendor_reported" },
     ],
     infravana: [
       { label: "Bedrock", kind: "provider", usd: 30000, provenance: "vendor_reported" },
