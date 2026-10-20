@@ -11,7 +11,8 @@ interface HeadlineStripProps {
  * The hero result (spec 4.1): the saving in money first, then the same fact
  * as a percentage and as "more work for the same money". When the budget does
  * not cover the work (spec 5), how much of it the budget covers comes first
- * instead. Both sides use the same quality and speed settings (spec 9).
+ * instead. Work is moved only to models that meet the quality and speed
+ * asked for (spec 9).
  */
 export function HeadlineStrip({ results, contactUrl }: HeadlineStripProps) {
   const { tokens_multiple, cost_savings_pct } = results.headline;
@@ -50,7 +51,9 @@ export function HeadlineStrip({ results, contactUrl }: HeadlineStripProps) {
           </li>
         </ul>
       ) : null}
-      <p className="hero__basis">Same quality and response speed on both sides.</p>
+      <p className="hero__basis">
+        InfraVana moves work only to models that meet your minimum quality and response speed.
+      </p>
       <a className="button button--primary" href={contactUrl}>
         Talk to us about your numbers
       </a>

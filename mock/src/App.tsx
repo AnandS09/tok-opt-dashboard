@@ -15,6 +15,7 @@ import type { Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
+import { setBudget, setSpeed, setUsers, setWork, workOf } from "./store/intake";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
@@ -190,7 +191,17 @@ export default function App() {
               scenario={scenario}
               openShare={openShare}
               onEdit={edit}
-              onReset={() => dispatch({ type: "scenario_reset" })}
+              onReset={() => {
+                // Undo fine-tuning restores the assumptions, not the answers in the sentence above it.
+                const answers = scenario;
+                dispatch({ type: "scenario_reset" });
+                edit((s) => {
+                  const { users, budget_usd_per_quarter } = answers.baseline;
+                  const kept = setSpeed(setBudget(setUsers(s, users), budget_usd_per_quarter), answers.latency_class);
+                  const work = workOf(answers);
+                  return workOf(kept) === work ? kept : setWork(kept, work, tables);
+                });
+              }}
             />
           </details>
           <div className="situation__foot">

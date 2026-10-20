@@ -37,6 +37,7 @@
   --chart-separator-width: 1px;
   --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
   --chart-budget-line-width: 1.5px;
+  --chart-budget-halo-width: 6px;         /* surface-colour underlay, so the line reads on any fill it crosses */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */

@@ -170,6 +170,12 @@ export function buildAllocationOption(
         symbol: "none",
         animation: false,
         data: [
+          // A surface-colour halo first: the dark line alone is 1.26:1 on today-1.
+          {
+            xAxis: a.budget_usd,
+            lineStyle: { color: t.surface, width: t.budgetHaloWidth, type: "solid" },
+            label: { show: false },
+          },
           {
             xAxis: a.budget_usd,
             lineStyle: { color: t.budgetLine, width: t.budgetLineWidth, type: [4, 4] },

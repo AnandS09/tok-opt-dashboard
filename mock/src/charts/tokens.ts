@@ -29,6 +29,7 @@ export type NumberKey =
   | "separatorWidth"
   | "savingsOutlineWidth"
   | "budgetLineWidth"
+  | "budgetHaloWidth"
   | "fontXs"
   | "fontSm"
   | "weightBold"
@@ -69,6 +70,7 @@ export const NUMBER_VARS: Record<NumberKey, string> = {
   separatorWidth: "--chart-separator-width",
   savingsOutlineWidth: "--chart-savings-outline-width",
   budgetLineWidth: "--chart-budget-line-width",
+  budgetHaloWidth: "--chart-budget-halo-width",
   fontXs: "--font-size-xs",
   fontSm: "--font-size-sm",
   weightBold: "--font-weight-bold",
