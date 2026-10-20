@@ -1,6 +1,7 @@
 :root {
   /* Surfaces */
-  --color-bg: #fafafa;              /* infravana.ai body background */
+  --color-bg: #f3f6f8;              /* cool off-white, a tint of the accent hue */
+  --color-bg-top: #e6edf1;          /* top of the page gradient, fading into --color-bg */
   --color-surface: #ffffff;
   --color-surface-muted: #f2f2f2;
   --color-skeleton: #ebebeb;
@@ -17,10 +18,15 @@
 
   /* Infravana accent: the only chart hue */
   --color-accent: #5f7a89;          /* sampled from logo.jpeg; fills, lines >=3px, large text */
-  --color-accent-strong: #526a77;   /* With-Infravana text, lines <=2px, markers, C1 "saved" outline; never generic links */
-  --color-accent-hover: #445762;    /* hover/pressed on Infravana-coloured controls */
+  --color-accent-strong: #526a77;   /* With-Infravana text, lines <=2px, markers; never generic links */
+  --color-accent-deep: #3f5562;     /* primary buttons: white text 7.82:1 */
+  --color-accent-hover: #33454f;    /* hover/pressed on primary buttons: white text 9.98:1 */
   --color-accent-soft: #e8eef1;     /* tinted card and selected-card background */
-  --color-saved: #c9d6dd;           /* C1 "saved" block: light accent tint, reads as money not spent */
+  --color-hero-end: #d5e2e9;        /* end of the hero card gradient (from --color-accent-soft) */
+
+  /* Savings: the one positive accent, only for money saved */
+  --color-positive: #1f6b5e;        /* hero saving figure, C1 "Saved" outline: 6.32:1 on white, 4.78:1 on hero-end */
+  --color-saved: #d3ece6;           /* C1 "Saved" fill, always with the --color-positive outline */
 
   /* "Today" series: greys, always with a direct label */
   --color-today-1: #333333;
@@ -37,7 +43,6 @@
   --chart-separator-width: 1px;
   --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
   --chart-budget-line-width: 1.5px;
-  --chart-budget-halo-width: 6px;         /* surface-colour underlay, so the line reads on any fill it crosses */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */
@@ -82,7 +87,7 @@
   --radius-pill: 999px;
 
   /* Shadow */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 6px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 2px rgba(31, 45, 54, 0.04), 0 6px 20px rgba(31, 45, 54, 0.06);
   --shadow-stage: 0 2px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
 
   /* Motion */

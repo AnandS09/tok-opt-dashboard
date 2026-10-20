@@ -15,7 +15,7 @@ import type { Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
-import { selectedWorkloads, setBudget, setCustomers, setSpeed, setUsers, setWorkloads, type CompanyType } from "./store/intake";
+import type { CompanyType } from "./store/intake";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
@@ -103,6 +103,9 @@ export default function App() {
   const edit = useCallback((update: (s: Scenario) => Scenario) => {
     dispatch({ type: "scenario_edited", update });
   }, []);
+  const answer = useCallback((update: (s: Scenario) => Scenario) => {
+    dispatch({ type: "answer_edited", update });
+  }, []);
 
   // Every knob change recomputes locally through compute(), throttled while a slider is dragged.
   const liveScenario = useThrottledValue(scenario, RECOMPUTE_MS);
@@ -127,10 +130,12 @@ export default function App() {
     if (answered) situationRef.current?.focus();
   }, [answered]);
 
-  const pickExample = (example: Example) => {
-    setAnswered(true);
-    setCompany(example.company);
-    void openExample(example);
+  // The dashboard opens only once the example is loaded; a failed load leaves the questions as they were.
+  const pickExample = async (example: Example) => {
+    if (await openExample(example)) {
+      setAnswered(true);
+      setCompany(example.company);
+    }
   };
   // The questions show only once the default scenario is back, so a late load never overwrites an answer.
   const startOver = async () => {
@@ -187,7 +192,12 @@ export default function App() {
             setAnswered(true);
           }}
         />
-        <Examples activeId={null} onPick={pickExample} />
+        <Examples activeId={null} onPick={(example) => void pickExample(example)} />
+        {state.exampleError ? (
+          <Notice title="That example could not be opened" role="alert">
+            {state.exampleError}
+          </Notice>
+        ) : null}
       </>
     );
   } else if (response && scenario) {
@@ -195,17 +205,7 @@ export default function App() {
       <>
         <section className="situation card" aria-label="Your situation" ref={situationRef} tabIndex={-1}>
           {company ? (
-            <IntakeSentence
-              tables={tables}
-              scenario={scenario}
-              company={company}
-              onCompany={(next) => {
-                // The new type's pre-fill becomes what Undo fine-tuning restores.
-                setCompany(next);
-                dispatch({ type: "scenario_committed", answered: ANSWERED });
-              }}
-              onEdit={edit}
-            />
+            <IntakeSentence tables={tables} scenario={scenario} company={company} onCompany={setCompany} onEdit={answer} />
           ) : null}
           <details className="finetune">
             <summary>Fine-tune the assumptions</summary>
@@ -214,22 +214,11 @@ export default function App() {
               scenario={scenario}
               openShare={openShare}
               onEdit={edit}
-              onReset={() => {
-                // Undo fine-tuning restores the assumptions, not the answers in the sentence above it.
-                const answers = scenario;
-                dispatch({ type: "scenario_reset" });
-                edit((s) => {
-                  const { users, budget_usd_per_quarter, customers } = answers.baseline;
-                  let kept = setSpeed(setBudget(setUsers(s, users), budget_usd_per_quarter), answers.latency_class);
-                  if (customers !== undefined) kept = setCustomers(kept, customers);
-                  const work = selectedWorkloads(answers, tables);
-                  return selectedWorkloads(kept, tables).join() === work.join() ? kept : setWorkloads(kept, work, tables);
-                });
-              }}
+              onReset={() => dispatch({ type: "scenario_reset" })}
             />
           </details>
           <div className="situation__foot">
-            <Examples activeId={state.exampleId} onPick={pickExample} />
+            <Examples activeId={state.exampleId} onPick={(example) => void pickExample(example)} />
             <button type="button" className="link-button" onClick={() => void startOver()}>
               Start over
             </button>

@@ -116,7 +116,8 @@ export function tokensBoughtCaption(results: Results): string {
 const TOKENS_HOW_COMPUTED =
   "This is how much work the same budget pays for. " +
   "Today, the budget buys tokens (the small pieces of text that models read and write) at the prices of your current set-up. " +
-  `With ${BRAND}, the same budget buys tokens from the cheapest options that still meet your quality and speed targets. ` +
+  `With ${BRAND}, it buys the same models at a better price, and moves some work to cheaper open models ` +
+  "that meet your minimum quality and response speed. " +
   "All prices here are illustrative.";
 
 /** Header first, then the two bars and the delta label. */

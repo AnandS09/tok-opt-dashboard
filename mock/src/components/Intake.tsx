@@ -395,7 +395,6 @@ interface SentenceProps {
   tables: Tables;
   scenario: Scenario;
   company: CompanyType;
-  /** Called after the type's pre-fill is applied. */
   onCompany: (company: CompanyType) => void;
   onEdit: (update: (s: Scenario) => Scenario) => void;
 }

@@ -88,14 +88,14 @@ function piecesOf(a: AllocationResult, t: Tokens): { today: Piece[]; infravana: 
       seg,
     }));
   const saved = planned.filter((seg) => seg.tone !== "spend").reduce((sum, seg) => sum + seg.usd, 0);
-  // The light fill alone is too faint against the card (1.48:1); the accent-strong outline gives the edge.
+  // The light fill alone is too faint against the card (1.24:1); the positive outline (6.32:1) gives the edge.
   if (saved > 0) {
     infravana.push({
       label: SAVED_LABEL,
       usd: saved,
       color: t.saved,
       textColor: t.text,
-      border: t.accentStrong,
+      border: t.positive,
       borderWidth: t.savingsOutlineWidth,
       seg: null,
     });
@@ -129,11 +129,12 @@ export function buildAllocationOption(
     return textWidth(short, t.fontSm, t.weightBold, t.fontSans) <= room ? short : "";
   };
 
-  /** True when a label right of the With bar would sit on the budget line; it then goes above its block. */
-  const crossesBudget = (text: string): boolean => {
+  /** True when a label right of the With bar would sit on the budget line or leave the plot; it then goes above its block. */
+  const noRoomRight = (text: string): boolean => {
     const start = a.total_usd * pxPer;
     const end = start + t.space2 + textWidth(text, t.fontSm, t.weightBold, t.fontSans);
-    return a.budget_usd * pxPer >= start && a.budget_usd * pxPer <= end + t.space2;
+    const budgetX = a.budget_usd * pxPer;
+    return end > plotWidth || (budgetX >= start && budgetX <= end + t.space2);
   };
 
   const all = [
@@ -157,9 +158,11 @@ export function buildAllocationOption(
       data: side === "today" ? [p.usd, null] : [null, p.usd],
       label: {
         show: text !== "",
-        position: outside ? (crossesBudget(text) ? "top" : "right") : "inside",
+        position: outside ? (noRoomRight(text) ? "top" : "right") : "inside",
         formatter: text,
         color: outside ? t.text : p.textColor,
+        // An outside label can sit over the budget line; the card colour behind it hides the line there.
+        backgroundColor: outside ? t.surface : "transparent",
         fontSize: t.fontSm,
         fontWeight: t.weightBold,
       },
@@ -167,15 +170,11 @@ export function buildAllocationOption(
     if (index === 0 && stage) {
       item.markLine = {
         silent: true,
+        // Under the bars (series z 2): the line shows between them and never crosses a label or a fill.
+        z: 1,
         symbol: "none",
         animation: false,
         data: [
-          // A surface-colour halo first: the dark line alone is 1.26:1 on today-1.
-          {
-            xAxis: a.budget_usd,
-            lineStyle: { color: t.surface, width: t.budgetHaloWidth, type: "solid" },
-            label: { show: false },
-          },
           {
             xAxis: a.budget_usd,
             lineStyle: { color: t.budgetLine, width: t.budgetLineWidth, type: [4, 4] },
@@ -263,7 +262,7 @@ export function buildAllocationOption(
 // ---------------------------------------------------------------------------
 
 function savingsOf(a: AllocationResult, source: "arbitrage" | "routing"): SavingsSegment[] {
-  return a.infravana.filter(isSavings).filter((s) => s.savings_source === source);
+  return a.infravana.filter(isSavings).filter((s) => s.savings_source === source && s.usd > 0);
 }
 
 /**
@@ -292,9 +291,9 @@ export function allocationCaption(results: Results): string {
 const ALLOCATION_HOW_COMPUTED =
   "Both bars cover the same work: what your team's AI use costs in a quarter. " +
   "The top bar splits today's cost by who you pay: a seat plan, a pay-as-you-go provider, a cloud platform, or hardware you run yourself. " +
-  `The ${BRAND} bar buys the same work from the cheapest options that still meet your quality and speed needs, ` +
-  "and the light block at its end is the money you no longer spend. " +
-  "Part of it comes from buying the same model at a better price, and part from moving some work to cheaper models or hardware. " +
+  `The ${BRAND} bar buys the same work for less, and the light block at its end is the money you no longer spend. ` +
+  "Part of it comes from buying the same model at a better price. " +
+  "The rest comes from moving some work to cheaper open models or hardware, only where they meet your minimum quality and response speed. " +
   "The dashed line is your budget. All prices here are illustrative."
 
 /** Header first, then exactly the segments drawn (small ones as one "Other" row) and the budget marker. */

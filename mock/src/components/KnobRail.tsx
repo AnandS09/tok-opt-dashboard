@@ -149,6 +149,10 @@ export function KnobRail({ openShare, tables, scenario, onEdit, onReset }: KnobR
           items={[{ key: "open_weight_share", label: "Share on open models", value: scenario.model_mix.open_weight_share }]}
           onChange={(_key, value) => onEdit((s) => ({ ...s, model_mix: { ...s.model_mix, open_weight_share: value } }))}
         />
+        <p className="knob__hint">
+          Today keeps one model for each kind of work. This split sets how the work moved to open models is spread
+          across model sizes.
+        </p>
         {openShare && Math.round(openShare.asked * 100) !== Math.round(openShare.possible * 100) ? (
           <p className="knob__hint">
             Only {fmtShare(openShare.possible)} can move to open models here; the rest has no cheaper open model.
