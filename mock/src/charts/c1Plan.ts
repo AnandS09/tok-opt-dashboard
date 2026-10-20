@@ -1,18 +1,12 @@
-import type { BarSeriesOption } from "echarts/charts";
 import type {
   AllocationSegment,
   Provenance,
   SavingsSegment,
   SpendSegment,
 } from "../contract";
-import { channelLabel, fmtUsd, selfHostLabel } from "../shared/format";
-import { PROVENANCE_TEXT, worstProvenance } from "./format";
+import { channelLabel, selfHostLabel } from "../shared/format";
+import { worstProvenance } from "./format";
 import { SAVINGS_LABEL } from "./labels";
-import { crossHatch, dots, hatch } from "./patterns";
-import { borderSpec, provenanceBorder } from "./provenanceStyle";
-import type { ColourKey, Tokens } from "./tokens";
-
-type ItemStyle = NonNullable<BarSeriesOption["itemStyle"]>;
 
 // ---------------------------------------------------------------------------
 // Planning: which segments are drawn (design-tokens 3 and 3a)
@@ -108,77 +102,4 @@ export function planBar(segments: AllocationSegment[], side: Side): PlannedSegme
     });
   }
   return planned;
-}
-
-
-// ---------------------------------------------------------------------------
-// Look of a segment (design-tokens 3, 3a, 3b), as token names
-// ---------------------------------------------------------------------------
-
-export type PatternKind = "hatch" | "dots" | "cross";
-
-/** Fill and pattern of a segment, by token name, shared by the bars and the label-list swatches. */
-export interface SegmentLook {
-  fill: ColourKey;
-  pattern?: { kind: PatternKind; colour: ColourKey };
-  /** A savings segment: white inside, drawn with the accent-strong outline. */
-  hollow: boolean;
-}
-
-export function segmentLook(seg: PlannedSegment, side: Side): SegmentLook {
-  if (seg.tone === "arbitrage" || seg.tone === "routing") {
-    return {
-      fill: "surface",
-      hollow: true,
-      pattern: { kind: seg.tone === "arbitrage" ? "hatch" : "dots", colour: "accentStrong" },
-    };
-  }
-  const isOther = seg.kind === "other";
-  const ladder: PatternKind[] = ["hatch", "dots", "cross"];
-  if (side === "today") {
-    const slot = Math.min(isOther ? 4 : seg.slot, 4);
-    const fills: ColourKey[] = ["today1", "today2", "today3", "today4", "today2"];
-    return {
-      fill: fills[slot],
-      hollow: false,
-      pattern: slot >= 2 ? { kind: ladder[slot - 2], colour: "separator" } : undefined,
-    };
-  }
-  const slot = Math.min(isOther ? 3 : seg.slot, 3);
-  return {
-    fill: "accent",
-    hollow: false,
-    pattern: slot >= 1 ? { kind: ladder[slot - 1], colour: "separator" } : undefined,
-  };
-}
-
-const PATTERN_FILL = { hatch, dots, cross: crossHatch };
-
-/** Fill, border and pattern of one segment for ECharts. The border carries provenance; the pattern stays inside. */
-export function segmentStyle(seg: PlannedSegment, side: Side, t: Tokens): ItemStyle {
-  const look = segmentLook(seg, side);
-  return {
-    color: t[look.fill],
-    ...provenanceBorder(seg.provenance, look.hollow, t),
-    ...(look.pattern ? { decal: PATTERN_FILL[look.pattern.kind](t[look.pattern.colour]) } : {}),
-  };
-}
-
-/** Border of the swatch or bar part as token names, for callers that resolve them as CSS properties. */
-export function segmentBorderSpec(seg: PlannedSegment, side: Side) {
-  return borderSpec(seg.provenance, segmentLook(seg, side).hollow);
-}
-
-/** Lines of a segment's chip: its name, its amount, and, when not measured, its provenance (design-tokens 3b, 3c). */
-export function chipLines(seg: PlannedSegment): string[] {
-  const lines = [seg.label, fmtUsd(seg.usd)];
-  if (seg.provenance !== "measured") lines.push(PROVENANCE_TEXT[seg.provenance]);
-  return lines;
-}
-
-/** Chip text as ECharts rich text: name and amount in the main style, provenance in the secondary one. */
-export function chipText(seg: PlannedSegment): string {
-  return chipLines(seg)
-    .map((line, i) => (i === 2 ? `{prov|${line}}` : `{main|${line}}`))
-    .join("\n");
 }

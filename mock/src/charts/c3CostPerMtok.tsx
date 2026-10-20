@@ -1,21 +1,19 @@
 import { useCallback } from "react";
 import { BarChart } from "echarts/charts";
 import type { BarSeriesOption } from "echarts/charts";
-import { GridComponent, TooltipComponent } from "echarts/components";
+import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, CostPerMtokRow, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
 import { ChartFrame } from "./ChartFrame";
-import type { BadgeItem } from "./ChartFrame";
-import { channelLabel } from "../shared/format";
-import { esc, fmtUsdPerMtok, PROVENANCE_TEXT, pricesTogether, toCsvText } from "./format";
-import { provenanceBorder } from "./provenanceStyle";
+import { LATENCY_LABEL } from "../components/format";
+import { esc, fmtUsdPerMtok, pricesTogether, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
 
-use([BarChart, GridComponent, TooltipComponent]);
+use([BarChart, GridComponent, LegendComponent, TooltipComponent]);
 
 type SideKey = "today" | "infravana";
 
@@ -32,15 +30,22 @@ function provenanceOf(row: CostPerMtokRow, side: SideKey): Provenance {
   return side === "today" ? row.today_provenance : row.infravana_provenance;
 }
 
-/** Category label: the class name, plus a note when a side has no value (absent, never zero). */
+const CLASS_NAME: Record<CostPerMtokRow["model_class"], string> = {
+  frontier: "Flagship",
+  mid: "Mid-size",
+  small: "Small",
+};
+
+/** Category label: the class name in plain words. */
 function classLabel(row: CostPerMtokRow): string {
-  const name = channelLabel(row.model_class);
-  const today = row.today_usd_per_mtok === null;
-  const infravana = row.infravana_usd_per_mtok === null;
-  if (today && infravana) return `${name}\n(not used here)`;
-  if (today) return `${name}\n(no ${TODAY_LABEL.toLowerCase()} value)`;
-  if (infravana) return `${name}\n(no ${BRAND} value)`;
-  return name;
+  return `${CLASS_NAME[row.model_class]} models`;
+}
+
+/** The classes drawn: those priced on both sides, else those priced on either (never an empty group). */
+function shownRows(results: Results): CostPerMtokRow[] {
+  const rows = results.cost_per_mtok.by_model_class;
+  const both = rows.filter((r) => r.today_usd_per_mtok !== null && r.infravana_usd_per_mtok !== null);
+  return both.length > 0 ? both : rows.filter((r) => r.today_usd_per_mtok !== null || r.infravana_usd_per_mtok !== null);
 }
 
 /** The ECharts option for C3: grouped bars by model class, today next to InfraVana. */
@@ -51,13 +56,10 @@ export function buildCostPerMtokOption(
   _dims: Dims,
 ): EChartsCoreOption {
   const stage = size === "stage";
-  const rows = results.cost_per_mtok.by_model_class;
-  const colour: Record<SideKey, string> = { today: t.today1, infravana: t.accent };
-  const maxValue = Math.max(0, ...rows.flatMap((r) => [r.today_usd_per_mtok ?? 0, r.infravana_usd_per_mtok ?? 0]));
+  const rows = shownRows(results);
+  const colour: Record<SideKey, string> = { today: t.today2, infravana: t.accent };
 
   const series: BarSeriesOption[] = SIDES.map(({ key, name }) => {
-    // The side's name is written once, on its first bar, as a direct label.
-    const firstIndex = rows.findIndex((r) => valueOf(r, key) !== null);
     return {
       type: "bar",
       name,
@@ -65,12 +67,13 @@ export function buildCostPerMtokOption(
       barGap: "12%",
       silent: !stage,
       emphasis: { disabled: true },
+      itemStyle: { color: colour[key] },
       // A null stays null: ECharts draws no bar for it, never a bar at zero.
       data: rows.map((r) => {
         const value = valueOf(r, key);
         return value === null
           ? null
-          : { value, itemStyle: { color: colour[key], ...provenanceBorder(provenanceOf(r, key), false, t) } };
+          : { value, itemStyle: { color: colour[key] } };
       }),
       label: {
         show: stage,
@@ -78,22 +81,17 @@ export function buildCostPerMtokOption(
         fontSize: t.fontXs,
         color: t.text,
         lineHeight: t.lineXs,
-        formatter: (p) => {
-          const value = fmtUsdPerMtok(Number(p.value));
-          if (p.dataIndex !== firstIndex) return value;
-          return key === "infravana" ? `{inf|With\n${BRAND}}\n${value}` : `{today|${TODAY_LABEL}}\n${value}`;
-        },
-        rich: {
-          today: { color: t.text, fontWeight: t.weightBold, fontSize: t.fontXs, lineHeight: t.lineXs },
-          inf: { color: t.accentStrong, fontWeight: t.weightBold, fontSize: t.fontXs, lineHeight: t.lineXs },
-        },
+        formatter: (p) => fmtUsdPerMtok(Number(p.value)),
       },
     };
   });
 
   return {
     ...baseOption(t, stage),
-    grid: stage ? { left: 64, right: 24, top: 56, bottom: 52 } : { left: 4, right: 4, top: 6, bottom: 6 },
+    grid: stage ? { left: 64, right: 24, top: 48, bottom: 40 } : { left: 4, right: 4, top: 6, bottom: 6 },
+    legend: stage
+      ? { top: 0, right: 0, itemWidth: 12, itemHeight: 12, textStyle: { color: t.text, fontSize: t.fontSm }, selectedMode: false }
+      : undefined,
     tooltip: stage
       ? {
           ...tooltipChrome(t),
@@ -106,10 +104,8 @@ export function buildCostPerMtokOption(
             const value = valueOf(row, side.key);
             if (value === null) return "";
             return [
-              `<strong>${esc(channelLabel(row.model_class))} models</strong> (${esc(side.name)})`,
+              `<strong>${esc(classLabel(row))}</strong> (${esc(side.name)})`,
               `${fmtUsdPerMtok(value)} per million tokens`,
-              `At the ${esc(results.cost_per_mtok.latency_class)} latency target`,
-              `Data: ${PROVENANCE_TEXT[provenanceOf(row, side.key)]}`,
             ].join("<br/>");
           },
         }
@@ -121,6 +117,7 @@ export function buildCostPerMtokOption(
       axisTick: { show: false },
       axisLine: { lineStyle: { color: t.borderStrong } },
       axisLabel: {
+        interval: 0,
         margin: t.space3,
         color: t.text,
         fontSize: t.fontSm,
@@ -131,9 +128,8 @@ export function buildCostPerMtokOption(
     yAxis: {
       type: "value",
       min: 0,
-      max: maxValue > 0 ? maxValue * 1.25 : 1,
       show: stage,
-      axisLabel: { color: t.textSecondary, fontSize: t.fontXs, formatter: (v: number) => fmtUsdPerMtok(v) },
+      axisLabel: { color: t.textSecondary, fontSize: t.fontXs, formatter: (v: number) => (v === 0 ? "$0" : fmtUsdPerMtok(v)) },
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: { lineStyle: { color: t.grid } },
@@ -148,29 +144,24 @@ export function buildCostPerMtokOption(
  * disagree with the headline.
  */
 export function costPerMtokCaption(results: Results): string {
-  const { latency_class, by_model_class } = results.cost_per_mtok;
-  const both = by_model_class.filter(
+  const both = results.cost_per_mtok.by_model_class.filter(
     (r) => r.today_usd_per_mtok !== null && r.infravana_usd_per_mtok !== null,
   );
-  if (both.length === 0) {
-    return `At the ${latency_class} latency target there is no model class with a price on both sides to compare.`;
-  }
+  if (both.length === 0) return "There is no model size with a price on both sides to compare.";
   // Every price of the sentence has the same number of decimals.
   const price = pricesTogether(both.flatMap((r) => [r.today_usd_per_mtok ?? 0, r.infravana_usd_per_mtok ?? 0]));
   const parts = both.map(
     (r) =>
-      `${price(r.today_usd_per_mtok ?? 0)} today and ${price(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${r.model_class} models`,
+      `${price(r.today_usd_per_mtok ?? 0)} today and ${price(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${CLASS_NAME[r.model_class].toLowerCase()} models`,
   );
-  return `At the ${latency_class} latency target, a million tokens costs ${parts.join(", ")}.`;
+  return `A million tokens costs ${parts.join(", ")}.`;
 }
 
 const COST_HOW_COMPUTED =
-  "This is the price of a million tokens (the small pieces of text that models read and write), grouped by size of model: frontier, mid and small. " +
+  "This is the price of a million tokens (the small pieces of text that models read and write), grouped by size of model: flagship, mid-size and small. " +
   "For each group it shows what you pay today next to what the same work costs with " +
-  `${BRAND}, at the same speed target on both sides. ` +
-  "A group your scenario does not use stays on the chart, marked as not used, with no bar rather than a bar at zero. " +
-  "A dashed outline on a bar marks a figure that comes from a model, and a dotted outline marks one reported by a vendor. " +
-  "Every price comes from the data files, and in this mock all of it is invented placeholder data.";
+  `${BRAND}, with answers needed just as fast on both sides. ` +
+  "Only the model sizes your team uses are shown. Every price comes from the data files, and in this mock all of it is illustrative.";
 
 /** Header first, then one row per bar drawn; a class with no value on a side has no row for it. */
 export function costPerMtokCsv(results: Results): string {
@@ -185,32 +176,16 @@ export function costPerMtokCsv(results: Results): string {
   return toCsvText(["model_class", "series", "usd_per_mtok", "provenance"], rows);
 }
 
-function badgeItems(results: Results): BadgeItem[] {
-  const items: BadgeItem[] = [];
-  for (const r of results.cost_per_mtok.by_model_class) {
-    for (const { key, name } of SIDES) {
-      if (valueOf(r, key) === null) continue;
-      items.push({ series: name, part: channelLabel(r.model_class), provenance: provenanceOf(r, key) });
-    }
-  }
-  return items;
-}
-
 export function CostPerMtokChart({ results, size }: ChartProps) {
   const build = useCallback(
     (tokens: Tokens, dims: Dims) => buildCostPerMtokOption(results, size, tokens, dims),
     [results, size],
   );
-  const { latency_class, by_model_class } = results.cost_per_mtok;
-  const rows = by_model_class.flatMap((r) =>
+  const speed = LATENCY_LABEL[results.cost_per_mtok.latency_class];
+  const rows = shownRows(results).flatMap((r) =>
     SIDES.map(({ key, name }) => {
       const value = valueOf(r, key);
-      return [
-        channelLabel(r.model_class),
-        name,
-        value === null ? "not used" : fmtUsdPerMtok(value),
-        value === null ? "" : PROVENANCE_TEXT[provenanceOf(r, key)],
-      ];
+      return [classLabel(r), name, value === null ? "not used" : fmtUsdPerMtok(value)];
     }),
   );
   return (
@@ -218,11 +193,10 @@ export function CostPerMtokChart({ results, size }: ChartProps) {
       size={size}
       ariaLabel={costPerMtokCaption(results)}
       build={build}
-      badges={badgeItems(results)}
-      subtitle={`Cost per million tokens at the ${latency_class} latency target`}
+      subtitle={`With answers needed ${speed}`}
       table={{
-        caption: `Cost per million tokens by model class, at the ${latency_class} latency target.`,
-        headers: ["Model class", "Series", "Dollars per million tokens", "Data"],
+        caption: `Price per million tokens by model size, with answers needed ${speed}.`,
+        headers: ["Model size", "Series", "Dollars per million tokens"],
         rows,
       }}
     />
@@ -231,7 +205,7 @@ export function CostPerMtokChart({ results, size }: ChartProps) {
 
 export const costPerMtokChart: ChartDef = {
   id: "C3",
-  title: "Cost per million tokens",
+  title: "Price per million tokens, by model size",
   caption: costPerMtokCaption,
   howComputed: COST_HOW_COMPUTED,
   toCsv: costPerMtokCsv,

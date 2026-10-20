@@ -21,7 +21,9 @@ export type AppAction =
   | { type: "example_loaded"; exampleId: string; response: ScenarioResponse }
   | { type: "example_failed"; message: string }
   | { type: "scenario_edited"; update: (scenario: Scenario) => Scenario }
-  | { type: "scenario_reset" };
+  | { type: "scenario_reset" }
+  /** The guided questions are answered: their scenario becomes what Reset restores, no example is active. */
+  | { type: "scenario_committed"; answered: string[] };
 
 export const initialState: AppState = {
   tables: null,
@@ -60,5 +62,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return state.scenario ? { ...state, scenario: action.update(state.scenario) } : state;
     case "scenario_reset":
       return state.response ? { ...state, scenario: clone(state.response.scenario) } : state;
+    case "scenario_committed":
+      return state.response && state.scenario
+        ? {
+            ...state,
+            exampleId: null,
+            response: {
+              ...state.response,
+              scenario: clone(state.scenario),
+              missing: state.response.missing.filter((m) => !action.answered.includes(m)),
+            },
+          }
+        : state;
   }
 }

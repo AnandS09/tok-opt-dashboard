@@ -37,19 +37,16 @@ export function ResultNotices({ results, tables }: ResultNoticesProps) {
   return (
     <>
       {unmet.length > 0 ? (
-        <Notice title="Neither side meets the quality floor">
-          For {joinList(unmet.map((label) => label.toLowerCase()))}, the model Today buys scores below the
-          quality floor in effect. InfraVana keeps that same proprietary model for the traffic it does not
-          move, so it does not meet the floor either. Lower the floor to compare like with like.
+        <Notice title="No model meets this quality bar">
+          For {joinList(unmet.map((label) => label.toLowerCase()))}, the model used today scores below the
+          minimum quality you set. Lower "Minimum model quality" to compare.
         </Notice>
       ) : null}
       {todayPct < 100 ? (
-        <Notice title={`Budget covers only ${todayPct}% of this workload`}>
-          At today's prices the budget buys {todayPct}% of the tokens this workload needs.
+        <Notice title={`Today, this budget covers only ${todayPct}% of the work`}>
           {infravanaPct < 100
-            ? ` With InfraVana it covers ${infravanaPct}%.`
-            : " With InfraVana it covers all of it."}{" "}
-          The charts below still show the comparison.
+            ? `With InfraVana it covers ${infravanaPct}%.`
+            : "With InfraVana it covers all of it."}
         </Notice>
       ) : null}
     </>

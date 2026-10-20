@@ -21,14 +21,10 @@ import { SVGRenderer } from "echarts/renderers";
 import type { ChartDef, ChartId, Results, Scenario, Tables } from "../../contract";
 import { compute } from "../../compute";
 import { allocationCsv, buildAllocationOption, planBar } from "../c1Allocation";
-import { layoutAllocation } from "../c1Layout";
-import type { Rect } from "../c1Layout";
-import { C1LabelList } from "../c1LabelList";
 import { buildCostPerMtokOption } from "../c3CostPerMtok";
 import { buildTokensBoughtOption } from "../c5TokensBought";
 import { fmtMultiple, fmtPct, fmtUsdSig } from "../../shared/format";
-import { PROVENANCE_TEXT } from "../format";
-import { INFRAVANA_LABEL, SAVINGS_LABEL, TODAY_LABEL } from "../labels";
+import { INFRAVANA_LABEL, TODAY_LABEL } from "../labels";
 import { chartRegistry } from "../registry";
 import type { Tokens } from "../tokens";
 import type { Dims } from "../useEChart";
@@ -168,270 +164,28 @@ function textsOf(svg: string): string[] {
   return [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
 }
 
-/** C1: segment names, provenance borders and the budget halo, in the drawing and the CSV. */
+/** C1: plain segment names, the "Saved" block, the budget label and both bar names, as drawn. */
 function checkAllocation(
   results: Results,
   size: "stage" | "thumb",
   svg: string,
-  t: Tokens,
-  dims: Dims,
   problems: string[],
   label: string,
 ): void {
+  if (size !== "stage") return;
   const where = `${label} C1 ${size}`;
   const a = results.allocation;
   const planned = [...planBar(a.today, "today"), ...planBar(a.infravana, "infravana")];
-  if (size === "stage") {
-    const texts = textsOf(svg);
-    const drawn = new Set(texts);
-    const layout = layoutAllocation(results, t, dims);
-    const placements = [...layout.today.placements, ...layout.infravana.placements];
-    for (const [i, seg] of planned.entries()) {
-      const chip = placements[i].mode !== "list";
-      // A segment with a chip has its label drawn; one without is named by the label list instead. Two
-      // bars can share a name, so compare how many times the name is drawn with how many chips carry it.
-      const withChip = planned.filter((p, k) => p.label === seg.label && placements[k].mode !== "list").length;
-      const times = texts.filter((x) => x === seg.label).length;
-      if (times !== withChip) problems.push(`${where}: "${seg.label}" is drawn ${times} times for ${withChip} chips`);
-      if (/^[a-z]/.test(seg.label)) problems.push(`${where}: label "${seg.label}" starts in lower case (a raw id)`);
-      if (seg.kind === "hardware" && !seg.label.startsWith("Self-host · "))
-        problems.push(`${where}: hardware label "${seg.label}" lacks the "Self-host · " prefix`);
-      if (seg.tone !== "spend" && seg.label !== SAVINGS_LABEL[seg.tone])
-        problems.push(`${where}: savings segment named "${seg.label}", expected "${SAVINGS_LABEL[seg.tone]}"`);
-      if (chip && seg.provenance !== "measured" && !drawn.has(PROVENANCE_TEXT[seg.provenance]))
-        problems.push(`${where}: no provenance line drawn for "${seg.label}"`);
-    }
-    if (![...drawn].some((x) => x.startsWith("Budget "))) problems.push(`${where}: no budget label`);
-    // Both bar names are drawn, beside the bars (wide) or above them (narrow).
-    for (const name of [TODAY_LABEL, INFRAVANA_LABEL]) {
-      if (!drawn.has(name)) problems.push(`${where}: no "${name}" title or axis label drawn`);
-    }
+  for (const seg of planned) {
+    if (/^[a-z]/.test(seg.label)) problems.push(`${where}: label "${seg.label}" starts in lower case (a raw id)`);
+    if (seg.kind === "hardware" && !seg.label.startsWith("Own hardware ("))
+      problems.push(`${where}: hardware label "${seg.label}" lacks the "Own hardware (" prefix`);
   }
-  // Each non-measured segment has a dashed or dotted border; the budget line has its halo.
-  const dashes = (svg.match(/stroke-dasharray="/g) ?? []).length;
-  const marked = planned.filter((seg) => seg.provenance !== "measured").length;
-  if (dashes < marked) problems.push(`${where}: ${dashes} dashed borders for ${marked} non-measured segments`);
-  if (marked === 0 && dashes > 0) problems.push(`${where}: dashed borders drawn although every segment is measured`);
-  for (const width of [t.budgetHaloWidth, t.budgetLineWidth]) {
-    if (!new RegExp(`stroke-width="${width}"`).test(svg)) problems.push(`${where}: no budget stroke of width ${width}`);
+  const drawn = textsOf(svg);
+  if (!drawn.some((x) => x.startsWith("Budget "))) problems.push(`${where}: no budget label`);
+  for (const name of [TODAY_LABEL, INFRAVANA_LABEL]) {
+    if (!drawn.includes(name)) problems.push(`${where}: no "${name}" axis label drawn`);
   }
-  if (!svg.includes(`stroke="${t.budgetHalo}"`)) problems.push(`${where}: budget halo colour not drawn`);
-}
-
-
-// ---------------------------------------------------------------------------
-// C1 geometry, read back from the drawn svg (design-tokens 3d and 3e)
-// ---------------------------------------------------------------------------
-
-interface Segment {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-}
-
-function translateOf(attrs: string): [number, number] {
-  const m = /translate\((-?[\d.]+)[ ,](-?[\d.]+)\)/.exec(attrs);
-  return m ? [Number(m[1]), Number(m[2])] : [0, 0];
-}
-
-function attr(attrs: string, name: string): string | undefined {
-  return new RegExp(`(?:^|\\s)${name}="([^"]*)"`).exec(attrs)?.[1];
-}
-
-/**
- * Chip rectangles as drawn: the rounded-corner paths filled with the chip
- * colour. A rounded rectangle is the only path of that fill with arc commands.
- */
-export function chipRectsOf(svg: string, t: Tokens): Rect[] {
-  const rects: Rect[] = [];
-  // Pattern tiles use arcs too (the dots), so only shapes outside <pattern> blocks count.
-  for (const m of svg.replace(/<pattern[\s\S]*?<\/pattern>/g, "").matchAll(/<path d="([^"]*)"([^>]*)>/g)) {
-    if (!m[1].includes("A") || attr(m[2], "fill")?.toLowerCase() !== t.chip.toLowerCase()) continue;
-    const xs: number[] = [];
-    const ys: number[] = [];
-    for (const cmd of m[1].matchAll(/([MLA])([^MLAZ]*)/g)) {
-      const n = cmd[2].trim().split(/[ ,]+/).map(Number);
-      xs.push(n[n.length - 2]);
-      ys.push(n[n.length - 1]);
-    }
-    const [tx, ty] = translateOf(m[2]);
-    const x = Math.min(...xs) + tx;
-    const y = Math.min(...ys) + ty;
-    rects.push({ x, y, w: Math.max(...xs) + tx - x, h: Math.max(...ys) + ty - y });
-  }
-  return rects;
-}
-
-/** Straight two-point paths drawn with a stroke colour and width (a missing width attribute means 1). */
-export function linesOf(svg: string, stroke: string, width: number): Segment[] {
-  const out: Segment[] = [];
-  for (const m of svg.replace(STYLE_BLOCK, "").matchAll(/<path d="M(-?[\d.]+) (-?[\d.]+)L(-?[\d.]+) (-?[\d.]+)"([^>]*)>/g)) {
-    if (attr(m[5], "stroke")?.toLowerCase() !== stroke.toLowerCase()) continue;
-    if (Math.abs(Number(attr(m[5], "stroke-width") ?? 1) - width) > 0.001) continue;
-    out.push({ x1: Number(m[1]), y1: Number(m[2]), x2: Number(m[3]), y2: Number(m[4]) });
-  }
-  return out;
-}
-
-const apart = (a: Rect, b: Rect) => a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
-
-/**
- * Checks the drawn C1 against the design rules, from the svg alone plus the
- * layout's bar positions: no two chips overlap, none leaves the canvas, every
- * chip outside a bar has exactly one leader of the leader colour that runs
- * from the bar edge to the chip's near edge and crosses no chip, the layout's
- * chips are the chips drawn (so its text measuring is the drawn one), and the
- * budget halo and line share a centre.
- */
-export function checkAllocationGeometry(results: Results, svg: string, t: Tokens, dims: Dims, where: string): string[] {
-  const problems: string[] = [];
-  const layout = layoutAllocation(results, t, dims);
-  const chips = chipRectsOf(svg, t);
-
-  for (let i = 0; i < chips.length; i++) {
-    for (let j = i + 1; j < chips.length; j++) {
-      if (!apart(chips[i], chips[j])) problems.push(`${where}: chips ${i} and ${j} overlap`);
-    }
-    const c = chips[i];
-    if (c.x < -0.01 || c.y < -0.01 || c.x + c.w > dims.width + 0.01 || c.y + c.h > dims.height + 0.01)
-      problems.push(`${where}: chip ${i} leaves the canvas (${c.x.toFixed(1)}, ${c.y.toFixed(1)}, ${c.w.toFixed(1)} x ${c.h.toFixed(1)} in ${dims.width} x ${dims.height})`);
-  }
-
-  // The chips the layout decided are the chips drawn.
-  const placements = [layout.today, layout.infravana].flatMap((bar) => bar.placements);
-  const modelChips = placements.flatMap((p) => (p.mode === "list" ? [] : [p.chip]));
-  if (chips.length !== modelChips.length) problems.push(`${where}: ${chips.length} chips drawn, layout has ${modelChips.length}`);
-  for (const m of modelChips) {
-    const near = chips.some((c) => [c.x - m.x, c.y - m.y, c.w - m.w, c.h - m.h].every((d) => Math.abs(d) <= 1.5));
-    if (!near) problems.push(`${where}: layout chip at ${m.x.toFixed(1)},${m.y.toFixed(1)} is not drawn`);
-  }
-
-  // Leaders: one per outside chip, in the leader colour, joining the bar edge to the chip's near edge.
-  const outside = placements.flatMap((p) => (p.mode === "outside" ? [p] : []));
-  // The axis line shares the leader colour (both alias the strong border), so leave out lines as tall as the plot.
-  const leaders = linesOf(svg, t.chartLeader, t.leaderWidth).filter(
-    (l) => Math.abs(l.x1 - l.x2) < 0.01 && Math.abs(l.y2 - l.y1) < layout.plotHeight - 1,
-  );
-  if (leaders.length !== outside.length) problems.push(`${where}: ${leaders.length} leaders for ${outside.length} outside labels`);
-  for (const p of outside) {
-    // Match by position: the leader's x (lines snap by up to half a pixel) and one end on this bar edge.
-    const mine = leaders.filter(
-      (l) => Math.abs(l.x1 - p.leader.x) <= 0.6 && [l.y1, l.y2].some((y) => Math.abs(y - p.leader.to) <= 1.5),
-    );
-    if (mine.length !== 1) {
-      problems.push(`${where}: ${mine.length} leaders at x ${p.leader.x.toFixed(1)}, expected 1`);
-      continue;
-    }
-    const l = mine[0];
-    const [lo, hi] = [Math.min(l.y1, l.y2), Math.max(l.y1, l.y2)];
-    const ends = [lo, hi];
-    const drawn = chips.find((c) => Math.abs(c.x - p.chip.x) <= 1.5 && Math.abs(c.y - p.chip.y) <= 1.5);
-    const chipEdge = p.position === "top" ? p.chip.y + p.chip.h : p.chip.y;
-    const barEdge = p.leader.to;
-    if (!ends.some((y) => Math.abs(y - chipEdge) <= 1.5)) problems.push(`${where}: leader at x ${l.x1} does not touch its chip's near edge`);
-    if (!ends.some((y) => Math.abs(y - barEdge) <= 1.5)) problems.push(`${where}: leader at x ${l.x1} does not reach the bar edge`);
-    if (drawn && (l.x1 < drawn.x || l.x1 > drawn.x + drawn.w)) problems.push(`${where}: leader at x ${l.x1} is outside its chip's width`);
-    for (const c of chips) {
-      if (c === drawn) continue;
-      if (l.x1 > c.x && l.x1 < c.x + c.w && hi > c.y && lo < c.y + c.h) problems.push(`${where}: leader at x ${l.x1} crosses a chip`);
-    }
-  }
-
-  // The budget label sits where the layout expects, on the canvas, clear of every chip.
-  const budgetText = [...svg.matchAll(/<text([^>]*)>(Budget [^<]*)<\/text>/g)][0];
-  if (!budgetText) problems.push(`${where}: no budget label drawn`);
-  else {
-    const attrs = budgetText[1];
-    const [tx, ty] = translateOf(attrs);
-    const anchor = attr(attrs, "text-anchor") ?? "middle";
-    const x = tx + Number(attr(attrs, "x") ?? 0);
-    const w = layout.budget.rect.w;
-    const drawn: Rect = {
-      x: anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2,
-      y: ty + Number(attr(attrs, "y") ?? 0) - t.lineXs / 2,
-      w,
-      h: t.lineXs,
-    };
-    const m = layout.budget.rect;
-    if (Math.abs(drawn.x - m.x) > 2.5 || Math.abs(drawn.y - m.y) > 2.5)
-      problems.push(`${where}: budget label drawn at ${drawn.x.toFixed(1)},${drawn.y.toFixed(1)}, layout expects ${m.x.toFixed(1)},${m.y.toFixed(1)}`);
-    if (drawn.x < -0.01 || drawn.y < -0.01 || drawn.x + drawn.w > dims.width + 0.01) problems.push(`${where}: budget label leaves the canvas`);
-    for (const c of chips) if (!apart(drawn, c)) problems.push(`${where}: a chip overlaps the budget label`);
-  }
-
-  // Budget halo and line share one centre, and both span the plot.
-  const halo = linesOf(svg, t.budgetHalo, t.budgetHaloWidth);
-  const line = linesOf(svg, t.budgetLine, t.budgetLineWidth);
-  if (halo.length !== 1 || line.length !== 1) problems.push(`${where}: ${halo.length} halo and ${line.length} line paths, expected 1 each`);
-  else if (Math.abs(halo[0].x1 - line[0].x1) > 0.01) problems.push(`${where}: halo centre ${halo[0].x1} and line centre ${line[0].x1} differ`);
-
-  return problems;
-}
-
-/**
- * Proves the geometry checks can fail: draws C1 for `results`, expects no
- * problem, then applies each deliberate break to the svg and expects one.
- * A break that has nothing to act on in this drawing (no leader in the
- * narrow layout, say) is left out of `applied`. Returns the checks that did
- * not behave, and the breaks that were applied.
- */
-export function selfTestGeometryChecks(results: Results, t: Tokens, dims: Dims): { fails: string[]; applied: string[] } {
-  const svg = renderSvg(buildAllocationOption(results, "stage", t, dims), dims);
-  const fails: string[] = [];
-  const clean = checkAllocationGeometry(results, svg, t, dims, "clean");
-  if (clean.length > 0) fails.push(`the unbroken drawing reports problems: ${clean[0]}`);
-  const chips = [...svg.matchAll(/<path d="([^"]*A[^"]*)" transform="translate\(([-\d.]+) ([-\d.]+)\)"/g)];
-  // The first real leader: a two-point path in the leader colour that is shorter than the plot is tall
-  // (the axis line has the same colour and spans it).
-  const plotHeight = layoutAllocation(results, t, dims).plotHeight;
-  const leaderTag = [...svg.matchAll(/<path d="M(-?[\d.]+) (-?[\d.]+)L(-?[\d.]+) (-?[\d.]+)"([^>]*)><\/path>/g)].find(
-    (m) => attr(m[5], "stroke")?.toLowerCase() === t.chartLeader.toLowerCase() && Math.abs(Number(m[4]) - Number(m[2])) < plotHeight - 1,
-  )?.[0];
-  const breaks: [string, (s: string) => string][] = [
-    ["two chips overlapping", (s) => (chips.length < 2 ? s : s.replace(chips[1][0], chips[1][0].replace(`translate(${chips[1][2]} ${chips[1][3]})`, `translate(${chips[0][2]} ${chips[0][3]})`)))],
-    ["a chip off the canvas", (s) => (chips.length < 1 ? s : s.replace(chips[0][0], chips[0][0].replace(`translate(${chips[0][2]} ${chips[0][3]})`, `translate(${chips[0][2]} -400)`)))],
-    ["a leader removed", (s) => (leaderTag ? s.replace(leaderTag, "") : s)],
-    ["a leader in the wrong colour", (s) => (leaderTag ? s.replace(leaderTag, leaderTag.replace(/stroke="[^"]*"/, `stroke="${t.today1}"`)) : s)],
-    ["the halo off the line's centre", (s) => s.replace(/(<path d="M)(-?[\d.]+)( [-\d.]+L)(-?[\d.]+)([^>]*stroke-width="6")/, (_m, a, x, b, x2, c) => `${a}${Number(x) + 0.5}${b}${Number(x2) + 0.5}${c}`)],
-  ];
-  const applied: string[] = [];
-  for (const [name, apply] of breaks) {
-    const broken = apply(svg);
-    if (broken === svg) continue;
-    applied.push(name);
-    if (checkAllocationGeometry(results, broken, t, dims, name).length === 0) fails.push(`break "${name}" went unnoticed`);
-  }
-  return { fails, applied };
-}
-
-/** The label list names exactly the segments the layout gave no chip, in the layout's words. */
-function checkLabelList(results: Results, t: Tokens, dims: Dims, where: string): string[] {
-  const problems: string[] = [];
-  const layout = layoutAllocation(results, t, dims);
-  const listed = [layout.today, layout.infravana].flatMap((bar) =>
-    bar.segs.flatMap((seg, i) => {
-      const p = bar.placements[i];
-      return p.mode === "list" ? [{ seg, tooSmall: p.tooSmall }] : [];
-    }),
-  );
-  const html = renderToStaticMarkup(createElement(C1LabelList, { results, tokens: t, dims, idPrefix: "check" }));
-  if (listed.length === 0) {
-    if (html !== "") problems.push(`${where}: a label list is drawn although every segment has a chip`);
-    return problems;
-  }
-  if ((html.match(/<li[ >]/g) ?? []).length !== listed.length)
-    problems.push(`${where}: ${(html.match(/<li[ >]/g) ?? []).length} list entries for ${listed.length} segments without a chip`);
-  if ((html.match(/too small to draw/g) ?? []).length !== listed.filter((e) => e.tooSmall).length)
-    problems.push(`${where}: "too small to draw" does not match the segments under the minimum width`);
-  if ((html.match(/<svg/g) ?? []).length !== listed.length) problems.push(`${where}: a list entry lacks its swatch`);
-  for (const { seg } of listed) {
-    const name = seg.label.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-    if (!html.includes(name)) problems.push(`${where}: list lacks "${seg.label}"`);
-    if (seg.provenance !== "measured" && !html.includes(PROVENANCE_TEXT[seg.provenance]))
-      problems.push(`${where}: list entry "${seg.label}" lacks its provenance`);
-  }
-  return problems;
 }
 
 function checkCaption(def: ChartDef, results: Results, problems: string[], label: string): void {
@@ -532,33 +286,9 @@ function checkMarkup(def: ChartDef, results: Results, problems: string[], label:
   const where = `${label} ${def.id}`;
   if (!stage.includes('role="img"')) problems.push(`${where} stage: no role="img" container`);
   if (!thumb.includes('role="img"')) problems.push(`${where} thumb: no role="img" container`);
-  if (thumb.includes("<table") || thumb.includes("<ul")) problems.push(`${where} thumb: badges or table present`);
+  if (thumb.includes("<table") || thumb.includes("<ul")) problems.push(`${where} thumb: list or table present`);
   if (!thumb.includes("pointer-events:none")) problems.push(`${where} thumb: not marked non-interactive`);
 
-  // Provenance badges: one per non-measured side at stage, none when every side is measured.
-  const badgeBlock = /<ul[^>]*>[\s\S]*?<\/ul>/.exec(stage)?.[0] ?? "";
-  const badges = [...badgeBlock.matchAll(/<li[^>]*>([^<]*)<\/li>/g)].map((m) => m[1]);
-  const provenance =
-    def.id === "C1"
-      ? results.allocation.provenance
-      : def.id === "C5"
-        ? results.tokens_bought.provenance
-        : results.cost_per_mtok.provenance;
-  let expected = 0;
-  for (const [side, series] of [
-    ["today", "Today"],
-    ["infravana", "With InfraVana"],
-  ] as const) {
-    const value = provenance[side];
-    if (value === "measured") continue;
-    expected++;
-    const text = PROVENANCE_TEXT[value];
-    if (!badges.some((b) => b.startsWith(series) && b.endsWith(`: ${text}`)))
-      problems.push(`${where} stage: ${series} is ${text} but has no badge for it`);
-  }
-  if (expected === 0 && badges.length > 0) problems.push(`${where} stage: badge shown although every series is measured`);
-  if (def.id === "C5" && Math.round(results.headline.tokens_multiple * 10) / 10 > 1 && !stage.includes("favours InfraVana"))
-    problems.push(`${where} stage: delta label lacks the favours marker text`);
 }
 
 /** Runs every check on one `Results`. `tokens` must be the real token values. */
@@ -599,13 +329,7 @@ export function runChartChecks(label: string, results: Results, tokens: Tokens):
       for (const m of svg.replace(STYLE_BLOCK, "").matchAll(/\s(?:fill-|stroke-)?opacity="([\d.]+)"/g)) {
         if (Number(m[1]) < 1) problems.push(`${where}: a shape is drawn with opacity ${m[1]}`);
       }
-      if (def.id === "C1") {
-        checkAllocation(results, size, svg, tokens, dims, problems, `${label} ${dims.width}`);
-        if (size === "stage") {
-          problems.push(...checkAllocationGeometry(results, svg, tokens, dims, where));
-          problems.push(...checkLabelList(results, tokens, dims, where));
-        }
-      }
+      if (def.id === "C1") checkAllocation(results, size, svg, problems, `${label} ${dims.width}`);
       const patterns = (svg.match(/<pattern/g) ?? []).length;
       const texts = (svg.match(/<text/g) ?? []).length;
       notes.push(`${where}: ${svg.length} chars, ${colours.size} token colours, ${hoverOnly.size} hover-only, ${patterns} patterns, ${texts} text nodes`);

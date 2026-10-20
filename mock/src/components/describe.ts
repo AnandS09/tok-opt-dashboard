@@ -78,7 +78,7 @@ export function understoodItems(scenario: Scenario, tables: Tables): Understood[
     {
       key: "stage_today",
       label: "Today",
-      value: `${STAGE_LABEL[scenario.stage_today]} stage`,
+      value: STAGE_LABEL[scenario.stage_today].toLowerCase(),
       aliases: ["stage_today"],
     },
     {
@@ -93,7 +93,7 @@ export function understoodItems(scenario: Scenario, tables: Tables): Understood[
     {
       key: "latency_class",
       label: "Latency",
-      value: `${LATENCY_LABEL[scenario.latency_class].toLowerCase()} target`,
+      value: `answers ${LATENCY_LABEL[scenario.latency_class]}`,
       aliases: ["latency_class"],
     },
   );

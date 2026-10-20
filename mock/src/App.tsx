@@ -1,28 +1,39 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { chartRegistry } from "./charts/registry";
-import { Album } from "./components/Album";
-import { AssumptionsPanel, type PanelSection } from "./components/AssumptionsPanel";
+import { AssumptionsPanel } from "./components/AssumptionsPanel";
+import { ChartSections } from "./components/ChartSections";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { HeadlineStrip } from "./components/HeadlineStrip";
+import { IntakeQuestions, IntakeSentence } from "./components/Intake";
 import { KnobRail } from "./components/KnobRail";
 import { Notice } from "./components/Notice";
 import { openShareOf, ResultNotices } from "./components/ResultNotices";
-import { PromptStrip } from "./components/PromptStrip";
 import { Skeleton } from "./components/Skeleton";
-import { UnderstoodStrip } from "./components/UnderstoodStrip";
 import { compute } from "./compute";
-import type { Results, Scenario } from "./contract";
+import type { Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
-import { useSlideHash } from "./store/useSlideHash";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
 const DATA_URL = `${import.meta.env.BASE_URL}data/`;
 /** Pause between recomputations while a slider is dragged. */
 const RECOMPUTE_MS = 120;
+// ponytail: placeholder until the site has a contact page or address; swap in the real link.
+const CONTACT_URL = "#contact";
+/** Scenario fields the guided questions set, so they are no longer "assumed". */
+const ANSWERED = ["users", "baseline", "budget", "workload_mix", "latency_class"];
+
+/**
+ * A scaling example is shown at its target size: the charts compare one plan,
+ * so the plan shown is the one being planned for.
+ */
+function atTarget(response: ScenarioResponse): ScenarioResponse {
+  const { target, ...rest } = response.scenario;
+  return target ? { ...response, scenario: { ...rest, baseline: target } } : response;
+}
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -30,10 +41,9 @@ function messageOf(error: unknown): string {
 
 export default function App() {
   const [state, dispatch] = useReducer(appReducer, initialState);
-  const [panel, setPanel] = useState<PanelSection | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [presenting, setPresenting] = useState(false);
-  const [requestedSlide, setSlide] = useSlideHash();
+  const [panelOpen, setPanelOpen] = useState(false);
+  // The guided questions show until they are answered or an example is picked.
+  const [answered, setAnswered] = useState(false);
   const loadSeq = useRef(0);
 
   const { tables, response, scenario } = state;
@@ -65,7 +75,7 @@ export default function App() {
         dispatch({
           type: "example_loaded",
           exampleId: example.id,
-          response: loaded,
+          response: atTarget(loaded),
         });
       } catch (error) {
         if (seq === loadSeq.current) dispatch({ type: "example_failed", message: messageOf(error) });
@@ -74,7 +84,7 @@ export default function App() {
     [tables],
   );
 
-  // Open the first example once the tables are in, so the album is never an empty page.
+  // Load the first example once the tables are in: the guided questions start from its scenario.
   const opened = useRef(false);
   useEffect(() => {
     if (tables && !opened.current) {
@@ -104,41 +114,15 @@ export default function App() {
     () => (response ? chartRegistry.filter((def) => response.charts.includes(def.id)) : []),
     [response],
   );
-  const found = slides.findIndex((def) => def.id === requestedSlide);
-  const activeIndex = found >= 0 ? found : 0;
 
-  // A link to a slide that is not shown (not requested, or not registered) is rewritten to the
-  // slide that is, so a copied link always matches the page.
-  const shownId = slides[activeIndex]?.id;
-  useEffect(() => {
-    if (shownId !== undefined && requestedSlide !== null && found < 0) setSlide(shownId);
-  }, [shownId, requestedSlide, found, setSlide]);
-
-  // Presentation mode: hide the rails and use the browser's fullscreen where it exists.
-  const togglePresent = useCallback(() => {
-    if (presenting) {
-      setPresenting(false);
-      if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
-    } else {
-      setPresenting(true);
-      void document.documentElement.requestFullscreen?.().catch(() => undefined);
-    }
-  }, [presenting]);
-
-  useEffect(() => {
-    const onFullscreenChange = () => {
-      if (!document.fullscreenElement) setPresenting(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && presenting && !document.fullscreenElement) setPresenting(false);
-    };
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("fullscreenchange", onFullscreenChange);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [presenting]);
+  const pickExample = (example: Example) => {
+    setAnswered(true);
+    void openExample(example);
+  };
+  const startOver = () => {
+    setAnswered(false);
+    void openExample(EXAMPLES[0]);
+  };
 
   const openShare = results && liveScenario ? openShareOf(results, liveScenario) : null;
 
@@ -150,7 +134,7 @@ export default function App() {
       </Notice>
     );
   } else if (!tables || (state.loadingExample && !response)) {
-    body = <Skeleton label="Reading your scenario..." />;
+    body = <Skeleton label="Loading..." />;
   } else if (state.exampleError && !response) {
     body = (
       <Notice
@@ -171,103 +155,108 @@ export default function App() {
         {response.reason_for_user || "The prompt could not be used."}
       </Notice>
     );
+  } else if (response && scenario && !answered) {
+    body = (
+      <>
+        <IntakeQuestions
+          tables={tables}
+          onEdit={edit}
+          onDone={() => {
+            dispatch({ type: "scenario_committed", answered: ANSWERED });
+            setAnswered(true);
+          }}
+        />
+        <Examples activeId={null} onPick={pickExample} />
+      </>
+    );
   } else if (response && scenario) {
     body = (
-      <div className="workspace">
-        <KnobRail
-          id="knob-rail"
-          tables={tables}
-          scenario={scenario}
-          openShare={openShare}
-          onEdit={edit}
-          onReset={() => dispatch({ type: "scenario_reset" })}
-        />
-        <div className="main" id="main-content" tabIndex={-1}>
-          {state.exampleError ? (
-            <Notice title="The other example could not be opened" role="alert">
-              {state.exampleError}
-            </Notice>
-          ) : null}
-          {computed.error ? (
-            <Notice title="These knob values could not be computed" role="alert">
-              {computed.error} Try Reset, or move a knob back.
-            </Notice>
-          ) : null}
-          {results && liveScenario ? (
-            <>
-              <HeadlineStrip results={results} scenario={liveScenario} tables={tables} />
-              <ResultNotices results={results} tables={tables} />
-              {slides.length > 0 ? (
-                <Album
-                  slides={slides}
-                  results={results}
-                  activeIndex={activeIndex}
-                  onSelect={setSlide}
-                  presenting={presenting}
-                  onTogglePresent={togglePresent}
-                />
-              ) : (
-                <Notice title="None of the requested charts is available yet">
-                  This mock draws only the charts that are registered. Pick another example.
-                </Notice>
-              )}
-            </>
-          ) : computed.error ? null : (
-            <Skeleton label="Reading your scenario..." />
-          )}
-        </div>
-        <button
-          type="button"
-          className="sheet-toggle button"
-          aria-expanded={sheetOpen}
-          aria-controls="knob-rail"
-          onClick={() => setSheetOpen((open) => !open)}
-        >
-          {sheetOpen ? "Close knobs" : "Knobs"}
-        </button>
-      </div>
+      <>
+        <section className="situation card" aria-label="Your situation">
+          <IntakeSentence tables={tables} scenario={scenario} onEdit={edit} />
+          <details className="finetune">
+            <summary>Fine-tune the assumptions</summary>
+            <KnobRail
+              tables={tables}
+              scenario={scenario}
+              openShare={openShare}
+              onEdit={edit}
+              onReset={() => dispatch({ type: "scenario_reset" })}
+            />
+          </details>
+          <div className="situation__foot">
+            <Examples activeId={state.exampleId} onPick={pickExample} />
+            <button type="button" className="link-button" onClick={startOver}>
+              Start over
+            </button>
+          </div>
+        </section>
+        {state.exampleError ? (
+          <Notice title="That example could not be opened" role="alert">
+            {state.exampleError}
+          </Notice>
+        ) : null}
+        {computed.error ? (
+          <Notice title="These answers could not be worked out" role="alert">
+            {computed.error} Try changing an answer back.
+          </Notice>
+        ) : null}
+        {results ? (
+          <>
+            <HeadlineStrip results={results} contactUrl={CONTACT_URL} />
+            <ResultNotices results={results} tables={tables} />
+            <ChartSections slides={slides} results={results} />
+            <section className="cta card" aria-label="Contact">
+              <h2 className="cta__title">Want this with your real numbers?</h2>
+              <p>We model your actual workloads, contracts and hardware options, and show what you can save.</p>
+              <a className="button button--primary" href={CONTACT_URL}>
+                Talk to us
+              </a>
+            </section>
+          </>
+        ) : computed.error ? null : (
+          <Skeleton label="Working out your numbers..." />
+        )}
+      </>
     );
   }
 
   return (
-    <div className={["app", presenting ? "app--present" : "", sheetOpen ? "app--sheet-open" : ""].join(" ")}>
-      <a
-        className="skip-link"
-        href="#main-content"
-        onClick={(event) => {
-          event.preventDefault();
-          document.getElementById("main-content")?.focus();
-        }}
-      >
-        Skip to the charts
-      </a>
-      <Header
-        disabled={!tables || !response}
-        onOpenAssumptions={() => setPanel("assumptions")}
-        onOpenData={() => setPanel("data")}
-      />
-      <main className="page">
-        <PromptStrip
-          activeId={state.exampleId}
-          loading={state.loadingExample}
-          disabled={!tables}
-          onPick={(example) => void openExample(example)}
-        />
-        {tables && response && response.verdict === "ok" ? (
-          <UnderstoodStrip response={response} tables={tables} />
-        ) : null}
+    <div className="app">
+      <Header />
+      <main className="page" id="main-content">
         {body}
       </main>
-      <Footer tables={tables} />
-      {panel && tables && response && scenario ? (
+      <Footer onOpenAssumptions={tables && response && answered ? () => setPanelOpen(true) : undefined} />
+      {panelOpen && tables && response && scenario ? (
         <AssumptionsPanel
           tables={tables}
           response={response}
           stage={scenario.stage_today}
-          section={panel}
-          onClose={() => setPanel(null)}
+          section="assumptions"
+          onClose={() => setPanelOpen(false)}
         />
       ) : null}
+    </div>
+  );
+}
+
+/** The ready-made situations, as chips. */
+function Examples({ activeId, onPick }: { activeId: string | null; onPick: (example: Example) => void }) {
+  return (
+    <div className="examples" role="group" aria-label="Examples">
+      <span className="examples__label">Or try an example:</span>
+      {EXAMPLES.map((example) => (
+        <button
+          key={example.id}
+          type="button"
+          className="chip"
+          aria-pressed={example.id === activeId}
+          onClick={() => onPick(example)}
+        >
+          {example.chip}
+        </button>
+      ))}
     </div>
   );
 }

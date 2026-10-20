@@ -1,7 +1,7 @@
-import { useCallback, useId } from "react";
+import { useCallback } from "react";
 import { BarChart } from "echarts/charts";
 import type { BarSeriesOption } from "echarts/charts";
-import { GraphicComponent, GridComponent, MarkLineComponent, TooltipComponent } from "echarts/components";
+import { GridComponent, MarkLineComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type {
@@ -13,21 +13,16 @@ import type {
 } from "../contract";
 import { fmtPct, fmtUsd, fmtUsdFull, fmtUsdSig } from "../shared/format";
 import { baseOption, tooltipChrome } from "./base";
-import { BAR_SHARE, BUDGET_LABEL_DISTANCE, layoutAllocation } from "./c1Layout";
-import type { Layout, Placement } from "./c1Layout";
-import { isSavings, planBar, segmentStyle } from "./c1Plan";
-import type { PlannedSegment, Side } from "./c1Plan";
-import { C1LabelList } from "./c1LabelList";
+import { isSavings, planBar } from "./c1Plan";
+import type { PlannedSegment } from "./c1Plan";
 import { ChartFrame } from "./ChartFrame";
-import type { BadgeItem } from "./ChartFrame";
-import { esc, PROVENANCE_TEXT, toCsvText } from "./format";
+import { esc, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
-import { chipText } from "./c1Plan";
-import { readTokens } from "./tokens";
+import { textWidth } from "./measure";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
 
-use([BarChart, GraphicComponent, GridComponent, MarkLineComponent, TooltipComponent]);
+use([BarChart, GridComponent, MarkLineComponent, TooltipComponent]);
 
 export { planBar } from "./c1Plan";
 export type { PlannedSegment } from "./c1Plan";
@@ -39,70 +34,56 @@ export type { PlannedSegment } from "./c1Plan";
 function explain(seg: PlannedSegment): string {
   switch (seg.tone) {
     case "arbitrage":
-      return "Money no longer needed: the same proprietary model bought through a cheaper channel.";
+      return "Not spent: the same model bought from a seller with a better price.";
     case "routing":
-      return "Money no longer needed: some work moved to cheaper models or hardware that still meet the quality floor.";
+      return "Not spent: some work moved to cheaper models or hardware that are still good enough.";
     default:
       if (seg.kind === "other") return `Combined: ${seg.members.join(", ")}.`;
-      return seg.kind === "hardware"
-        ? "Spent on self-hosted hardware."
-        : "Spent with this provider or plan.";
+      return seg.kind === "hardware" ? "Spent on hardware you run yourself." : "Spent with this provider or plan.";
   }
 }
 
 const GRID_THUMB = { left: 4, right: 4, top: 6, bottom: 6 };
+const SAVED_LABEL = "Saved";
 
-/** ECharts label options for one segment, from where the layout put its chip. */
-function labelOption(seg: PlannedSegment, place: Placement | undefined, stage: boolean, t: Tokens) {
-  const rich = {
-    main: { color: t.text, fontSize: t.fontXs, lineHeight: t.lineXs },
-    prov: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
-  };
-  const base = {
-    formatter: chipText(seg),
-    color: t.text,
-    fontSize: t.fontXs,
-    lineHeight: t.lineXs,
-    backgroundColor: t.chip,
-    borderRadius: t.chipRadius,
-    padding: t.chipPadding,
-    rich,
-  };
-  if (!stage || !place || place.mode === "list") return { ...base, show: false };
-  if (place.mode === "inside") return { ...base, show: true, position: "inside" as const };
-  return {
-    ...base,
-    show: true,
-    position: place.position,
-    distance: t.space2,
-    offset: [place.dx, place.position === "bottom" ? place.lift : -place.lift],
-  };
+/** Smallest of 1, 2, 2.5, 5 x 10^n at or above `x`, so the axis ends on a round number. */
+function niceCeil(x: number): number {
+  if (x <= 0) return 1;
+  const p = 10 ** Math.floor(Math.log10(x));
+  const step = [1, 2, 2.5, 5, 10].find((m) => m * p >= x) ?? 10;
+  return step * p;
 }
 
-/** Titles above the bars in the narrow layout: "Today · $100K total", the name bold and the total secondary. */
-function narrowTitles(layout: Layout, t: Tokens) {
-  return [layout.today, layout.infravana].map((bar) => ({
-    type: "text",
-    silent: true,
-    x: layout.grid.left,
-    y: bar.bar.y - t.space1,
-    style: {
-      text: `{name|${bar.side === "today" ? TODAY_LABEL : INFRAVANA_LABEL}}{total| \u00b7 ${fmtUsd(bar.total)} total}`,
-      fill: t.text,
-      fontFamily: t.fontSans,
-      fontSize: t.fontSm,
-      textVerticalAlign: "bottom",
-      rich: {
-        name: {
-          color: bar.side === "today" ? t.text : t.accentStrong,
-          fontSize: t.fontSm,
-          fontWeight: t.weightBold,
-          lineHeight: t.lineSm,
-        },
-        total: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
-      },
-    },
+/** The drawn pieces of one bar: spend segments, then (With bar only) one "Saved" block. */
+interface Piece {
+  label: string;
+  usd: number;
+  color: string;
+  textColor: string;
+  seg: PlannedSegment | null;
+}
+
+function piecesOf(a: AllocationResult, t: Tokens): { today: Piece[]; infravana: Piece[]; saved: number } {
+  const today = planBar(a.today, "today").map((seg, i) => ({
+    label: seg.label,
+    usd: seg.usd,
+    color: i % 2 === 0 ? t.today2 : t.today3,
+    textColor: t.surface,
+    seg,
   }));
+  const planned = planBar(a.infravana, "infravana");
+  const infravana: Piece[] = planned
+    .filter((seg) => seg.tone === "spend")
+    .map((seg, i) => ({
+      label: seg.label,
+      usd: seg.usd,
+      color: i % 2 === 0 ? t.accent : t.accentStrong,
+      textColor: t.surface,
+      seg,
+    }));
+  const saved = planned.filter((seg) => seg.tone !== "spend").reduce((sum, seg) => sum + seg.usd, 0);
+  if (saved > 0) infravana.push({ label: SAVED_LABEL, usd: saved, color: t.saved, textColor: t.text, seg: null });
+  return { today, infravana, saved };
 }
 
 /** The ECharts option for C1. Pure: tokens and pixel size in, option out. */
@@ -114,32 +95,49 @@ export function buildAllocationOption(
 ): EChartsCoreOption {
   const stage = size === "stage";
   const a: AllocationResult = results.allocation;
-  const layout = layoutAllocation(results, t, dims);
-  const grid = stage ? layout.grid : GRID_THUMB;
-  const today = layout.today;
-  const infravana = layout.infravana;
-  const axisMax = layout.axisMax;
+  const { today, infravana, saved } = piecesOf(a, t);
+  const spent = a.total_usd - saved;
+  const axisMax = niceCeil(Math.max(a.total_usd, a.budget_usd));
+  const grid = stage ? { left: 8, right: 24, top: 36, bottom: 8, containLabel: true } : GRID_THUMB;
+  // Plot width is approximate (containLabel takes the axis labels off it), close enough to decide label fit.
+  const plotWidth = Math.max(0, dims.width - 150);
+  const pxPer = plotWidth / axisMax;
 
-  const all: { seg: PlannedSegment; side: Side; place: Placement | undefined }[] = [
-    ...today.segs.map((seg, i) => ({ seg, side: "today" as const, place: today.placements[i] })),
-    ...infravana.segs.map((seg, i) => ({ seg, side: "infravana" as const, place: infravana.placements[i] })),
+  /** The longest label that fits inside a piece: "Name $X", then "$X", then none. */
+  const fit = (p: Piece): string => {
+    const room = p.usd * pxPer - 2 * t.space2;
+    const full = `${p.label} ${fmtUsdSig(p.usd)}`;
+    if (textWidth(full, t.fontSm, t.weightBold, t.fontSans) <= room) return full;
+    const short = fmtUsdSig(p.usd);
+    return textWidth(short, t.fontSm, t.weightBold, t.fontSans) <= room ? short : "";
+  };
+
+  const all = [
+    ...today.map((p) => ({ p, side: "today" as const })),
+    ...infravana.map((p) => ({ p, side: "infravana" as const })),
   ];
 
-  const series: BarSeriesOption[] = all.map(({ seg, side, place }, index) => {
+  const series: BarSeriesOption[] = all.map(({ p, side }, index) => {
+    const text = stage ? fit(p) : "";
     const item: BarSeriesOption = {
       type: "bar",
-      name: seg.label,
+      name: p.label,
       stack: "total",
-      barWidth: `${BAR_SHARE * 100}%`,
+      barWidth: "46%",
       silent: !stage,
       emphasis: { disabled: true },
-      itemStyle: segmentStyle(seg, side, t),
-      data: side === "today" ? [seg.usd, null] : [null, seg.usd],
-      label: labelOption(seg, place, stage, t),
+      itemStyle: { color: p.color, borderColor: t.separator, borderWidth: t.separatorWidth },
+      data: side === "today" ? [p.usd, null] : [null, p.usd],
+      label: {
+        show: text !== "",
+        position: "inside",
+        formatter: text,
+        color: p.textColor,
+        fontSize: t.fontSm,
+        fontWeight: t.weightBold,
+      },
     };
-    if (index === 0) {
-      // Two items at the budget: a halo underneath, then the line on top
-      // (design-tokens 3d). The halo is silent and has no label.
+    if (index === 0 && stage) {
       item.markLine = {
         silent: true,
         symbol: "none",
@@ -147,22 +145,13 @@ export function buildAllocationOption(
         data: [
           {
             xAxis: a.budget_usd,
-            lineStyle: { color: t.budgetHalo, width: t.budgetHaloWidth, type: "solid" },
-            label: { show: false },
-          },
-          {
-            xAxis: a.budget_usd,
-            lineStyle: { color: t.budgetLine, width: t.budgetLineWidth, type: "solid" },
+            lineStyle: { color: t.budgetLine, width: t.budgetLineWidth, type: [4, 4] },
             label: {
-              show: stage,
+              show: true,
               position: "start",
-              align: layout.budget.align,
-              distance: BUDGET_LABEL_DISTANCE,
-              formatter: layout.budget.text,
-              color: t.budgetLine,
-              fontWeight: t.weightBold,
+              formatter: `Budget ${fmtUsd(a.budget_usd)}`,
+              color: t.textSecondary,
               fontSize: t.fontXs,
-              lineHeight: t.lineXs,
             },
           },
         ],
@@ -171,53 +160,29 @@ export function buildAllocationOption(
     return item;
   });
 
-  const rich = (color: string, bold: boolean) => ({
+  const rich = (color: string) => ({
     color,
     fontSize: t.fontSm,
-    fontWeight: bold ? t.weightBold : t.weightRegular,
+    fontWeight: t.weightBold,
     lineHeight: t.lineSm,
   });
 
-  // Leader lines for chips outside a bar (design-tokens 3e): a vertical line from the middle of the
-  // chip's near edge to the bar edge at the segment's midpoint, no end marker.
-  const leaders = stage
-    ? [today, infravana].flatMap((bar) =>
-        bar.placements.flatMap((p) =>
-          p.mode === "outside"
-            ? [
-                {
-                  type: "line",
-                  silent: true,
-                  z: 1,
-                  shape: { x1: p.leader.x, y1: p.leader.from, x2: p.leader.x, y2: p.leader.to },
-                  style: { stroke: t.chartLeader, lineWidth: t.leaderWidth },
-                },
-              ]
-            : [],
-        ),
-      )
-    : [];
-
   return {
     ...baseOption(t, stage),
-    grid: { ...grid, containLabel: false },
+    grid,
     tooltip: stage
       ? {
           ...tooltipChrome(t),
           trigger: "item",
           formatter: (params: unknown) => {
-            const p = params as { seriesIndex: number };
-            const entry = all[p.seriesIndex];
+            const entry = all[(params as { seriesIndex: number }).seriesIndex];
             if (!entry) return "";
-            const { seg, side } = entry;
-            const bar = side === "today" ? today : infravana;
-            const share = bar.total > 0 ? (seg.usd / bar.total) * 100 : 0;
-            return [
-              `<strong>${esc(seg.label)}</strong> (${esc(side === "today" ? TODAY_LABEL : INFRAVANA_LABEL)})`,
-              `${fmtUsdFull(seg.usd)} a quarter, ${fmtPct(share)} of the bar`,
-              esc(explain(seg)),
-              `Data: ${PROVENANCE_TEXT[seg.provenance]}`,
-            ].join("<br/>");
+            const { p, side } = entry;
+            const name = side === "today" ? TODAY_LABEL : INFRAVANA_LABEL;
+            const lines = [`<strong>${esc(p.label)}</strong> (${esc(name)})`, `${fmtUsdFull(p.usd)} a quarter`];
+            if (p.seg) lines.push(esc(explain(p.seg)));
+            else lines.push("Money you no longer need to spend for the same work.");
+            return lines.join("<br/>");
           },
         }
       : undefined,
@@ -237,22 +202,20 @@ export function buildAllocationOption(
       data: [TODAY_LABEL, INFRAVANA_LABEL],
       show: stage,
       axisTick: { show: false },
-      axisLine: { lineStyle: { color: t.borderStrong } },
+      axisLine: { show: false },
       axisLabel: {
-        show: !layout.narrow,
         margin: t.space3,
         formatter: (value: string) =>
           value === INFRAVANA_LABEL
-            ? `{inf|${value}}\n{sub|${fmtUsd(infravana.total)} total}`
-            : `{today|${value}}\n{sub|${fmtUsd(today.total)} total}`,
+            ? `{inf|${value}}\n{sub|${fmtUsdSig(spent)} spent}`
+            : `{today|${value}}\n{sub|${fmtUsdSig(a.total_usd)} spent}`,
         rich: {
-          today: rich(t.text, true),
-          inf: rich(t.accentStrong, true),
-          sub: { color: t.textSecondary, fontSize: t.fontXs, fontWeight: t.weightRegular, lineHeight: t.lineXs },
+          today: rich(t.text),
+          inf: rich(t.accentStrong),
+          sub: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
         },
       },
     },
-    graphic: stage ? [...leaders, ...(layout.narrow ? narrowTitles(layout, t) : [])] : undefined,
     series,
   };
 }
@@ -278,26 +241,23 @@ export function allocationCaption(results: Results): string {
   // Every dollar figure of the sentence has three significant digits, whatever its size.
   const usd = fmtUsdSig;
   const total = usd(a.total_usd);
-  const budget = usd(a.budget_usd);
   if (Math.round(pct) <= 0) {
-    return `With ${BRAND} the same ${total} of work costs about the same, against a ${budget} budget.`;
+    return `This work costs ${total} a quarter today, and about the same with ${BRAND}.`;
   }
   const parts: string[] = [];
   if (arbitrage.length === 1) parts.push(`${usd(arbitrage[0].usd)} from a better price for the same model`);
   if (routing.length === 1) parts.push(`${usd(routing[0].usd)} from moving work to cheaper models and hardware`);
   const detail = detailed && parts.length > 0 ? `: ${parts.join(" and ")}` : "";
-  return `The same ${total} of work costs ${fmtPct(pct)} less with ${BRAND}${detail}, against a ${budget} budget.`;
+  return `This work costs ${total} a quarter today, and ${fmtPct(pct)} less with ${BRAND}${detail}.`;
 }
 
 const ALLOCATION_HOW_COMPUTED =
-  "Both bars show the same piece of work: what your current usage would cost this quarter. " +
-  "The top bar splits that cost by who you pay today: a seat plan, an API provider, a cloud platform, or hardware you run yourself. " +
-  `The ${BRAND} bar buys the same work from the cheapest options that still meet your quality and speed targets. ` +
-  "The two hollow, patterned blocks at its end are money you no longer need to spend. " +
-  "The first is a better price for the same model from a different seller, and the second is moving some work to cheaper models or hardware. " +
-  "The vertical line is your budget. When there are many items, the smallest are combined into Other. " +
-  "A dashed outline marks figures that come from a model, and a dotted outline marks figures reported by a vendor. " +
-  "Every price comes from the data files, and in this mock all of it is invented placeholder data.";
+  "Both bars cover the same work: what your team's AI use costs in a quarter. " +
+  "The top bar splits today's cost by who you pay: a seat plan, an API provider, a cloud platform, or hardware you run yourself. " +
+  `The ${BRAND} bar buys the same work from the cheapest options that still meet your quality and speed needs, ` +
+  "and the light block at its end is the money you no longer spend. " +
+  "Part of it comes from buying the same model at a better price, and part from moving some work to cheaper models or hardware. " +
+  "The dashed line is your budget. Every price comes from the data files, and in this mock all of it is illustrative."
 
 /** Header first, then exactly the segments drawn (small ones as one "Other" row) and the budget marker. */
 export function allocationCsv(results: Results): string {
@@ -327,53 +287,24 @@ export function allocationCsv(results: Results): string {
 // Component and registry entry
 // ---------------------------------------------------------------------------
 
-/** One badge item per drawn segment, named exactly as the bar names it. */
-function badgeItems(results: Results): BadgeItem[] {
-  const a = results.allocation;
-  const sides: [string, PlannedSegment[]][] = [
-    [TODAY_LABEL, planBar(a.today, "today")],
-    [INFRAVANA_LABEL, planBar(a.infravana, "infravana")],
-  ];
-  const items: BadgeItem[] = [];
-  for (const [series, segs] of sides) {
-    for (const s of segs) items.push({ series, part: s.label, provenance: s.provenance });
-  }
-  return items;
-}
-
 export function AllocationChart({ results, size }: ChartProps) {
   const build = useCallback(
     (tokens: Tokens, dims: Dims) => buildAllocationOption(results, size, tokens, dims),
     [results, size],
   );
-  const listId = useId();
   const a = results.allocation;
   const rows = [
-    ...planBar(a.today, "today").map((s) => [TODAY_LABEL, s.label, fmtUsdFull(s.usd), PROVENANCE_TEXT[s.provenance]]),
-    ...planBar(a.infravana, "infravana").map((s) => [
-      INFRAVANA_LABEL,
-      s.label,
-      fmtUsdFull(s.usd),
-      PROVENANCE_TEXT[s.provenance],
-    ]),
+    ...planBar(a.today, "today").map((s) => [TODAY_LABEL, s.label, fmtUsdFull(s.usd)]),
+    ...planBar(a.infravana, "infravana").map((s) => [INFRAVANA_LABEL, s.label, fmtUsdFull(s.usd)]),
   ];
   return (
     <ChartFrame
       size={size}
       ariaLabel={allocationCaption(results)}
       build={build}
-      badges={badgeItems(results)}
-      renderList={(width, height) => {
-        // The list names the segments the chart could not label; it needs the chart's pixel size and the tokens.
-        try {
-          return width > 0 ? <C1LabelList results={results} tokens={readTokens()} dims={{ width, height }} idPrefix={listId} /> : null;
-        } catch {
-          return null;
-        }
-      }}
       table={{
-        caption: `Budget allocation, ${TODAY_LABEL.toLowerCase()} and ${INFRAVANA_LABEL}, in dollars a quarter. Budget: ${fmtUsdFull(a.budget_usd)}.`,
-        headers: ["Bar", "Segment", "Dollars a quarter", "Data"],
+        caption: `Where the budget goes, ${TODAY_LABEL.toLowerCase()} and ${INFRAVANA_LABEL}, in dollars a quarter. Budget: ${fmtUsdFull(a.budget_usd)}.`,
+        headers: ["Bar", "Segment", "Dollars a quarter"],
         rows,
       }}
     />
@@ -382,7 +313,7 @@ export function AllocationChart({ results, size }: ChartProps) {
 
 export const allocationChart: ChartDef = {
   id: "C1",
-  title: "Budget allocation, today vs " + BRAND,
+  title: "Where the money goes",
   caption: allocationCaption,
   howComputed: ALLOCATION_HOW_COMPUTED,
   toCsv: allocationCsv,

@@ -6,12 +6,9 @@ import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
-import { Favours } from "../components/Favours";
 import { ChartFrame } from "./ChartFrame";
-import type { BadgeItem } from "./ChartFrame";
 import { fmtMultiple, fmtTokens, fmtTokensSig, fmtUsd, fmtUsdSig } from "../shared/format";
-import { esc, PROVENANCE_TEXT, toCsvText } from "./format";
-import { filledStyle } from "./provenanceStyle";
+import { esc, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
@@ -28,8 +25,8 @@ export function buildTokensBoughtOption(
   const stage = size === "stage";
   const b = results.tokens_bought;
   const sides = [
-    { name: TODAY_LABEL, tokens: b.today_tokens, provenance: b.provenance.today },
-    { name: INFRAVANA_LABEL, tokens: b.infravana_tokens, provenance: b.provenance.infravana },
+    { name: TODAY_LABEL, tokens: b.today_tokens },
+    { name: INFRAVANA_LABEL, tokens: b.infravana_tokens },
   ];
   const bars: BarSeriesOption = {
     type: "bar",
@@ -37,8 +34,8 @@ export function buildTokensBoughtOption(
     silent: !stage,
     emphasis: { disabled: true },
     data: [
-      { value: b.today_tokens, itemStyle: filledStyle(t.today1, b.provenance.today, t) },
-      { value: b.infravana_tokens, itemStyle: filledStyle(t.accent, b.provenance.infravana, t) },
+      { value: b.today_tokens, itemStyle: { color: t.today2 } },
+      { value: b.infravana_tokens, itemStyle: { color: t.accent } },
     ],
     label: {
       show: stage,
@@ -63,7 +60,6 @@ export function buildTokensBoughtOption(
             return [
               `<strong>${esc(side.name)}</strong>`,
               `${fmtTokens(side.tokens)} tokens a quarter for ${fmtUsd(b.budget_usd)}`,
-              `Data: ${PROVENANCE_TEXT[side.provenance]}`,
             ].join("<br/>");
           },
         }
@@ -75,6 +71,7 @@ export function buildTokensBoughtOption(
       axisTick: { show: false },
       axisLine: { lineStyle: { color: t.borderStrong } },
       axisLabel: {
+        interval: 0,
         margin: t.space3,
         formatter: (value: string) => (value === INFRAVANA_LABEL ? `{inf|${value}}` : `{today|${value}}`),
         rich: {
@@ -86,7 +83,6 @@ export function buildTokensBoughtOption(
     yAxis: {
       type: "value",
       min: 0,
-      max: Math.max(b.today_tokens, b.infravana_tokens) * 1.2,
       show: stage,
       axisLabel: { color: t.textSecondary, fontSize: t.fontXs, formatter: (v: number) => fmtTokens(v) },
       axisLine: { show: false },
@@ -121,8 +117,7 @@ const TOKENS_HOW_COMPUTED =
   "This is how much work the same budget pays for. " +
   "Today, the budget buys tokens (the small pieces of text that models read and write) at the prices of your current set-up. " +
   `With ${BRAND}, the same budget buys tokens from the cheapest options that still meet your quality and speed targets. ` +
-  "The label shows how many times as many tokens that is. A dashed outline on a bar marks a figure that comes from a model, and a dotted outline marks one reported by a vendor. " +
-  "Every price comes from the data files, and in this mock all of it is invented placeholder data.";
+  "Every price comes from the data files, and in this mock all of it is illustrative.";
 
 /** Header first, then the two bars and the delta label. */
 export function tokensBoughtCsv(results: Results): string {
@@ -137,35 +132,6 @@ export function tokensBoughtCsv(results: Results): string {
   );
 }
 
-/** The delta label: the shared "favours InfraVana" marker (check mark, colour and hidden text) around the multiple. */
-function DeltaLabel({ results, stage }: { results: Results; stage: boolean }) {
-  const multiple = results.headline.tokens_multiple;
-  // Decided on the number as displayed ("1.0x" is no change), as the headline strip does.
-  const shown = Math.round(multiple * 10) / 10;
-  return (
-    <p
-      style={{
-        margin: 0,
-        fontSize: stage ? "var(--font-size-xl)" : "var(--font-size-sm)",
-        fontWeight: "var(--font-weight-bold)",
-        fontVariantNumeric: "tabular-nums lining-nums",
-      }}
-    >
-      <Favours favoursInfravana={shown > 1} noChange={shown === 1}>
-        {fmtMultiple(multiple)} tokens
-      </Favours>
-    </p>
-  );
-}
-
-function badgeItems(results: Results): BadgeItem[] {
-  const b = results.tokens_bought;
-  return [
-    { series: TODAY_LABEL, provenance: b.provenance.today },
-    { series: INFRAVANA_LABEL, provenance: b.provenance.infravana },
-  ];
-}
-
 export function TokensBoughtChart({ results, size }: ChartProps) {
   const build = useCallback(
     (tokens: Tokens, dims: Dims) => buildTokensBoughtOption(results, size, tokens, dims),
@@ -177,14 +143,12 @@ export function TokensBoughtChart({ results, size }: ChartProps) {
       size={size}
       ariaLabel={tokensBoughtCaption(results)}
       build={build}
-      badges={badgeItems(results)}
-      header={<DeltaLabel results={results} stage={size === "stage"} />}
       table={{
         caption: `Tokens bought a quarter for a ${fmtUsd(b.budget_usd)} budget.`,
-        headers: ["Series", "Tokens a quarter", "Data"],
+        headers: ["Series", "Tokens a quarter"],
         rows: [
-          [TODAY_LABEL, fmtTokens(b.today_tokens), PROVENANCE_TEXT[b.provenance.today]],
-          [INFRAVANA_LABEL, fmtTokens(b.infravana_tokens), PROVENANCE_TEXT[b.provenance.infravana]],
+          [TODAY_LABEL, fmtTokens(b.today_tokens)],
+          [INFRAVANA_LABEL, fmtTokens(b.infravana_tokens)],
         ],
       }}
     />
@@ -193,7 +157,7 @@ export function TokensBoughtChart({ results, size }: ChartProps) {
 
 export const tokensBoughtChart: ChartDef = {
   id: "C5",
-  title: "Tokens bought for the budget",
+  title: "How much AI work the budget buys",
   caption: tokensBoughtCaption,
   howComputed: TOKENS_HOW_COMPUTED,
   toCsv: tokensBoughtCsv,

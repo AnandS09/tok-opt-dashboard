@@ -35,13 +35,6 @@ const PROVENANCE_RANK: Record<Provenance, number> = {
   modelled: 2,
 };
 
-/** Badge text of spec 9. */
-export const PROVENANCE_TEXT: Record<Provenance, string> = {
-  measured: "measured",
-  modelled: "modelled",
-  vendor_reported: "vendor-reported",
-};
-
 /** Worst of several provenances: a part is measured only if all inputs are. */
 export function worstProvenance(values: Provenance[]): Provenance {
   return values.reduce<Provenance>(

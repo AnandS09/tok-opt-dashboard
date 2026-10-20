@@ -25,16 +25,15 @@ Run from this directory.
 | `src/charts/registry.ts` | `chartRegistry`, the ordered list of `ChartDef`s |
 | `public/data/` | Fixture CSVs per spec 7.3 (invented placeholder data) |
 | `src/App.tsx` | The page: loads the tables once, holds the one `Scenario` the knobs edit, calls `compute()` (throttled while a slider is dragged) and lays out the shell |
-| `src/components/` | Header, prompt strip, Understood strip, knob rail, headline strip, album (stage, filmstrip, grid view), drawer, assumptions panel, footer |
-| `src/store/` | Reducer for the page state, the three example prompts, mix rebalancing, the throttle hook and the `#slide=ID` hash hook |
+| `src/components/` | Header, guided questions and sentence (`Intake.tsx`), fine-tune inputs (`KnobRail.tsx`), hero result (`HeadlineStrip.tsx`), stacked chart cards, drawer, assumptions panel, footer |
+| `src/store/` | Reducer for the page state, the guided questions (`intake.ts`), the three examples, mix rebalancing and the throttle hook |
 | `src/styles/tokens.css` | The `:root` block of `docs/design-tokens.md`, pasted verbatim. The only file that may contain a hex colour. |
 | `src/styles/app.css` | Layout and components, using only the tokens |
 
 ## How the shell behaves
 
-- The data folder is fetched once at page load (`loadTables`). Moving a knob only calls `compute(scenario, tables)`; nothing is fetched. The example chips fetch one scenario file each.
-- The prompt is locked. The three example chips load a ready-made scenario through `loadScenario`; no language model is called. The first example opens on load so the album is never empty.
-- The album shows the charts in `chartRegistry` order, limited to the ids the scenario lists. Ids with no registry entry are skipped, and `n/N` counts only registered charts. The active slide is kept in the URL hash (`#slide=C1`).
-- A chart component must fill the width and height of its parent. The stage gives it a fixed-height box and the filmstrip a small one.
-- On screens up to 900px wide the knobs become a bottom sheet and the filmstrip becomes dots plus a thumbnail drawer.
-- Fullscreen hides everything except the stage, caption and action buttons.
+- The data folder is fetched once at page load (`loadTables`). Changing an input only calls `compute(scenario, tables)`; nothing is fetched. The example chips fetch one scenario file each.
+- The page opens on four one-click questions (team size, budget, main work, response speed). They write into the scenario of the first example. Once answered, they become an editable sentence at the top, with everything else under a collapsed "Fine-tune the assumptions". An example chip skips the questions. No language model is called.
+- A scaling example (one with `target`) is shown at its target size.
+- The result is a hero card (the saving in dollars, then as a percentage and a multiple), then the charts in `chartRegistry` order as stacked cards, limited to the ids the scenario lists, then a contact call to action. `CONTACT_URL` in `App.tsx` is a placeholder.
+- A chart component must fill the width of its parent; its canvas height is `--chart-stage-height`.

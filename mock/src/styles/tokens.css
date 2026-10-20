@@ -19,6 +19,8 @@
   --color-accent: #5f7a89;          /* sampled from logo.jpeg; fills, lines >=3px, large text */
   --color-accent-strong: #526a77;   /* With-Infravana text + favourable-delta check, lines <=2px, markers, C1 savings outline/pattern, active frame; never generic links */
   --color-accent-hover: #445762;    /* hover/pressed on active frame and Infravana marks */
+  --color-accent-soft: #e8eef1;     /* tinted card and selected-card background */
+  --color-saved: #c9d6dd;           /* C1 "saved" block: light accent tint, reads as money not spent */
 
   /* "Today" series: greys, always with direct label + pattern/marker */
   --color-today-1: #333333;         /* solid  / circle */
@@ -49,6 +51,7 @@
   --chart-narrow-width: 560px;            /* C1 chart width below which the narrow layout applies */
   --chart-label-tiers: 2;                 /* outside-label tiers above a bar (one below) */
   --chart-chip-padding: 2px 4px;
+  --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */
   --color-notice-bg: #fff6dd;

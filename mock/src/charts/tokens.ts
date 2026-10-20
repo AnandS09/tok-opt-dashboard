@@ -17,6 +17,7 @@ export type ColourKey =
   | "grid"
   | "accent"
   | "accentStrong"
+  | "saved"
   | "today1"
   | "today2"
   | "today3"
@@ -74,6 +75,7 @@ export const COLOUR_VARS: Record<ColourKey, string> = {
   grid: "--color-grid",
   accent: "--color-accent",
   accentStrong: "--color-accent-strong",
+  saved: "--color-saved",
   today1: "--color-today-1",
   today2: "--color-today-2",
   today3: "--color-today-3",

@@ -10,6 +10,6 @@ export const INFRAVANA_LABEL = `With ${BRAND}`;
  * badge and in the CSV (design-tokens 3a). Compute's own label is not shown.
  */
 export const SAVINGS_LABEL: Record<SavingsSource, string> = {
-  arbitrage: "Saved: provider arbitrage",
-  routing: "Saved: routing",
+  arbitrage: "Saved: better price",
+  routing: "Saved: cheaper models",
 };

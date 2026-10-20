@@ -1,31 +1,12 @@
-interface HeaderProps {
-  disabled: boolean;
-  onOpenAssumptions: () => void;
-  onOpenData: () => void;
-}
-
-export function Header({ disabled, onOpenAssumptions, onOpenData }: HeaderProps) {
+/** The page header: logo and the page's name. */
+export function Header() {
   return (
     <header className="header">
-      <div className="header__brand">
-        <img
-          className="header__logo"
-          src={`${import.meta.env.BASE_URL}logo.jpeg`}
-          alt=""
-          width={40}
-          height={40}
-        />
-        <h1 className="header__title">InfraVana Playground</h1>
-        <span className="pill pill--placeholder">Mock: invented placeholder data</span>
+      <img className="header__logo" src={`${import.meta.env.BASE_URL}logo.jpeg`} alt="" width={40} height={40} />
+      <div>
+        <h1 className="header__title">AI Budget Playground</h1>
+        <p className="header__tagline">See how far your AI budget can stretch.</p>
       </div>
-      <nav className="header__actions" aria-label="Page information">
-        <button type="button" className="button" disabled={disabled} onClick={onOpenAssumptions}>
-          Assumptions
-        </button>
-        <button type="button" className="button" disabled={disabled} onClick={onOpenData}>
-          Data
-        </button>
-      </nav>
     </header>
   );
 }

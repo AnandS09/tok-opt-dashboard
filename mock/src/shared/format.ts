@@ -22,19 +22,34 @@ export function fmtShare(share: number): string {
   return fmtPct(share * 100);
 }
 
-/** Hardware ids have no label column, so show the id in capitals with spaces: "mi355x" -> "MI355X". */
+/** Hardware ids whose display name is not just the id in capitals. */
+const HW_NAMES: Record<string, string> = {
+  dmatrix_corsair: "d-Matrix Corsair",
+  rebellions_rebel: "Rebellions Rebel",
+};
+
+/** Hardware ids have no label column: a known name, else the id in capitals ("mi355x" -> "MI355X"). */
 export function hwLabel(hwId: string): string {
-  return hwId.replace(/_/g, " ").toUpperCase();
+  return HW_NAMES[hwId] ?? hwId.replace(/_/g, " ").toUpperCase();
 }
 
-/** A channel or vendor name for display: first letter capitalised, rest as given ("direct" -> "Direct"). */
+/** Plain names for the buying channels in model_offers.csv. */
+const CHANNEL_NAMES: Record<string, string> = {
+  direct: "Direct from the model maker",
+  azure: "Microsoft Azure",
+  bedrock: "AWS Bedrock",
+  neocloud: "Specialist GPU cloud",
+  "self-host": "Your own hardware",
+};
+
+/** A channel or vendor name for display: a known plain name, else first letter capitalised. */
 export function channelLabel(name: string): string {
-  return name.length === 0 ? name : name[0].toUpperCase() + name.slice(1);
+  return CHANNEL_NAMES[name] ?? (name.length === 0 ? name : name[0].toUpperCase() + name.slice(1));
 }
 
-/** Label of a self-hosted hardware segment: "Self-host · MI355X". */
+/** Label of a self-hosted hardware segment: "Own hardware (MI355X)". */
 export function selfHostLabel(hwId: string): string {
-  return `Self-host · ${hwLabel(hwId)}`;
+  return `Own hardware (${hwLabel(hwId)})`;
 }
 
 // ---------------------------------------------------------------------------

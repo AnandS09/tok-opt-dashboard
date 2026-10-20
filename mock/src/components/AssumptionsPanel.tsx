@@ -48,14 +48,14 @@ export function AssumptionsPanel({ tables, response, stage, section, onClose }: 
 
   return (
     <Drawer title="Assumptions and data" onClose={onClose}>
-      <p className="panel__warning">
-        All data is invented placeholder data. Nothing here is measured, quoted or taken from a vendor.
+      <p className="panel__muted">
+        All figures are illustrative placeholders. Nothing here is measured, quoted or taken from a vendor.
       </p>
 
       <section aria-labelledby="panel-assumed">
-        <h3 id="panel-assumed">Defaults that were filled in</h3>
+        <h3 id="panel-assumed">What we filled in for you</h3>
         {assumed.length === 0 ? (
-          <p>Every value was stated in the prompt.</p>
+          <p>Every value came from your answers.</p>
         ) : (
           <ul className="panel__list">
             {assumed.map((item) => (
@@ -66,13 +66,13 @@ export function AssumptionsPanel({ tables, response, stage, section, onClose }: 
           </ul>
         )}
         <p className="panel__muted">
-          Values the prompt did not state are filled from the data tables and marked "assumed" in the
-          Understood strip.
+          Anything your answers did not cover uses a typical value from the data tables. You can change
+          it under "Fine-tune the assumptions".
         </p>
       </section>
 
       <section aria-labelledby="panel-baseline">
-        <h3 id="panel-baseline">How "today" is defined ({STAGE_LABEL[stage]} stage)</h3>
+        <h3 id="panel-baseline">How "today" is defined ({STAGE_LABEL[stage].toLowerCase()})</h3>
         <p>
           Today is a documented typical buyer, not the cheapest possible one: a company new to AI that is
           scaling from vendor options for individuals towards platforms that serve at scale. Seats and API
@@ -161,7 +161,7 @@ export function AssumptionsPanel({ tables, response, stage, section, onClose }: 
               const def = manifest.parameters.latency_classes[cls];
               return (
                 <li key={cls}>
-                  {LATENCY_LABEL[cls]} latency: at least {def.min_tok_s_per_user} tokens per second per user
+                  Answers {LATENCY_LABEL[cls]}: at least {def.min_tok_s_per_user} tokens per second per user
                   {def.max_p95_ttft_ms === null ? "" : `, first token within ${def.max_p95_ttft_ms} ms`}
                 </li>
               );
