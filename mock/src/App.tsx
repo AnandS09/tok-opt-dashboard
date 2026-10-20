@@ -195,7 +195,17 @@ export default function App() {
       <>
         <section className="situation card" aria-label="Your situation" ref={situationRef} tabIndex={-1}>
           {company ? (
-            <IntakeSentence tables={tables} scenario={scenario} company={company} onCompany={setCompany} onEdit={edit} />
+            <IntakeSentence
+              tables={tables}
+              scenario={scenario}
+              company={company}
+              onCompany={(next) => {
+                // The new type's pre-fill becomes what Undo fine-tuning restores.
+                setCompany(next);
+                dispatch({ type: "scenario_committed", answered: ANSWERED });
+              }}
+              onEdit={edit}
+            />
           ) : null}
           <details className="finetune">
             <summary>Fine-tune the assumptions</summary>

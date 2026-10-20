@@ -136,7 +136,7 @@ export function IntakeQuestions({
 }: QuestionsProps) {
   const [current, setCurrent] = useState<StepId>("company");
   const [answered, setAnswered] = useState<StepId[]>([]);
-  /** The work cards switched on; empty until the visitor picks one. */
+  /** The work cards switched on; the company type switches all of its own on. */
   const [picked, setPicked] = useState<string[]>([]);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -151,6 +151,8 @@ export function IntakeQuestions({
   const customerWord = info?.customerWord ?? "customers";
   const { users, budget_usd_per_quarter: budget, customers = 0 } = scenario.baseline;
 
+  // With no work picked the scenario still holds the last pick, so the visitor cannot leave the work step.
+  const stuck = current === "work" && picked.length === 0;
   const go = (step: StepId) => {
     if (step === "work") setPicked(selectedWorkloads(scenario, tables));
     setCurrent(step);
@@ -167,7 +169,7 @@ export function IntakeQuestions({
   const pickCompany = (c: Company) => {
     onCompany(c.id);
     onEdit((s) => setCompany(s, c, tables));
-    setPicked([]);
+    setPicked(c.workloads);
     // Another type offers other work, so the later answers start again.
     advance(company === c.id ? answered : []);
   };
@@ -269,7 +271,13 @@ export function IntakeQuestions({
           <ul className="intake__answers" aria-label="Your answers so far">
             {chips.map((step) => (
               <li key={step}>
-                <button type="button" className="chip" aria-label={`Change: ${answerText[step]}`} onClick={() => go(step)}>
+                <button
+                  type="button"
+                  className="chip"
+                  aria-label={`Change: ${answerText[step]}`}
+                  disabled={stuck}
+                  onClick={() => go(step)}
+                >
                   {answerText[step]}
                 </button>
               </li>
@@ -285,7 +293,12 @@ export function IntakeQuestions({
         </div>
         <div className="intake__nav">
           {index > 0 ? (
-            <button type="button" className="link-button intake__back" onClick={() => go(steps[index - 1])}>
+            <button
+              type="button"
+              className="link-button intake__back"
+              disabled={stuck}
+              onClick={() => go(steps[index - 1])}
+            >
               Back
             </button>
           ) : null}
@@ -293,7 +306,7 @@ export function IntakeQuestions({
             <button
               type="button"
               className="button button--primary"
-              disabled={picked.length === 0}
+              disabled={stuck}
               onClick={() => advance()}
             >
               Continue
@@ -382,6 +395,7 @@ interface SentenceProps {
   tables: Tables;
   scenario: Scenario;
   company: CompanyType;
+  /** Called after the type's pre-fill is applied. */
   onCompany: (company: CompanyType) => void;
   onEdit: (update: (s: Scenario) => Scenario) => void;
 }
@@ -403,8 +417,8 @@ export function IntakeSentence({ tables, scenario, company, onCompany, onEdit }:
         choices={COMPANIES.map((c) => ({ value: c.id, label: c.sentence }))}
         onChange={(v) => {
           const next = companyOf(v as CompanyType);
-          onCompany(next.id);
           onEdit((s) => setCompany(s, next, tables));
+          onCompany(next.id);
         }}
       />
       {team ? (
