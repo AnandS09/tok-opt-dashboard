@@ -17,6 +17,13 @@ Run from this directory.
 | `npm run build` | Typecheck, then production build into `dist/` |
 | `npm run typecheck` | `tsc --noEmit` for `src/` and `vite.config.ts` |
 
+Development checks (not part of the app, not run by `npm run build`):
+
+| Check | Needs | Catches |
+|---|---|---|
+| `src/charts/dev/renderCheck.ts` | a node driver that bundles it | the chart options, captions, CSV and badges, rendered to a string on the server |
+| `src/charts/dev/dom/check.mjs` | jsdom installed outside the repo (`JSDOM_DIR`, see the top of the file) | a chart that fails only when the page runs in a browser (the dev server uses React StrictMode, a production build does not): mounts `src/main.tsx` and confirms C1, C5 and C3 draw a canvas on the stage and in the filmstrip. It also puts the original fault back and requires that run to fail. |
+
 ## Layout
 
 | Path | Purpose |

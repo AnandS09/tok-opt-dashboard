@@ -49,7 +49,14 @@ export function useEChart(build: OptionBuilder) {
       }
     };
     drawRef.current = draw;
-    const measure = () => setSize((prev) => (prev.width === chart.getWidth() && prev.height === chart.getHeight() ? prev : { width: chart.getWidth(), height: chart.getHeight() }));
+    // Read the size now and hand React plain numbers. A state updater that
+    // reads `chart` would run later, during a render (twice under StrictMode),
+    // by which time the chart may be disposed and getWidth would throw.
+    const measure = () => {
+      const width = chart.getWidth();
+      const height = chart.getHeight();
+      setSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
+    };
     measure();
     const observer = new ResizeObserver(() => {
       chart.resize();
