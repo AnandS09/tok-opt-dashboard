@@ -27,6 +27,29 @@
   --color-today-4: #474747;         /* dots   / diamond */
   --color-series-separator: var(--color-surface);
 
+  /* Chart-only aliases (sections 3b to 3d) */
+  --color-provenance-on-fill: var(--color-surface);       /* dashed/dotted border on filled bars */
+  --color-provenance-on-hollow: var(--color-accent-strong); /* dashed/dotted outline on hollow savings */
+  --color-chart-chip: var(--color-surface);               /* label chips on bar fills */
+  --color-budget-line: var(--color-text);
+  --color-budget-halo: var(--color-surface);
+  --color-chart-leader: var(--color-border-strong);      /* leader from outside chip to segment */
+  --color-scrim: color-mix(in srgb, var(--color-text) 50%, transparent); /* drawer backdrop; panel edge >=3:1 */
+
+  /* Chart strokes: read with getComputedStyle, parse numbers */
+  --chart-separator-width: 1px;
+  --chart-savings-outline-width: 1.5px;
+  --chart-provenance-width: 2px;          /* on filled bars; hollow savings keep 1.5px */
+  --chart-dash-modelled: 6 3;             /* dash array: modelled */
+  --chart-dash-vendor: 2 3;               /* dash array: vendor-reported */
+  --chart-budget-line-width: 1.5px;
+  --chart-budget-halo-width: 6px;         /* even width: same snap centre as the 1.5px line; 2.25px white each side */
+  --chart-leader-width: 1px;
+  --chart-min-segment-width: 4px;         /* narrower segments go to the label list */
+  --chart-narrow-width: 560px;            /* C1 chart width below which the narrow layout applies */
+  --chart-label-tiers: 2;                 /* outside-label tiers above a bar (one below) */
+  --chart-chip-padding: 2px 4px;
+
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */
   --color-notice-bg: #fff6dd;
   --color-notice-text: #6b4a00;
