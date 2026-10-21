@@ -1,0 +1,73 @@
+--- a/mock/src/main.tsx	2026-10-19 21:05:47
++++ b/mock/src/main.tsx	2026-10-21 19:29:31
+@@ -3,9 +3,65 @@
+ import App from "./App";
+ import "./styles/tokens.css";
+ import "./styles/app.css";
++import "./themes/shared.css";
++import "./themes/d1-research-note.css";
++import "./themes/d2-spec-sheet.css";
++import "./themes/d3-blueprint.css";
++import "./themes/d4-analyst-desk.css";
++import "./themes/d5-ink-and-scale.css";
++import "./intake-study/intake-study.css";
+ 
+-createRoot(document.getElementById("root")!).render(
+-  <StrictMode>
+-    <App />
+-  </StrictMode>,
+-);
++// Theme boards (scratch copy only): ?theme=d1..d5 picks a token layer and its web fonts.
++const FONTS: Record<string, { href: string; load: string[] }> = {
++  d1: {
++    href: "https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap",
++    load: ['500 32px "Newsreader"', '400 16px "Newsreader"', '400 16px "Hanken Grotesk"', '600 16px "Hanken Grotesk"', '700 16px "Hanken Grotesk"'],
++  },
++  d2: {
++    href: "https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap|https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap",
++    load: ['400 16px "Switzer"', '600 16px "Switzer"', '700 16px "Switzer"', '400 12px "JetBrains Mono"', '500 12px "JetBrains Mono"', '700 12px "JetBrains Mono"'],
++  },
++  d3: {
++    href: "https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap",
++    load: ['400 16px "Schibsted Grotesk"', '700 16px "Schibsted Grotesk"', '800 16px "Schibsted Grotesk"', '400 12px "Spline Sans Mono"', '500 12px "Spline Sans Mono"', '600 12px "Spline Sans Mono"'],
++  },
++  d4: {
++    href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
++    load: ['400 14px "IBM Plex Sans"', '600 14px "IBM Plex Sans"', '700 14px "IBM Plex Sans"', '400 12px "IBM Plex Mono"', '500 12px "IBM Plex Mono"', '600 12px "IBM Plex Mono"'],
++  },
++  d5: {
++    href: "https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Fragment+Mono&display=swap",
++    load: ['400 16px "Archivo"', '700 16px "Archivo"', '800 16px "Archivo"', '400 12px "Fragment Mono"'],
++  },
++};
++
++const theme = new URLSearchParams(location.search).get("theme") ?? "";
++const fonts = FONTS[theme];
++if (fonts) document.documentElement.dataset.theme = theme;
++
++async function ready(): Promise<void> {
++  if (!fonts) return;
++  for (const href of fonts.href.split("|")) {
++    const link = document.createElement("link");
++    link.rel = "stylesheet";
++    link.href = href;
++    document.head.appendChild(link);
++    await new Promise((resolve) => {
++      link.onload = resolve;
++      link.onerror = resolve;
++    });
++  }
++  // Charts measure text on canvas, so the faces must be loaded before the first draw.
++  await Promise.race([
++    Promise.all(fonts.load.map((f) => document.fonts.load(f))),
++    new Promise((resolve) => setTimeout(resolve, 5000)),
++  ]);
++}
++
++void ready().then(() => {
++  createRoot(document.getElementById("root")!).render(
++    <StrictMode>
++      <App />
++    </StrictMode>,
++  );
++});

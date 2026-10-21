@@ -1,0 +1,150 @@
+--- a/mock/src/components/Intake.tsx	2026-10-20 19:18:23
++++ b/mock/src/components/Intake.tsx	2026-10-21 19:32:56
+@@ -1,6 +1,17 @@
+ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+ import type { LatencyClass, Results, Scenario, Tables } from "../contract";
+ import { fmtInt, joinList, LATENCY_LABEL } from "./format";
++import { ContinuousControl, type ControlVariant } from "../intake-study/ContinuousControl";
++
++// Intake study (scratch copy only): ?layout=list|row5|grid6 and ?control=slider|stepper.
++const STUDY = new URLSearchParams(location.search);
++const LAYOUT = (STUDY.get("layout") ?? "grid6") as "list" | "row5" | "grid6";
++const CONTROL = (STUDY.get("control") ?? "slider") as ControlVariant;
++const USERS_RANGE = { min: 1, max: 10_000 };
++const CUSTOMERS_RANGE = { min: 100, max: 100_000_000 };
++const BUDGET_RANGE = { min: 1_000, max: 100_000_000 };
++/** Study proposal: budget marks one per decade, so they spread across the 1K to 100M scale. */
++const BUDGET_MARKS = [10_000, 100_000, 1_000_000, 10_000_000];
+ import { fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
+ import {
+   BUDGETS,
+@@ -38,8 +49,8 @@
+ const ICON_SHAPES: Record<CompanyType, ReactNode> = {
+   ai_first: (
+     <>
+-      <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z" />
+-      <path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
++      <path d="M12 3l9 4.5-9 4.5-9-4.5z" />
++      <path d="M3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />
+     </>
+   ),
+   software: (
+@@ -214,6 +225,22 @@
+           <span className="choice__hint">{c.line}</span>
+         </button>
+       ));
++      if (LAYOUT === "grid6") {
++        choices = (
++          <>
++            {choices}
++            <a className="choice choice--provider" href={contactUrl}>
++              <svg className="choice__icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
++                <rect x="4" y="3" width="16" height="6" rx="1" />
++                <rect x="4" y="15" width="16" height="6" rx="1" />
++                <path d="M7 6h.01M7 18h.01M12 9v6" />
++              </svg>
++              <span className="choice__label">AI compute provider</span>
++              <span className="choice__hint">You sell cloud or GPU capacity: talk to us instead</span>
++            </a>
++          </>
++        );
++      }
+       break;
+     case "work":
+       title = "What do you use AI for?";
+@@ -234,23 +261,48 @@
+       break;
+     case "users":
+       title = "How many people on your team will use AI?";
+-      choices = single(
+-        (info?.teamSizes ?? []).map((n) => ({ value: String(n), label: `About ${fmtInt(n)}`, hint: "people" })),
+-        (s, v) => setUsers(s, Number(v)),
++      choices = (
++        <ContinuousControl
++          variant={CONTROL}
++          label="People on your team who will use AI"
++          unit="people"
++          {...USERS_RANGE}
++          presets={info?.teamSizes ?? []}
++          value={users}
++          format={fmtInt}
++          onChange={(n) => onEdit((s) => setUsers(s, n))}
++        />
+       );
+       break;
+     case "customers":
+       title = `How many ${customerWord} use your AI?`;
+-      choices = single(
+-        (info?.customerCounts ?? []).map((n) => ({ value: String(n), label: `About ${fmtInt(n)}`, hint: customerWord })),
+-        (s, v) => setCustomers(s, Number(v)),
++      choices = (
++        <ContinuousControl
++          variant={CONTROL}
++          label={`Number of ${customerWord} using your AI`}
++          unit={customerWord}
++          {...CUSTOMERS_RANGE}
++          presets={info?.customerCounts ?? []}
++          value={customers}
++          format={fmtInt}
++          onChange={(n) => onEdit((s) => setCustomers(s, n))}
++        />
+       );
+       break;
+     case "budget":
+       title = "What is your AI budget each quarter?";
+-      choices = single(
+-        BUDGETS.map((n) => ({ value: String(n), label: fmtUsd(n), hint: "a quarter" })),
+-        (s, v) => setBudget(s, Number(v)),
++      choices = (
++        <ContinuousControl
++          variant={CONTROL}
++          label="AI budget per quarter"
++          unit={null}
++          money
++          {...BUDGET_RANGE}
++          presets={BUDGET_MARKS}
++          value={budget}
++          format={fmtUsd}
++          onChange={(n) => onEdit((s) => setBudget(s, n))}
++        />
+       );
+       break;
+     case "speed":
+@@ -265,7 +317,7 @@
+   const chips = steps.filter((step) => step !== current && answered.includes(step));
+ 
+   return (
+-    <section className="intake card" aria-labelledby="intake-title">
++    <section className={`intake card intake--${current}`} aria-labelledby="intake-title">
+       <div className="intake__main">
+         <label className="intake__step">
+           {info ? `Step ${index + 1} of ${steps.length}` : "Step 1"}
+@@ -292,7 +344,7 @@
+           {title}
+         </h2>
+         {current === "work" ? <p className="intake__note">Pick all that apply.</p> : null}
+-        <div className="choices" role="group" aria-labelledby="intake-title">
++        <div className={`choices choices--${current === "company" ? LAYOUT : "control"}`} role="group" aria-labelledby="intake-title">
+           {choices}
+         </div>
+         <div className="intake__nav">
+@@ -306,7 +358,7 @@
+               Back
+             </button>
+           ) : null}
+-          {current === "work" ? (
++          {current === "work" || current === "users" || current === "customers" || current === "budget" ? (
+             <button
+               type="button"
+               className="button button--primary"
+@@ -317,8 +369,8 @@
+             </button>
+           ) : null}
+         </div>
+-        {current === "company" ? (
+-          <a className="intake__aside" href={contactUrl}>
++        {current === "company" && LAYOUT !== "grid6" ? (
++          <a className={`intake__aside intake__aside--${LAYOUT}`} href={contactUrl}>
+             I sell AI compute (cloud or GPU provider)
+           </a>
+         ) : null}
