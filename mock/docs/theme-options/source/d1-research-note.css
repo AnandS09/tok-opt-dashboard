@@ -1,0 +1,83 @@
+/* D1 Research Note: warm paper, serif display, figures numbered and sourced. */
+:root[data-theme="d1"] {
+  --color-bg: #f6f4ef;
+  --color-bg-top: #f6f4ef;
+  --color-surface: #fbfaf6;
+  --color-surface-muted: #eeebe3;
+  --color-skeleton: #e6e2d8;
+  --color-text: #1c1c1a;
+  --color-text-secondary: #5c5a55;
+  --color-text-disabled: #8a867f;
+  --color-border: #d6d1c7;
+  --color-border-strong: #8a867f;
+  --color-grid: #e4e0d7;
+  --color-accent: #466577;
+  --color-accent-strong: #3d5a6b;
+  --color-accent-deep: #2f4856;
+  --color-accent-hover: #233843;
+  --color-accent-soft: #e8ebea;
+  --color-hero-end: #e8ebea;
+  --color-positive: #1f6b5e;
+  --color-saved: #dcebe5;
+  --color-today-1: #2a2a28;
+  --color-today-2: #43413d;
+  --color-today-3: #43413d;
+  --color-today-4: #2a2a28;
+  --font-sans: "Hanken Grotesk", Arial, sans-serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-pill: 2px;
+  --shadow-card: none;
+  --shadow-stage: 0 0 0 1px #d6d1c7;
+}
+[data-theme="d1"] body { counter-reset: fig; }
+[data-theme="d1"] .header,
+[data-theme="d1"] .page,
+[data-theme="d1"] .footer { max-width: 1040px; }
+[data-theme="d1"] .header { border-bottom: 1px solid var(--color-text); padding-bottom: var(--space-4); margin-bottom: var(--space-5); }
+[data-theme="d1"] .header__logo { background: transparent; padding: 0; }
+[data-theme="d1"] .header__title { font-family: var(--font-display); font-weight: 500; font-size: 1.9rem; letter-spacing: -0.01em; }
+[data-theme="d1"] .header__tagline { font-family: var(--font-display); font-style: italic; font-size: 1.05rem; }
+[data-theme="d1"] .card { background: transparent; border: 0; border-top: 1px solid var(--color-border); border-radius: 0; padding-left: 0; padding-right: 0; }
+[data-theme="d1"] .intake { padding: var(--space-5) 0; grid-template-columns: minmax(0, 1fr) 240px; gap: var(--space-7); border-top: 0; }
+[data-theme="d1"] .intake__step { font-size: var(--font-size-xs); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+[data-theme="d1"] .intake__progress { height: 2px; border-radius: 0; }
+[data-theme="d1"] .intake__title { font-family: var(--font-display); font-weight: 500; font-size: 2.6rem; letter-spacing: -0.015em; }
+[data-theme="d1"] .choice { background: var(--color-surface); border-color: var(--color-border); min-height: 96px; }
+[data-theme="d1"] .choice:hover,
+[data-theme="d1"] .choice[aria-pressed="true"] { background: #ffffff; border-color: var(--color-accent-strong); }
+[data-theme="d1"] .choice__label { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; line-height: 1.2; }
+[data-theme="d1"] .choice__icon { color: var(--color-accent-strong); }
+[data-theme="d1"] .estimate { background: transparent; border-left: 1px solid var(--color-text); border-radius: 0; padding: 0 0 0 var(--space-5); }
+[data-theme="d1"] .estimate__title { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 1.1rem; }
+[data-theme="d1"] .estimate__figures dd { font-family: var(--font-display); font-weight: 500; font-size: 1.6rem; }
+[data-theme="d1"] .chip { border-color: var(--color-border-strong); background: transparent; }
+[data-theme="d1"] .chip[aria-pressed="true"] { background: var(--color-text); color: var(--color-surface); border-color: var(--color-text); }
+[data-theme="d1"] .sentence { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.7; }
+[data-theme="d1"] .blank { background: transparent; border-bottom: 1px solid var(--color-accent-strong); font-family: var(--font-display); font-weight: 600; border-radius: 0; }
+[data-theme="d1"] .hero { background: transparent; border-top: 3px double var(--color-text); padding: var(--space-6) 0; }
+[data-theme="d1"] .hero__lead { font-family: var(--font-display); font-style: italic; }
+[data-theme="d1"] .hero__figure { font-family: var(--font-display); font-weight: 500; font-size: 3.6rem; letter-spacing: -0.02em; }
+[data-theme="d1"] .button--primary { border-radius: 2px; letter-spacing: 0.01em; }
+[data-theme="d1"] .chart-card { counter-increment: fig; border-top: 1px solid var(--color-text); padding: var(--space-5) 0 var(--space-4); }
+[data-theme="d1"] .chart-card__title { font-family: var(--font-display); font-weight: 500; font-size: 1.85rem; letter-spacing: -0.01em; }
+[data-theme="d1"] .chart-card__title::before { content: "Figure " counter(fig) ". "; color: var(--color-text-secondary); font-style: italic; font-weight: 400; }
+[data-theme="d1"] .chart-card::after {
+  content: "Source: InfraVana cost model on illustrative price tables.  Note: all figures are invented placeholders, not quotes.";
+  display: block; padding-top: var(--space-2); border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary); font-size: var(--font-size-xs);
+}
+[data-theme="d1"] .chart-card__how { order: 9; }
+[data-theme="d1"] .cta { border-top: 1px solid var(--color-text); padding: var(--space-6) 0; }
+[data-theme="d1"] .cta__title { font-family: var(--font-display); font-weight: 500; font-size: 2rem; }
+[data-theme="d1"] .footer { border-top: 1px solid var(--color-text); font-style: italic; }
+[data-theme="d1"] .situation { border-top: 0; padding-top: 0; }
+@media (max-width: 600px) {
+  [data-theme="d1"] .intake__title { font-size: 1.9rem; }
+  [data-theme="d1"] .hero__figure { font-size: 2.3rem; }
+  [data-theme="d1"] .sentence { font-size: 1.3rem; }
+  [data-theme="d1"] .estimate { border-left: 0; border-top: 1px solid var(--color-text); background: var(--color-bg); padding: var(--space-2) 0; }
+  [data-theme="d1"] .chart-card__title { font-size: 1.45rem; }
+}

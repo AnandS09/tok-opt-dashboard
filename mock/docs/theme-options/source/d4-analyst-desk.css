@@ -1,0 +1,122 @@
+/* D4 Analyst Desk: compact light workspace, IBM Plex, every figure shown with its numbers. */
+:root[data-theme="d4"] {
+  --color-bg: #f2f3f4;
+  --color-bg-top: #f2f3f4;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f6f7;
+  --color-skeleton: #e6e8ea;
+  --color-text: #15171a;
+  --color-text-secondary: #535a60;
+  --color-text-disabled: #858b90;
+  --color-border: #d9dce0;
+  --color-border-strong: #858b90;
+  --color-grid: #eceef0;
+  --color-accent: #3d6880;
+  --color-accent-strong: #345a6f;
+  --color-accent-deep: #2b4b5d;
+  --color-accent-hover: #213a48;
+  --color-accent-soft: #e9eff3;
+  --color-hero-end: #e9eff3;
+  --color-positive: #1f6b5e;
+  --color-saved: #ddeee8;
+  --color-today-1: #25282b;
+  --color-today-2: #43474b;
+  --color-today-3: #43474b;
+  --color-today-4: #25282b;
+  --font-sans: "IBM Plex Sans", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-size-md: 0.875rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.6rem;
+  --font-size-display: 2rem;
+  --radius-sm: 3px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-pill: 3px;
+  --shadow-card: none;
+  --chart-stage-height: 280px;
+}
+[data-theme="d4"] .header,
+[data-theme="d4"] .page,
+[data-theme="d4"] .footer { max-width: 1280px; }
+[data-theme="d4"] .header { padding-top: var(--space-3); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-4); background: var(--color-surface); max-width: none; padding-left: calc((100% - 1280px) / 2 + var(--space-4)); padding-right: calc((100% - 1280px) / 2 + var(--space-4)); }
+[data-theme="d4"] .header__logo { width: 32px; height: 32px; padding: 0; }
+[data-theme="d4"] .header > div { display: flex; align-items: baseline; gap: var(--space-3); }
+[data-theme="d4"] .header__title { font-size: 1rem; font-weight: 600; }
+[data-theme="d4"] .header__tagline { font-size: 0.8rem; }
+[data-theme="d4"] .page { gap: var(--space-3); }
+[data-theme="d4"] .card { padding: var(--space-4); }
+[data-theme="d4"] .intake__step,
+[data-theme="d4"] .estimate__title,
+[data-theme="d4"] .examples__label,
+[data-theme="d4"] .hero__lead,
+[data-theme="d4"] .finetune > summary {
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary);
+}
+[data-theme="d4"] .intake { grid-template-columns: minmax(0, 1fr) 300px; padding: 0; gap: 0; }
+[data-theme="d4"] .intake__main { padding: var(--space-5); }
+[data-theme="d4"] .intake__progress { height: 3px; border-radius: 0; }
+[data-theme="d4"] .intake__title { font-weight: 600; letter-spacing: -0.01em; }
+[data-theme="d4"] .choices { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-2); }
+[data-theme="d4"] .choice { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); min-height: 0; padding: var(--space-3); border-color: var(--color-border); }
+[data-theme="d4"] .choice__icon { width: 18px; height: 18px; color: var(--color-accent-strong); }
+[data-theme="d4"] .choice__label { font-size: 0.875rem; font-weight: 600; }
+[data-theme="d4"] .choice__hint { flex-basis: 100%; font-size: 0.78rem; }
+[data-theme="d4"] .choice:hover,
+[data-theme="d4"] .choice[aria-pressed="true"] { background: var(--color-accent-soft); }
+[data-theme="d4"] .estimate { position: static; align-self: stretch; border-radius: 0; background: var(--color-surface-muted); border-left: 1px solid var(--color-border); padding: var(--space-5); }
+[data-theme="d4"] .estimate__figures { gap: 0; }
+[data-theme="d4"] .estimate__figures > div { display: flex; justify-content: space-between; align-items: baseline; padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); }
+[data-theme="d4"] .estimate__figures dd { font-family: var(--font-mono); font-size: 1rem; font-weight: 500; }
+[data-theme="d4"] .estimate__saving dd { color: var(--color-positive); }
+[data-theme="d4"] .chip { font-size: 0.78rem; min-height: 30px; }
+[data-theme="d4"] .chip[aria-pressed="true"] { background: var(--color-accent-soft); }
+[data-theme="d4"] .button--primary { min-height: 36px; font-size: 0.875rem; font-weight: 600; }
+[data-theme="d4"] .sentence { font-size: 1.15rem; line-height: 1.9; }
+[data-theme="d4"] .blank { background: var(--color-accent-soft); font-family: var(--font-mono); font-weight: 500; font-size: 0.95em; }
+/* Result: hero as a summary row of figures */
+[data-theme="d4"] .hero { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; align-items: center; column-gap: var(--space-6); row-gap: var(--space-1); padding: var(--space-4) var(--space-5); background: var(--color-surface); border-left: 3px solid var(--color-positive); }
+[data-theme="d4"] .hero__lead { grid-column: 1; grid-row: 1; }
+[data-theme="d4"] .hero__figure { grid-column: 1; grid-row: 2; font-family: var(--font-mono); font-weight: 500; font-size: 1.75rem; letter-spacing: -0.02em; }
+[data-theme="d4"] .hero__stats { grid-column: 2; grid-row: 1 / 3; font-size: 0.875rem; flex-direction: column; gap: var(--space-1); }
+[data-theme="d4"] .hero__stats strong { font-family: var(--font-mono); font-weight: 600; }
+[data-theme="d4"] .hero__basis { grid-column: 2; grid-row: 3; margin: 0; font-size: 0.75rem; }
+[data-theme="d4"] .hero .button--primary { grid-column: 3; grid-row: 1 / 3; }
+[data-theme="d4"] .chart-card { border-top: 1px solid var(--color-border); padding: var(--space-4) var(--space-5); }
+[data-theme="d4"] .chart-card__title { font-size: 1rem; font-weight: 600; }
+[data-theme="d4"] .chart-card__title::after { content: "USD per quarter \00B7  illustrative placeholder data"; margin-left: var(--space-3); font-size: 0.72rem; font-weight: 400; color: var(--color-text-secondary); }
+[data-theme="d4"] .chart-card__caption { font-size: 0.82rem; }
+[data-theme="d4"] .chart-frame { display: grid !important; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-5) !important; align-items: start; }
+[data-theme="d4"] .chart-frame__table { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip-path: none; white-space: normal; }
+[data-theme="d4"] .chart-frame__table table { font-family: var(--font-mono); font-size: 0.75rem; }
+[data-theme="d4"] .chart-frame__table caption { caption-side: top; text-align: left; padding-bottom: var(--space-2); font-family: var(--font-sans); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-secondary); }
+[data-theme="d4"] .chart-frame__table th { font-family: var(--font-sans); font-weight: 600; background: var(--color-surface-muted); }
+[data-theme="d4"] .chart-frame__table td:last-child,
+[data-theme="d4"] .chart-frame__table th:last-child { text-align: right; }
+[data-theme="d4"] .cta { flex-direction: row; align-items: center; flex-wrap: wrap; padding: var(--space-4) var(--space-5); }
+[data-theme="d4"] .cta__title { font-size: 1rem; }
+[data-theme="d4"] .footer { font-size: 0.75rem; }
+@media (max-width: 900px) {
+  [data-theme="d4"] .chart-frame { grid-template-columns: minmax(0, 1fr); }
+  [data-theme="d4"] .hero { grid-template-columns: 1fr; }
+  [data-theme="d4"] .hero > * { grid-column: 1 !important; grid-row: auto !important; }
+  [data-theme="d4"] .header { padding-left: var(--space-4); padding-right: var(--space-4); }
+}
+@media (max-width: 720px) {
+  [data-theme="d4"] .intake { display: flex; }
+  [data-theme="d4"] .estimate { position: sticky; bottom: 0; border-left: 0; border-top: 1px solid var(--color-border); padding: var(--space-2) var(--space-3); }
+  [data-theme="d4"] .estimate__figures > div { border: 0; padding: 0; gap: var(--space-1); }
+  [data-theme="d4"] .chart-card__title::after { display: block; margin: 2px 0 0; }
+}
+@media (max-width: 600px) {
+  [data-theme="d4"] .choices { grid-template-columns: 1fr 1fr; }
+  [data-theme="d4"] .intake__main { padding: var(--space-4); }
+}
+[data-theme="d4"] .choice { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; row-gap: 2px; }
+[data-theme="d4"] .choice__hint { flex-basis: auto; }
+[data-theme="d4"] .hero__figure { font-family: var(--font-sans); font-weight: 600; font-size: 1.9rem; }
+[data-theme="d4"] .chart-frame__table table { font-family: var(--font-sans); }
+[data-theme="d4"] .chart-frame__table td:last-child { font-family: var(--font-mono); }
+[data-theme="d4"] .chart-frame__table caption { text-transform: none; letter-spacing: 0; font-size: 0.75rem; font-weight: 500; }
+[data-theme="d4"] .chart-card__title::after { content: "Illustrative placeholder data"; }

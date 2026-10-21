@@ -1,0 +1,121 @@
+/* D3 Blueprint: drafting sheet, dashed construction grid, zero radius, saturated steel-cobalt,
+   dimension lines for the saving. */
+:root[data-theme="d3"] {
+  --color-bg: #fbfbfa;
+  --color-bg-top: #fbfbfa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f3f4;
+  --color-skeleton: #e9ecee;
+  --color-text: #111314;
+  --color-text-secondary: #555b60;
+  --color-text-disabled: #7d858b;
+  --color-border: #c9ced2;
+  --color-border-strong: #7d858b;
+  --color-grid: #e3e6e9;
+  --color-accent: #2f6f93;
+  --color-accent-strong: #275f7e;
+  --color-accent-deep: #1f4f6a;
+  --color-accent-hover: #173d52;
+  --color-accent-soft: #e7f0f5;
+  --color-hero-end: #e7f0f5;
+  --color-positive: #1f6b5e;
+  --color-saved: #dcefe9;
+  --color-today-1: #222222;
+  --color-today-2: #454545;
+  --color-today-3: #454545;
+  --color-today-4: #222222;
+  --font-sans: "Schibsted Grotesk", Arial, sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, monospace;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-pill: 0;
+  --shadow-card: none;
+  --shadow-stage: none;
+  --dash: repeating-linear-gradient(90deg, #c9ced2 0 4px, transparent 4px 8px);
+}
+[data-theme="d3"] body {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(201, 206, 210, 0.55) calc(10% - 1px) 10%),
+    var(--color-bg);
+}
+[data-theme="d3"] .header,
+[data-theme="d3"] .page,
+[data-theme="d3"] .footer { max-width: 1120px; }
+[data-theme="d3"] .header { position: relative; padding-bottom: var(--space-5); }
+[data-theme="d3"] .header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--dash); }
+[data-theme="d3"] .header__logo { background: #f9f9f9; padding: 2px; outline: 1px solid var(--color-border); }
+[data-theme="d3"] .header__title { font-weight: 800; letter-spacing: -0.02em; font-size: 1.7rem; }
+[data-theme="d3"] .header__tagline { font-family: var(--font-mono); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+[data-theme="d3"] .card { border: 1px solid var(--color-border); position: relative; }
+/* registration ticks on every panel corner */
+[data-theme="d3"] .card::before {
+  content: ""; position: absolute; inset: -6px; pointer-events: none;
+  background:
+    linear-gradient(var(--color-text), var(--color-text)) top left / 11px 1px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) top left / 1px 11px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) top right / 11px 1px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) top right / 1px 11px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) bottom left / 11px 1px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) bottom left / 1px 11px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) bottom right / 11px 1px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) bottom right / 1px 11px no-repeat;
+}
+[data-theme="d3"] .intake { grid-template-columns: minmax(0, 1fr) 260px; gap: var(--space-6); padding: var(--space-6); }
+[data-theme="d3"] .intake__step,
+[data-theme="d3"] .examples__label,
+[data-theme="d3"] .estimate__title,
+[data-theme="d3"] .estimate__figures dt,
+[data-theme="d3"] .hero__lead,
+[data-theme="d3"] .footer { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.74rem; }
+[data-theme="d3"] .intake__progress { height: 4px; }
+[data-theme="d3"] .intake__title { font-weight: 800; font-size: 2.5rem; letter-spacing: -0.03em; }
+[data-theme="d3"] .choice { border-color: var(--color-border); min-height: 112px; }
+[data-theme="d3"] .choice:hover,
+[data-theme="d3"] .choice[aria-pressed="true"] { background: var(--color-surface); border-color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+[data-theme="d3"] .choice__icon { color: var(--color-accent); }
+[data-theme="d3"] .choice__label { font-weight: 700; }
+[data-theme="d3"] .estimate { background: var(--color-surface); border: 1px dashed var(--color-border-strong); }
+[data-theme="d3"] .estimate__figures dd { font-family: var(--font-mono); font-weight: 500; }
+[data-theme="d3"] .estimate__saving dd { color: var(--color-accent-strong); }
+[data-theme="d3"] .chip,
+[data-theme="d3"] .button { font-family: var(--font-mono); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+[data-theme="d3"] .chip { background: var(--color-surface); }
+[data-theme="d3"] .chip[aria-pressed="true"] { background: var(--color-accent); color: #ffffff; border-color: var(--color-accent); }
+[data-theme="d3"] .button--primary { background: var(--color-accent); border-color: var(--color-accent); }
+[data-theme="d3"] .button--primary::after { content: " \2192"; }
+[data-theme="d3"] .sentence { font-size: 1.6rem; font-weight: 500; }
+[data-theme="d3"] .blank { background: transparent; border-bottom: 1px dashed var(--color-accent); color: var(--color-accent-strong); }
+/* Hero: the saving drawn as a dimension line, with end ticks, like a drawing annotation */
+[data-theme="d3"] .hero { background: var(--color-surface); }
+[data-theme="d3"] .hero__figure {
+  position: relative; display: inline-block; padding: 0 22px 22px; font-weight: 800; font-size: 3.4rem; letter-spacing: -0.03em;
+  background:
+    linear-gradient(var(--color-positive), var(--color-positive)) left bottom 6px / 100% 1px no-repeat,
+    linear-gradient(var(--color-positive), var(--color-positive)) left bottom / 1px 13px no-repeat,
+    linear-gradient(var(--color-positive), var(--color-positive)) right bottom / 1px 13px no-repeat;
+}
+[data-theme="d3"] .hero__stats strong { font-family: var(--font-mono); font-weight: 600; }
+[data-theme="d3"] .chart-card { border-top: 1px solid var(--color-border); }
+[data-theme="d3"] .chart-card__title { font-weight: 800; letter-spacing: -0.02em; }
+[data-theme="d3"] .chart-card__title::after { content: "Illustrative data"; margin-left: var(--space-3); padding: 1px 6px; border: 1px dashed var(--color-border-strong); font-family: var(--font-mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-secondary); vertical-align: middle; }
+[data-theme="d3"] .situation__foot { border-top: 1px dashed var(--color-border); }
+@media (max-width: 600px) {
+  [data-theme="d3"] .intake { padding: var(--space-4); }
+  [data-theme="d3"] .intake__title { font-size: 1.75rem; }
+  [data-theme="d3"] .hero__figure { font-size: 2.1rem; padding: 0 12px 20px; }
+  [data-theme="d3"] .sentence { font-size: 1.2rem; }
+  [data-theme="d3"] .chart-card__title::after { display: block; width: max-content; margin: var(--space-2) 0 0; }
+}
+/* Schibsted's tabular set spaces out "." and ",", so tabular figures only where numbers align. */
+[data-theme="d3"] body { font-variant-numeric: normal; }
+[data-theme="d3"] .estimate__figures dd,
+[data-theme="d3"] .hero__stats strong { font-variant-numeric: tabular-nums; }
+[data-theme="d3"] .hero__figure { padding: 0 0 22px; }
+[data-theme="d3"] .card::before {
+  background:
+    linear-gradient(var(--color-text), var(--color-text)) top left / 11px 1px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) top left / 1px 11px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) bottom right / 11px 1px no-repeat,
+    linear-gradient(var(--color-text), var(--color-text)) bottom right / 1px 11px no-repeat;
+}
