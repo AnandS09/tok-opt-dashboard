@@ -97,7 +97,7 @@ describe("enum values", () => {
     const text = replaceCsvLine(
       fixtureText("model_offers.csv"),
       prefix,
-      "frontier_a_direct_global,frontier_a,carrier_pigeon,global,10.0,50.0,0,,,https://example.invalid/x,2026-10-19",
+      "frontier_a_direct_global,frontier_a,carrier_pigeon,global,10.0,50.0,0,,,https://example.invalid/x,2026-10-19,standard,vendor_reported,,",
     );
     expect(await failure({ "model_offers.csv": text })).toContain(
       'model_offers.csv: column "channel" on line 2 must be one of direct, bedrock, ec2, neocloud, self-host, got "carrier_pigeon"',
