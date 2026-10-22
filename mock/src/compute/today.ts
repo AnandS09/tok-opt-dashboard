@@ -62,6 +62,14 @@ export interface TodayLine {
   tokens: number;
 }
 
+/** The best single option has no offer that meets every floor in effect (spec 6.1). */
+export class NoBestSingleError extends Error {
+  constructor(readonly patternId: PatternId) {
+    super(`buying_patterns.csv: no single offer meets every quality floor, so "${patternId}" has no result`);
+    this.name = "NoBestSingleError";
+  }
+}
+
 export interface TodayResult {
   total_usd: number;
   segments: SpendSegment[];
@@ -141,7 +149,7 @@ export function computeToday(
   if (pattern.kind === "best_single") {
     const derived = deriveBestSingle(pattern, demand, tables);
     if (derived === null) {
-      throw new Error(`buying_patterns.csv: no single offer meets every quality floor, so "${patternId}" has no result`);
+      throw new NoBestSingleError(patternId);
     }
     return computeTodayFromRows(demand, tables, derived.rows, pattern.pricing_rule, patternId);
   }

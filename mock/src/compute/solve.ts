@@ -15,6 +15,7 @@ import type {
 import { USERS_RANGE } from "../data/ranges";
 import { computeCore } from "./core";
 import { SpeedInfeasibleError } from "./infravana";
+import { NoBestSingleError } from "./today";
 import { compositeScores } from "./patterns";
 import { speedUnavailableReason } from "./tradeoff";
 
@@ -331,7 +332,8 @@ export function frontier(
           : computeCore(own, tables, { min_tok_s_per_user: threshold });
       return core.tokens_bought.infravana_tokens;
     } catch (error) {
-      if (error instanceof SpeedInfeasibleError) return null;
+      // A global floor above every model of the comparator's kind leaves no plan at that threshold, as a speed no offer meets does.
+      if (error instanceof SpeedInfeasibleError || error instanceof NoBestSingleError) return null;
       throw error;
     }
   };
