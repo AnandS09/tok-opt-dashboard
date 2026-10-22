@@ -1,0 +1,150 @@
+/*
+ * The comparison set: the chart marks that carry patterns and provenance
+ * (design-tokens 3), the provenance badges and source line under a chart
+ * (3.4, 3.5) and the "Compared with" selector (spec 6.1).
+ *
+ * Every colour is an alias of a token in tokens.css; this file holds no hex.
+ * The new custom properties below are the designer's section 7 additions to
+ * the token block. They sit here because tokens.css is shared with other
+ * units; moving them into tokens.css changes nothing, since both load on every page.
+ */
+
+:root {
+  /* Pattern and provenance marks on chart fills (design-tokens 3.1, 3.3) */
+  --color-pattern-on-fill: var(--color-surface);       /* decal colour on grey and accent fills */
+  --color-pattern-on-saved: var(--color-positive);     /* decal colour on the hollow savings segments */
+  --color-provenance-on-fill: var(--color-surface);    /* dashed and dotted perimeter on a fill */
+  --color-provenance-on-hollow: var(--color-positive); /* the same on a savings segment */
+  --chart-provenance-width: 2px;
+  --chart-dash-modelled: 6 3;                          /* dash array: modelled */
+  --chart-dash-vendor: 2 3;                            /* dash array: vendor-reported */
+}
+
+/* A chart with its own stage height (more rows, or a wrapping legend on a phone). */
+.chart-figure {
+  --chart-stage-height: var(--figure-height);
+}
+
+@media (max-width: 600px) {
+  .chart-figure {
+    --chart-stage-height: var(--figure-height-phone);
+  }
+}
+
+/* ---- Provenance badges and source line (design-tokens 3.4, 3.5) ---- */
+
+.chart-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.chart-notes__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prov-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.prov-badge--measured {
+  border-style: solid;
+  border-color: var(--color-text);
+}
+
+.prov-badge--modelled {
+  border-style: dashed;
+}
+
+.prov-badge--vendor_reported {
+  border-style: dotted;
+  border-width: 2px;
+}
+
+.prov-badge--invented {
+  background: var(--color-notice-bg);
+  border: 1px solid var(--color-notice-border);
+  color: var(--color-notice-text);
+}
+
+.prov-badge a {
+  color: inherit;
+}
+
+/*
+ * A card that carries its own source line (the notes above) drops the generic
+ * one the page stylesheet draws after every card, so a figure never ends with two.
+ * The text of the line varies by chart (invented speed rows say so), so it
+ * belongs to the chart and not to a stylesheet.
+ */
+.chart-card:has(.chart-notes)::after {
+  content: none;
+}
+
+.chart-source {
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.chart-source b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* ---- "Compared with" selector (spec 6.1) ---- */
+
+.compare-select {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.compare-select__label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.compare-select__control {
+  min-height: 44px;
+  max-width: 100%;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-md);
+}
+
+.compare-select__control:hover {
+  background: var(--color-surface-raised);
+  border-color: var(--color-accent-strong);
+}
+
+.compare-select__hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
