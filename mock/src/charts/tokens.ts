@@ -10,6 +10,7 @@
 /** Colour and font-family tokens, kept as the text the stylesheet gives. */
 export type ColourKey =
   | "surface"
+  | "surfaceRaised"
   | "separator"
   | "text"
   | "textSecondary"
@@ -55,6 +56,7 @@ export type Tokens = Record<ColourKey, string> &
  */
 export const COLOUR_VARS: Record<ColourKey, string> = {
   surface: "--color-chart-ground",
+  surfaceRaised: "--color-surface-raised",
   separator: "--color-series-separator",
   text: "--color-text",
   textSecondary: "--color-text-secondary",
