@@ -799,6 +799,40 @@ export interface GoalView {
   stale: boolean;
   /** The solver's failure message, or null. */
   error: string | null;
+  /** G4 only: the two calls and the steps behind it (spec 6.2); absent in every other tab. */
+  tradeoff?: TradeoffView;
+}
+
+/** One position of a G4 stepped control. */
+export interface TradeoffLevel {
+  /** The step number the control and the address use (0 is no give-up). */
+  step: number;
+  /** The InfraVana quality floors at this step (`infravana_side`), by workload id. */
+  floors: Record<string, number>;
+  /** The InfraVana latency class at this step (`infravana_side`). */
+  latency_class: LatencyClass;
+}
+
+/**
+ * What the G4 tab reads (spec 6.2, "Two calls"). `GoalView` carries it, so the
+ * hero, the controls and the charts that note invented data all see the same one.
+ */
+export interface TradeoffView {
+  /** The call at the visitor's own floors and speed: the G1 result, and Today's figures. */
+  untraded: Results;
+  /** The steps in force, after being held to the lists below. */
+  qualityStep: number;
+  speedStep: number;
+  /** Every position of the quality control, step 0 first. */
+  qualityLevels: TradeoffLevel[];
+  /** Every position of the speed control, step 0 first. */
+  speedLevels: TradeoffLevel[];
+  /** Why the speed control is disabled, or null while it can be used. */
+  speedReason: string | null;
+  /** True when the page is showing figures that draw on the invented speed rows (spec 12 BD-11). */
+  invented: boolean;
+  /** The trade-off's own failure message when its call could not be made, else null. */
+  error: string | null;
 }
 
 /**

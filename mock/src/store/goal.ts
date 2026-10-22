@@ -28,22 +28,13 @@ export const GOAL_TABS: Record<GoalId, GoalTabInfo> = {
   G4: { id: "G4", label: "Accept a trade-off", lead: "If you accept less quality or speed" },
 };
 
-/**
- * Whether the controls of the G4 trade-off exist yet. While they do not, the
- * tab is shown disabled with the reason below, so the set of four tabs is
- * already the one the spec describes.
- */
-export const TRADEOFF_CONTROLS_BUILT = false;
-
-export const TRADEOFF_PENDING_REASON = "Its controls arrive in a later step.";
-
 export interface GoalTabState {
   disabled: boolean;
   /** The one-line reason a tab is disabled, else null. */
   reason: string | null;
 }
 
-/** Which tabs can be chosen for the scenario (G3 needs employee work, G4 needs its controls). */
+/** Which tabs can be chosen for the scenario (G3 needs employee work; G4 is always open, its speed control carries its own reason). */
 export function goalTabStates(scenario: Scenario, tables: Tables): Record<GoalId, GoalTabState> {
   let g3: string | null = null;
   try {
@@ -56,7 +47,7 @@ export function goalTabStates(scenario: Scenario, tables: Tables): Record<GoalId
     G1: state(null),
     G2: state(null),
     G3: state(g3),
-    G4: state(TRADEOFF_CONTROLS_BUILT ? null : TRADEOFF_PENDING_REASON),
+    G4: state(null),
   };
 }
 
