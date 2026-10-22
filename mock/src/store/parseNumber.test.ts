@@ -19,6 +19,8 @@ describe("parseNumber: the forms a visitor types (spec 5.1)", () => {
     ["20 thousand", 20_000],
     ["1.5 million", 1_500_000],
     ["2 billion", 2_000_000_000],
+    ["3b", 3_000_000_000],
+    ["1.5B", 1_500_000_000],
     [".5m", 500_000],
     ["  42  ", 42],
   ])("reads %j as %i", (text, expected) => {
