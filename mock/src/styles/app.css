@@ -1,4 +1,8 @@
-/* Layout and components. Every colour, size and space comes from tokens.css. */
+/*
+ * Layout and components in the Research Note language (spec 14): warm paper,
+ * serif titles, structure drawn by 1px rules, no shadows and no gradients.
+ * Every colour, size and space comes from tokens.css.
+ */
 
 *,
 *::before,
@@ -8,12 +12,14 @@
 
 body {
   margin: 0;
-  background: linear-gradient(var(--color-bg-top), var(--color-bg) 30rem) no-repeat, var(--color-bg);
+  background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--font-size-md);
   line-height: var(--line-height-body);
   font-variant-numeric: tabular-nums lining-nums;
+  /* Numbers the figure titles: "Figure 1.", "Figure 2." in page order. */
+  counter-reset: fig;
 }
 
 h1,
@@ -45,6 +51,19 @@ a {
   outline-offset: var(--focus-ring-offset);
 }
 
+/* Containers and headings that only take focus from script (tabIndex -1) must not draw a box. */
+.intake__title:focus,
+.situation:focus {
+  outline: none;
+}
+
+.intake__title,
+.hero__figure,
+.chart-card__title,
+.cta__title {
+  text-wrap: balance;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -68,11 +87,11 @@ a {
 .header,
 .page,
 .footer {
-  width: 100%;
-  max-width: 960px;
+  /* No side padding: the section rules, the header rule and the footer rule all end at the same edges as the text. */
+  width: min(calc(100% - 2 * var(--space-4)), var(--page-max-width));
   margin: 0 auto;
-  padding-left: var(--space-4);
-  padding-right: var(--space-4);
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .page {
@@ -83,12 +102,14 @@ a {
   padding-bottom: var(--space-6);
 }
 
+/* A section, not a card: it sits on the paper under a 1px rule. */
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
   box-shadow: var(--shadow-card);
-  padding: var(--space-4);
+  padding: var(--space-4) 0;
 }
 
 /* ---- Buttons, inputs, chips ---- */
@@ -133,6 +154,7 @@ a {
   color: var(--color-surface);
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-bold);
+  letter-spacing: 0.01em;
   text-decoration: none;
 }
 
@@ -153,19 +175,20 @@ a {
 .chip {
   min-height: 36px;
   padding: var(--space-1) var(--space-3);
-  background: var(--color-surface);
+  background: transparent;
   color: var(--color-text);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
   font: inherit;
   font-size: var(--font-size-sm);
+  text-align: left;
   cursor: pointer;
 }
 
 .chip[aria-pressed="true"] {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent-strong);
-  color: var(--color-text);
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
 }
 
 /* ---- Header ---- */
@@ -174,35 +197,46 @@ a {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  margin-bottom: var(--space-5);
   padding-top: var(--space-5);
-  padding-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-text);
 }
 
 .header__logo {
+  display: block;
   flex: none;
-  /* The JPEG has its own off-white background: a white tile makes that box look intended on the tinted page. */
-  padding: var(--space-1);
-  background: var(--color-surface);
-  border-radius: var(--radius-sm);
+  /* No plate: multiply removes the JPEG's own off-white box on the paper without touching the logo file. */
+  padding: 0;
+  background: transparent;
+  mix-blend-mode: multiply;
 }
 
 .header__title {
-  font-size: var(--font-size-xl);
+  font-family: var(--font-display);
+  font-size: var(--font-size-header-title);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.01em;
   line-height: var(--line-height-tight);
 }
 
 .header__tagline {
   color: var(--color-text-secondary);
+  font-family: var(--font-display);
+  font-size: var(--font-size-tagline);
+  font-style: italic;
 }
 
 /* ---- Guided questions ---- */
 
 .intake {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) 240px;
   align-items: start;
-  gap: var(--space-5);
-  padding: var(--space-6);
+  gap: var(--space-7);
+  padding: var(--space-5) 0;
+  /* The header's rule already sits above it. */
+  border-top: 0;
 }
 
 .intake__main {
@@ -217,21 +251,24 @@ a {
   flex-direction: column;
   gap: var(--space-1);
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
 }
 
 .intake__progress {
   width: 100%;
-  height: 6px;
+  height: 2px;
   appearance: none;
   border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-muted);
+  border-radius: 0;
+  background: var(--color-border);
   overflow: hidden;
 }
 
 .intake__progress::-webkit-progress-bar {
-  background: var(--color-surface-muted);
+  background: var(--color-border);
 }
 
 .intake__progress::-webkit-progress-value {
@@ -279,13 +316,18 @@ a {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--color-accent-soft);
-  border-radius: var(--radius-md);
+  /* A margin note: one vertical ink rule at its left. */
+  padding: 0 0 0 var(--space-5);
+  background: transparent;
+  border-left: 1px solid var(--color-text);
+  border-radius: 0;
 }
 
 .estimate__title {
-  font-weight: var(--font-weight-bold);
+  font-family: var(--font-display);
+  font-size: var(--font-size-estimate-title);
+  font-style: italic;
+  font-weight: var(--font-weight-regular);
 }
 
 .estimate__note {
@@ -307,8 +349,9 @@ a {
 
 .estimate__figures dd {
   margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+  font-family: var(--font-display);
+  font-size: var(--font-size-estimate-figure);
+  font-weight: var(--font-weight-medium);
   font-variant-numeric: var(--font-numeric);
 }
 
@@ -317,7 +360,10 @@ a {
 }
 
 .intake__title {
-  font-size: var(--font-size-2xl);
+  font-family: var(--font-display);
+  font-size: var(--font-size-intake-title);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.015em;
   line-height: var(--line-height-tight);
 }
 
@@ -332,29 +378,25 @@ a {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-1);
-  min-height: 88px;
+  min-height: 96px;
   padding: var(--space-4);
   background: var(--color-surface);
   color: var(--color-text);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.choice:hover {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent-strong);
-}
-
+.choice:hover,
 .choice[aria-pressed="true"] {
-  background: var(--color-accent-soft);
+  background: var(--color-surface-raised);
   border-color: var(--color-accent-strong);
-  box-shadow: inset 0 0 0 1px var(--color-accent-strong);
 }
 
 .choice__icon {
+  color: var(--color-accent-strong);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -363,8 +405,10 @@ a {
 }
 
 .choice__label {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+  font-family: var(--font-display);
+  font-size: var(--font-size-choice-label);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
 }
 
 .choice__hint {
@@ -383,31 +427,37 @@ a {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: var(--space-5);
+  padding: var(--space-5) 0;
+  /* Follows the intake on the same page position: no rule above the first section. */
+  border-top: 0;
+  padding-top: 0;
 }
 
 .sentence {
-  font-size: var(--font-size-xl);
-  line-height: 1.8;
+  font-family: var(--font-display);
+  font-size: var(--font-size-sentence);
+  line-height: 1.7;
 }
 
+/* A blank of the sentence: serif, underlined in the accent. */
 .blank {
   max-width: 100%;
   padding: 0 var(--space-1);
-  background: var(--color-accent-soft);
+  background: transparent;
   color: var(--color-accent-strong);
   border: 0;
-  border-bottom: 2px solid var(--color-accent-strong);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border-bottom: 1px solid var(--color-accent-strong);
+  border-radius: 0;
   font: inherit;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
   cursor: pointer;
 }
 
 .popover {
   min-width: 240px;
   padding: var(--space-4);
-  background: var(--color-surface);
+  background: var(--color-surface-raised);
   color: var(--color-text);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
@@ -596,20 +646,25 @@ a {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-6);
-  background: linear-gradient(135deg, var(--color-accent-soft), var(--color-hero-end));
-  border-color: var(--color-hero-end);
+  padding: var(--space-6) 0;
+  /* A double rule above, no fill. */
+  background: transparent;
+  border-top: 3px double var(--color-text);
 }
 
 .hero__lead {
   color: var(--color-text-secondary);
+  font-family: var(--font-display);
   font-size: var(--font-size-lg);
+  font-style: italic;
 }
 
 .hero__figure {
   color: var(--color-accent-strong);
-  font-size: var(--font-size-display);
-  font-weight: var(--font-weight-bold);
+  font-family: var(--font-display);
+  font-size: var(--font-size-hero);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.02em;
   line-height: var(--line-height-tight);
 }
 
@@ -667,16 +722,43 @@ a {
 
 /* ---- Chart cards ---- */
 
+/*
+ * Each chart is a numbered figure: a 1px ink rule above, "Figure n." and the
+ * title, the chart, and a source-and-note line (spec 14.3). The number counts
+ * figures in page order; a stage that shows one figure at a time sets
+ * `--figure-number` on the card to the figure's index, as a string ("3").
+ */
 .chart-card {
+  counter-increment: fig;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-5);
-  border-top: 3px solid var(--color-accent);
+  padding: var(--space-5) 0 var(--space-4);
+  border-top: 1px solid var(--color-text);
 }
 
 .chart-card__title {
-  font-size: var(--font-size-xl);
+  font-family: var(--font-display);
+  font-size: var(--font-size-figure-title);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.01em;
+  line-height: var(--line-height-tight);
+}
+
+.chart-card__title::before {
+  content: "Figure " var(--figure-number, counter(fig)) ". ";
+  color: var(--color-text-secondary);
+  font-style: italic;
+  font-weight: var(--font-weight-regular);
+}
+
+.chart-card::after {
+  content: "Source: InfraVana cost model on illustrative price tables.  Note: all figures are invented placeholders, not quotes.";
+  display: block;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
 }
 
 .chart-card__caption {
@@ -713,11 +795,15 @@ th {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-6);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--color-text);
 }
 
 .cta__title {
-  font-size: var(--font-size-xl);
+  font-family: var(--font-display);
+  font-size: var(--font-size-cta-title);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
 }
 
 /* ---- Drawer ---- */
@@ -743,6 +829,8 @@ th {
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
+  /* No shadow: the panel's edge is a rule that separates it from the scrim. */
+  border-left: 1px solid var(--color-border-strong);
   box-shadow: var(--shadow-stage);
 }
 
@@ -794,9 +882,10 @@ th {
   gap: var(--space-2) var(--space-4);
   padding-top: var(--space-4);
   padding-bottom: var(--space-6);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-text);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+  font-style: italic;
 }
 
 .footer .link-button {
@@ -842,8 +931,10 @@ th {
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1) var(--space-3);
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-border);
+    padding: var(--space-2) 0;
+    background: var(--color-bg);
+    border: 0;
+    border-top: 1px solid var(--color-text);
     box-shadow: var(--shadow-card);
   }
 
@@ -865,23 +956,15 @@ th {
   .hero,
   .chart-card,
   .cta {
-    padding: var(--space-4);
+    padding: var(--space-4) 0;
   }
 
-  .intake__title {
-    font-size: var(--font-size-xl);
+  .situation {
+    padding-top: 0;
   }
 
   .estimate__figures dd {
-    font-size: var(--font-size-md);
-  }
-
-  .sentence {
     font-size: var(--font-size-lg);
-  }
-
-  .hero__figure {
-    font-size: var(--font-size-2xl);
   }
 
   .choices {

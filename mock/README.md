@@ -29,7 +29,7 @@ Run from this directory.
 | `src/App.tsx` | The page: loads the tables once, holds the one `Scenario` the knobs edit, calls `compute()` (throttled while a slider is dragged) and lays out the shell |
 | `src/components/` | Header, guided questions and sentence (`Intake.tsx`), fine-tune inputs (`KnobRail.tsx`), hero result (`HeadlineStrip.tsx`), stacked chart cards, drawer, assumptions panel, footer |
 | `src/store/` | Reducer for the page state, the guided questions (`intake.ts`), the three examples, mix rebalancing and the throttle hook |
-| `src/styles/tokens.css` | The `:root` block of `docs/design-tokens.md`, pasted verbatim. The only file that may contain a hex colour. |
+| `src/styles/tokens.css` | The Research Note tokens of spec 14 (values of `docs/theme-options/source/d1-research-note.css`; fonts in `fonts.css` and `public/fonts/`, self-hosted). The only file that may contain a hex colour. |
 | `src/styles/app.css` | Layout and components, using only the tokens |
 
 ## How the shell behaves
