@@ -34,6 +34,7 @@ import { addToClass, computeToday, emptyClassTotals, type TodayResult } from "./
 export { computeCore, type CoreResults } from "./core";
 export { benefitHeadcount } from "./headcount";
 export { frontier, solveAtBudget } from "./solve";
+export { NO_SPEED_DATA_REASON, speedUnavailableReason, type EngineOptions } from "./tradeoff";
 export {
   c5Figures,
   COVERAGE_MESSAGE_ABOVE,
