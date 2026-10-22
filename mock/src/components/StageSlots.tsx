@@ -1,0 +1,72 @@
+/**
+ * The three places later steps fill (spec 4, 4.1, 6.2, 6.4). Each slot is its
+ * own component with its own props, so a step that builds one replaces that
+ * function and leaves `App.tsx`, `Stage.tsx` and the other slots alone.
+ *
+ *   GoalTabsSlot    above the hero            goal tabs G1 to G4 (6.2)
+ *   ComparatorSlot  under the hero            the "Compared with" selector (6.1)
+ *   BenefitsSlot    under each figure title   the benefit boxes (6.4)
+ *
+ * Until a slot is built it draws a quiet, clearly marked placeholder (the two
+ * above the stage) or, for the boxes, the one-sentence takeaway the page has
+ * always shown. `data-slot` names each one for tests and for the step that
+ * replaces it. The view state and its setters arrive in `ctx`.
+ */
+import type { ChartDef, Results } from "../contract";
+import type { StageSlotContext } from "../store/stage";
+
+/** Text of a chart function that may throw while an input is mid-change. */
+function attempt(fn: () => string): string {
+  try {
+    return fn();
+  } catch {
+    return "";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Slot 1: goal tabs. Replace the body of GoalTabsSlot; keep the wrapper's data-slot.
+// ---------------------------------------------------------------------------
+
+export function GoalTabsSlot({ ctx }: { ctx: StageSlotContext }) {
+  void ctx;
+  return (
+    <div
+      className="stage-slot stage-slot--empty"
+      data-slot="goal-tabs"
+      data-label="Slot: goal tabs (a later step fills this)"
+      aria-hidden="true"
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Slot 2: the "Compared with" selector. Replace the body of ComparatorSlot.
+// ---------------------------------------------------------------------------
+
+export function ComparatorSlot({ ctx }: { ctx: StageSlotContext }) {
+  void ctx;
+  return (
+    <div
+      className="stage-slot stage-slot--empty"
+      data-slot="comparator"
+      data-label="Slot: Compared with selector (a later step fills this)"
+      aria-hidden="true"
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Slot 3: benefit boxes, under the figure title. Replace the body of BenefitsSlot.
+// Until the boxes exist it shows the chart's one-sentence takeaway, which
+// stays as the chart's accessible name once they do (spec 6.4).
+// ---------------------------------------------------------------------------
+
+export function BenefitsSlot({ def, results, ctx }: { def: ChartDef; results: Results; ctx: StageSlotContext }) {
+  void ctx;
+  return (
+    <div data-slot="benefit-boxes">
+      <p className="chart-card__caption">{attempt(() => def.caption(results))}</p>
+    </div>
+  );
+}
