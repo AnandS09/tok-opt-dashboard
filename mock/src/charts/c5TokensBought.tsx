@@ -203,6 +203,7 @@ export function buildTokensBoughtOption(
               if (!alt.meets_floors) lines.push(`Misses ${BELOW_FLOOR}`);
             }
             if (isEstimated(figures, bar)) lines.push(ESTIMATED_LABEL);
+            if (bar.kind === "infravana" && figures.at_tradeoff) lines.push(TRADEOFF_NOTE);
             lines.push(`Source: ${PROVENANCE_TEXT[bar.provenance].toLowerCase()}`);
             return lines.join("<br/>");
           },
@@ -302,7 +303,9 @@ export function tokensBoughtCaption(results: Results, goalView?: GoalView): stri
       ? ", counting the most people each budget covers"
       : goalView?.goal === "G2"
         ? ", counting the most AI work each budget covers"
-        : "";
+        : goalView?.goal === "G4"
+          ? `, ${TRADEOFF_NOTE}`
+          : "";
   const sentence = (todayTokens: string, infravanaTokens: string, ratio: string) =>
     `The same ${budget} budget buys ${todayTokens} tokens a quarter ${buyer} and ${infravanaTokens} with ${BRAND}, ${ratio}${basis}.`;
   // While the volumes are being worked out the sentence keeps its shape, with the figures left blank, so the page below it does not move.
@@ -392,6 +395,7 @@ export function TokensBoughtChart({ results, size, goalView }: ChartProps) {
         height={height}
         phoneHeight={phoneHeight}
         parts={tokensBoughtParts(results)}
+        invented={goalView?.tradeoff?.invented}
         ariaLabel={tokensBoughtCaption(results, goalView)}
         build={build}
         table={{
@@ -400,7 +404,7 @@ export function TokensBoughtChart({ results, size, goalView }: ChartProps) {
           rows: covered
             ? [[state.notice ?? "", ""]]
             : bars.map((bar) => [
-                bar.name,
+                bar.kind === "infravana" && figures.at_tradeoff ? `${bar.name} (${TRADEOFF_NOTE})` : bar.name,
                 `${fmtTokensSig(bar.tokens)}${isEstimated(figures, bar) ? ` (${ESTIMATED_LABEL.toLowerCase()})` : ""}`,
               ]),
         }}

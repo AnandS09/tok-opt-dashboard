@@ -2,13 +2,16 @@ import { useState, type ReactNode } from "react";
 import { BRAND } from "../charts/labels";
 import { comparisonOf } from "../charts/comparison";
 import { COVERAGE_MESSAGE_ABOVE, g1Headline, solvedHeadline } from "../compute";
-import type { GoalId, GoalView, Results, Scenario } from "../contract";
+import { ProvenanceNotes } from "../charts/ProvenanceNotes";
+import type { GoalId, GoalView, Results, Scenario, TradeoffView } from "../contract";
 import { fmtMultiple, fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
 import { COVERAGE_MESSAGE, solvedNotice } from "../shared/goalNotice";
 import { GOAL_TABS } from "../store/goal";
-import { fmtInt } from "./format";
+import { floorsText, tradeoffFigures } from "../store/tradeoff";
+import { fmtInt, LATENCY_LABEL } from "./format";
 import { Drawer } from "./Drawer";
 import { GOAL_PANEL_ID, goalTabId } from "./GoalTabs";
+import { TradeoffControls } from "./TradeoffControls";
 
 interface HeadlineStripProps {
   goal: GoalId;
@@ -17,6 +20,8 @@ interface HeadlineStripProps {
   scenario: Scenario;
   /** The solve of the active tab (G2, G3); ignored in the other tabs. */
   goalView: GoalView;
+  /** Moves a G4 step; only the G4 tab reads it. */
+  onSteps: (steps: { qualityStep?: number; speedStep?: number }) => void;
   contactUrl: string;
 }
 
@@ -36,6 +41,12 @@ interface HeroContent {
   pending: boolean;
   /** True while the value on show is the previous one, awaiting a new one. */
   stale: boolean;
+  /** G4 only: the second number, under the figure. */
+  extra?: ReactNode;
+  /** G4 only: both sides' floors and speeds, read from the two calls. */
+  sides?: ReactNode;
+  /** G4 only: the trade-off the hero is showing. */
+  tradeoff?: TradeoffView;
 }
 
 const PENDING_FIGURE = "Working out your numbers";
@@ -167,9 +178,69 @@ function solvedContent(goal: "G2" | "G3", scenario: Scenario, view: GoalView, la
   };
 }
 
+/** What the steps chosen give up, in words. */
+function giveUpWords(trade: TradeoffView): string {
+  const quality = trade.qualityStep > 0;
+  const speed = trade.speedStep > 0;
+  return quality && speed ? "quality and speed" : quality ? "quality" : "speed";
+}
+
+/**
+ * G4: two numbers (spec 6.2), the saving at the visitor's own floors, which is
+ * the G1 figure from the untraded call, and the extra saving the give-up buys,
+ * with both sides' floors and speeds beside them. This is the one place the two
+ * sides differ (spec 9), so it says so.
+ */
+function g4Content(results: Results, scenario: Scenario, trade: TradeoffView): HeroContent {
+  const label = comparisonOf(trade.untraded).label;
+  const own = g1Content(trade.untraded, label);
+  const relaxed = trade.error === null ? results : trade.untraded;
+  const { extraSaving } = tradeoffFigures(trade.untraded, relaxed);
+  const chosen = trade.qualityStep > 0 || trade.speedStep > 0;
+
+  let extra: ReactNode;
+  if (trade.error !== null) extra = `This trade-off could not be worked out: ${trade.error}`;
+  else if (extraSaving > 0 && chosen) {
+    extra = (
+      <>
+        <strong>{fmtUsdSig(extraSaving)} more</strong> each quarter by giving up {giveUpWords(trade)}
+      </>
+    );
+  } else if (chosen) extra = "These steps add no saving for this work.";
+  else extra = "Choose a step below to see what giving up quality or speed would add.";
+
+  const todaySide = { floors: trade.untraded.quality_floor_by_workload, speed: scenario.latency_class };
+  const side = relaxed.infravana_side;
+  const sideText = (floors: Record<string, number>, speed: keyof typeof LATENCY_LABEL) => (
+    <>
+      Quality at least {floorsText(floors)}, answers {LATENCY_LABEL[speed]}
+    </>
+  );
+  const sides = (
+    <dl className="hero__sides" aria-label="The quality and speed each side is held to">
+      <div className="hero__side">
+        <dt>{label}</dt>
+        <dd>{sideText(todaySide.floors, todaySide.speed)}</dd>
+      </div>
+      <div className="hero__side hero__side--infravana">
+        <dt>{BRAND}</dt>
+        <dd>{sideText(side.quality_floor_by_workload, side.latency_class)}</dd>
+      </div>
+    </dl>
+  );
+  return {
+    ...own,
+    lead: `At your own quality and speed, measured against ${label}`,
+    extra,
+    sides,
+    tradeoff: trade,
+  };
+}
+
 function contentFor(goal: GoalId, results: Results, scenario: Scenario, view: GoalView): HeroContent {
   const label = comparisonOf(results).label;
   if (goal === "G2" || goal === "G3") return solvedContent(goal, scenario, view, label);
+  if (goal === "G4" && view.tradeoff) return g4Content(results, scenario, view.tradeoff);
   return g1Content(results, label);
 }
 
@@ -195,7 +266,15 @@ function explanation(goal: GoalId, label: string): { fn: string; body: string[] 
         ],
       };
     case "G4":
-      return { fn: "compute(scenario, tables)", body: ["The trade-off controls arrive in a later step."] };
+      return {
+        fn: "compute(scenario, tables), twice",
+        body: [
+          `One call prices your work at your own quality and speed. That is the first figure, and it is the same one the first tab gives. A second call lets ${BRAND} accept the lower quality and slower speed you chose, and the second figure is how much more that saves. ${label} is priced once, at your own quality and speed, so it does not change as you move the steps.`,
+          "The quality step lowers the score each kind of work has to reach, one score of the benchmark table at a time. It only moves the share of work you allow on open models. The speed step lets a model be bought at its slower, cheaper batch or flex price, and lets open models run on slower hardware.",
+          "This is the one tab where the two sides are held to different quality and speed, because you chose to give something up. Each side's floors are shown under the figures.",
+          "The speed and batch-price rows this uses are invented placeholder data.",
+        ],
+      };
     default:
       return {
         fn: "compute(scenario, tables)",
@@ -216,7 +295,7 @@ function explanation(goal: GoalId, label: string): { fn: string; body: string[] 
  * worked out?" drawer names the compute function behind it. Work is moved only
  * to models that meet the quality and speed asked for (spec 9).
  */
-export function HeadlineStrip({ goal, results, scenario, goalView, contactUrl }: HeadlineStripProps) {
+export function HeadlineStrip({ goal, results, scenario, goalView, onSteps, contactUrl }: HeadlineStripProps) {
   const [how, setHow] = useState(false);
   const label = comparisonOf(results).label;
   const hero = contentFor(goal, results, scenario, goalView);
@@ -251,10 +330,25 @@ export function HeadlineStrip({ goal, results, scenario, goalView, contactUrl }:
           ))}
         </ul>
       ) : null}
+      {hero.extra ? <p className="hero__extra">{hero.extra}</p> : null}
+      {hero.sides}
+      {hero.tradeoff ? <TradeoffControls view={hero.tradeoff} onSteps={onSteps} /> : null}
       {hero.note !== null ? <p className="hero__note">{hero.note}</p> : null}
       <p className="hero__basis">
-        {BRAND} moves work only to models that meet your minimum quality and response speed.
+        {hero.tradeoff
+          ? `In this tab only, ${BRAND} is held to the lower quality and speed you chose, and ${label} is not.`
+          : `${BRAND} moves work only to models that meet your minimum quality and response speed.`}
       </p>
+      {hero.tradeoff?.invented ? (
+        <ProvenanceNotes
+          size="stage"
+          invented
+          parts={[
+            { group: label, part: "", provenance: results.tokens_bought.provenance.today },
+            { group: BRAND, part: "", provenance: results.tokens_bought.provenance.infravana },
+          ]}
+        />
+      ) : null}
       <div className="hero__actions">
         <a className="button button--primary" href={contactUrl}>
           Talk to us about your numbers

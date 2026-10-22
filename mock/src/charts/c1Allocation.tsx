@@ -523,7 +523,7 @@ export function allocationParts(results: Results): ProvenancePart[] {
 // Component and registry entry
 // ---------------------------------------------------------------------------
 
-export function AllocationChart({ results, size }: ChartProps) {
+export function AllocationChart({ results, size, goalView }: ChartProps) {
   const build = useCallback(
     (tokens: Tokens, dims: Dims) => buildAllocationOption(results, size, tokens, dims),
     [results, size],
@@ -545,6 +545,7 @@ export function AllocationChart({ results, size }: ChartProps) {
       height={barRowsHeight(results)}
       phoneHeight={barRowsHeight(results, true)}
       parts={allocationParts(results)}
+      invented={goalView?.tradeoff?.invented}
       ariaLabel={allocationCaption(results)}
       build={build}
       table={{
