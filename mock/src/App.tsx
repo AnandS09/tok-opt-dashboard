@@ -15,6 +15,7 @@ import type { GoalId, PatternId, Results, Scenario, ScenarioResponse } from "./c
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
+import { goalTabStates, useGoalSolve } from "./store/goal";
 import type { CompanyType } from "./store/intake";
 import {
   activeIndex,
@@ -123,10 +124,19 @@ export default function App() {
   // The goal, comparator and G4 steps join the scenario here; the chart in focus does not, so changing chart never recomputes.
   const { goal, comparator, qualityStep, speedStep } = view;
   const viewedScenario = useMemo(
-    () => (scenario && tables ? withView(scenario, { goal, comparator, qualityStep, speedStep }, tables) : scenario),
-    [scenario, tables, goal, comparator, qualityStep, speedStep],
+    () => (scenario && tables && answered ? withView(scenario, { goal, comparator, qualityStep, speedStep }, tables) : scenario),
+    [scenario, tables, answered, goal, comparator, qualityStep, speedStep],
   );
   const liveScenario = useThrottledValue(viewedScenario, RECOMPUTE_MS);
+  // G2 and G3 are solved on the worker, from the scenario as it is now (the solver's own debounce
+  // spaces the requests), so the previous value dims at once. A goal that cannot be chosen is not solved.
+  const tabStates = useMemo(() => (scenario && tables ? goalTabStates(scenario, tables) : null), [scenario, tables]);
+  const goalView = useGoalSolve({
+    goal,
+    scenario: viewedScenario,
+    tables,
+    enabled: answered && response?.verdict === "ok" && tabStates !== null && !tabStates[goal].disabled,
+  });
   const computed = useMemo<{ results: Results | null; error: string | null }>(() => {
     if (!tables || !liveScenario || response?.verdict !== "ok") return { results: null, error: null };
     try {
@@ -148,6 +158,13 @@ export default function App() {
   const active = activeIndex(slides, view.slide);
   useStageHash(view, stageShown ? slides[active].id : null, stageDispatch);
 
+  // A tab that cannot be chosen for these answers (G3 with no team work, G4 until its controls exist)
+  // cannot stay active, so a link or an edit that lands on one returns to G1.
+  const goalBlocked = tabStates?.[goal].disabled ?? false;
+  useEffect(() => {
+    if (stageShown && goalBlocked) stageDispatch({ type: "goal_set", goal: "G1" });
+  }, [stageShown, goalBlocked, stageDispatch]);
+
   const slideTo = useCallback(
     (index: number, direction: StageDirection) => {
       const target = slides[index];
@@ -162,6 +179,7 @@ export default function App() {
           scenario: liveScenario,
           tables,
           results,
+          goalView,
           setGoal: (next: GoalId) => stageDispatch({ type: "goal_set", goal: next }),
           setComparator: (next: PatternId | null) => stageDispatch({ type: "comparator_set", comparator: next }),
           setSteps: (steps) => stageDispatch({ type: "steps_set", ...steps }),
@@ -281,7 +299,7 @@ export default function App() {
         {results && slotContext ? (
           <>
             <GoalTabsSlot ctx={slotContext} />
-            <HeadlineStrip results={results} contactUrl={CONTACT_URL} />
+            <HeadlineStrip goal={goal} results={results} scenario={slotContext.scenario} goalView={goalView} contactUrl={CONTACT_URL} />
             <ComparatorSlot ctx={slotContext} />
             <ResultNotices results={results} tables={tables} />
             <Stage

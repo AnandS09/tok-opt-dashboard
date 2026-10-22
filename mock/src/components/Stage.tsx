@@ -56,7 +56,7 @@ function StageBody({ direction, def, results, ctx, onHow }: StageBodyProps) {
     <div className="stage__body" data-direction={arrival}>
       <BenefitsSlot def={def} results={results} ctx={ctx} />
       <ChartBoundary resetKey={results}>
-        <def.Component results={results} size="stage" />
+        <def.Component results={results} size="stage" goalView={ctx.goalView} />
       </ChartBoundary>
       <button type="button" className="link-button chart-card__how" aria-haspopup="dialog" onClick={onHow}>
         How is this worked out?
@@ -174,7 +174,7 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
       </div>
 
       {gridOpen ? (
-        <GridView slides={slides} results={results} active={active} onPick={pickFromGrid} />
+        <GridView slides={slides} results={results} goalView={ctx.goalView} active={active} onPick={pickFromGrid} />
       ) : (
         <section
           className="chart-card card stage__panel"

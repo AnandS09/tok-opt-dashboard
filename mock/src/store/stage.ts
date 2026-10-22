@@ -10,7 +10,7 @@
  */
 import { useEffect, useReducer, type Dispatch } from "react";
 import { compute } from "../compute";
-import type { ChartDef, ChartId, GoalId, PatternId, Results, Scenario, Tables } from "../contract";
+import type { ChartDef, ChartId, GoalId, GoalView, PatternId, Results, Scenario, Tables } from "../contract";
 import {
   hasStageFields,
   parseHash,
@@ -94,7 +94,8 @@ export function withView(
   const next: Scenario = { ...scenario };
   if (view.goal !== "G1") next.goal = view.goal;
   if (known && view.comparator !== null) next.comparator = view.comparator;
-  if (view.goal === "G4") next.tradeoff = { quality_step: view.qualityStep, speed_step: view.speedStep };
+  // ponytail: no G4 tab or two-sided headline yet (spec 6.2), so a G4 link must not relax the floors
+  // behind a hero that promises them; apply `tradeoff` here once the G4 tab ships.
   return next;
 }
 
@@ -129,6 +130,8 @@ export interface StageSlotContext {
   scenario: Scenario;
   tables: Tables;
   results: Results;
+  /** The active tab and, in G2 and G3, its solve (spec 6.2); charts that follow the tab read it. */
+  goalView: GoalView;
   setGoal: (goal: GoalId) => void;
   /** Null selects the default, the typical buyer for the stage. */
   setComparator: (comparator: PatternId | null) => void;

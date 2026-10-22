@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { ChartDef, Results } from "../contract";
+import type { ChartDef, GoalView, Results } from "../contract";
 import { useThrottledValue } from "../store/useThrottledValue";
 import { ChartBoundary } from "./ChartBoundary";
 
@@ -57,6 +57,8 @@ function WhenInView({ children }: { children: ReactNode }) {
 interface GridViewProps {
   slides: readonly ChartDef[];
   results: Results;
+  /** The goal tab the thumbnails are drawn for. */
+  goalView: GoalView;
   active: number;
   onPick: (index: number) => void;
 }
@@ -68,9 +70,10 @@ interface GridViewProps {
  * results, much more slowly while a slider is dragged, so they never make a
  * drag lag.
  */
-export function GridView({ slides, results, active, onPick }: GridViewProps) {
+export function GridView({ slides, results, goalView, active, onPick }: GridViewProps) {
   const dragging = useSliderDragging();
   const thumbResults = useThrottledValue(results, dragging ? THUMB_DRAG_MS : THUMB_MS);
+  const thumbGoalView = useThrottledValue(goalView, dragging ? THUMB_DRAG_MS : THUMB_MS);
   const current = useRef<HTMLButtonElement>(null);
 
   // Focus lands on the chart that was in focus, so the keyboard starts where the visitor was.
@@ -96,7 +99,7 @@ export function GridView({ slides, results, active, onPick }: GridViewProps) {
           <div className="grid-view__thumb" aria-hidden="true">
             <WhenInView>
               <ChartBoundary resetKey={thumbResults}>
-                <def.Component results={thumbResults} size="thumb" />
+                <def.Component results={thumbResults} size="thumb" goalView={thumbGoalView} />
               </ChartBoundary>
             </WhenInView>
           </div>

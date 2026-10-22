@@ -16,6 +16,7 @@ import {
   setWorkloads,
   stepsFor,
   withCurrent,
+  withCustomers,
 } from "./intake";
 
 afterEach(restoreFetch);
@@ -178,5 +179,19 @@ describe("small helpers", () => {
     const s = setSpeed(s1, "batch");
     expect(s.latency_class).toBe("batch");
     expect({ ...s, latency_class: s1.latency_class }).toEqual(s1);
+  });
+});
+
+describe("withCustomers", () => {
+  it("gives customer work added after the questions a customer count, and leaves a set count alone", async () => {
+    const s2 = await loadFixtureScenario("s2");
+    restoreFetch();
+    expect(s2.baseline.customers).toBeUndefined();
+    const customerWork = tables.workloads.find((w) => w.basis === "customer")!.workload_id;
+    const added = withCustomers(setWorkloads(s2, [customerWork], tables), tables);
+    expect(added.baseline.customers).toBe(50_000);
+    expect(compute(added, tables).tokens_bought.demand_tokens).toBeGreaterThan(0);
+    expect(withCustomers(setCustomers(added, 7), tables).baseline.customers).toBe(7);
+    expect(withCustomers(s2, tables)).toBe(s2);
   });
 });

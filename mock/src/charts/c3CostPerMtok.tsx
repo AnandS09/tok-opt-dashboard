@@ -6,13 +6,14 @@ import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, CostPerMtokRow, ModelTier, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
+import { costPerMtokBenefits } from "./benefits";
 import { C3Key } from "./C3Key";
 import { ChartFigure } from "./ChartFigure";
 import { LATENCY_LABEL } from "../components/format";
 import { comparisonOf, qualityText } from "./comparison";
 import type { Comparison } from "./comparison";
 import { esc, fmtUsdPerMtok, pricesTogether, toCsvText } from "./format";
-import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
+import { BRAND, INFRAVANA_LABEL, MODEL_CLASS_NAME, TODAY_LABEL } from "./labels";
 import { textWidth } from "./measure";
 import { optionStyle } from "./patterns";
 import type { ProvenancePart } from "./ProvenanceNotes";
@@ -32,15 +33,9 @@ function provenanceOf(row: CostPerMtokRow, side: SideKey): Provenance {
   return side === "today" ? row.today_provenance : row.infravana_provenance;
 }
 
-const CLASS_NAME: Record<CostPerMtokRow["model_class"], string> = {
-  frontier: "Flagship",
-  mid: "Mid-size",
-  small: "Small",
-};
-
 /** Category label: the class name in plain words. */
 function classLabel(row: CostPerMtokRow): string {
-  return `${CLASS_NAME[row.model_class]} models`;
+  return `${MODEL_CLASS_NAME[row.model_class]} models`;
 }
 
 /** The two grouped bars: the comparator's name carries the Today it is measured against. */
@@ -57,16 +52,14 @@ function optionPriced(cmp: Comparison, cls: ModelTier): boolean {
 }
 
 /**
- * The classes drawn: those priced on both sides or holding an option's
- * marker, else those priced on either side (never an empty group).
+ * The classes drawn: those priced on either side or holding an option's
+ * marker. A class only InfraVana buys (work routed to open models) stays, so
+ * the chart never hides where the routed work is priced.
  */
 function shownRows(results: Results, cmp: Comparison): CostPerMtokRow[] {
-  const rows = results.cost_per_mtok.by_model_class;
-  const drawn = rows.filter(
-    (r) =>
-      (r.today_usd_per_mtok !== null && r.infravana_usd_per_mtok !== null) || optionPriced(cmp, r.model_class),
+  return results.cost_per_mtok.by_model_class.filter(
+    (r) => r.today_usd_per_mtok !== null || r.infravana_usd_per_mtok !== null || optionPriced(cmp, r.model_class),
   );
-  return drawn.length > 0 ? drawn : rows.filter((r) => r.today_usd_per_mtok !== null || r.infravana_usd_per_mtok !== null);
 }
 
 /** Horizontal room kept free of markers at each edge of a class band. */
@@ -262,7 +255,7 @@ export function costPerMtokCaption(results: Results): string {
   const buyer = cmp.comparator ? `with ${cmp.label}` : "today";
   const parts = both.map(
     (r) =>
-      `${price(r.today_usd_per_mtok ?? 0)} ${buyer} and ${price(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${CLASS_NAME[r.model_class].toLowerCase()} models`,
+      `${price(r.today_usd_per_mtok ?? 0)} ${buyer} and ${price(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${MODEL_CLASS_NAME[r.model_class].toLowerCase()} models`,
   );
   return `A million tokens costs ${parts.join(", ")}.`;
 }
@@ -355,7 +348,6 @@ export const costPerMtokChart: ChartDef = {
   caption: costPerMtokCaption,
   howComputed: COST_HOW_COMPUTED,
   toCsv: costPerMtokCsv,
-  // Benefit boxes (spec 6.4) are built in a later step.
-  benefits: (_results, _context) => [],
+  benefits: costPerMtokBenefits,
   Component: CostPerMtokChart,
 };

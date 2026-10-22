@@ -173,12 +173,15 @@ export function IntakeQuestions({
     advance();
   };
   const pickCompany = (c: Company) => {
+    if (company === c.id) {
+      setCurrent("work");
+      return;
+    }
     onCompany(c.id);
     onEdit((s) => setCompany(s, c, tables));
     setPicked(c.workloads);
     // Another type offers other work, so the later answers start again.
-    const kept = company === c.id ? answered : [];
-    setAnswered(kept.includes("company") ? kept : [...kept, "company"]);
+    setAnswered(["company"]);
     setCurrent("work");
   };
   const toggle = (id: string) => {
@@ -251,6 +254,7 @@ export function IntakeQuestions({
       listClass = "choices--slider";
       choices = (
         <LogSlider
+          key={current}
           label={title}
           unit="people"
           range={USERS_RANGE}
@@ -267,6 +271,7 @@ export function IntakeQuestions({
       listClass = "choices--slider";
       choices = (
         <LogSlider
+          key={current}
           label={title}
           unit={customerWord}
           range={CUSTOMERS_RANGE}
@@ -283,6 +288,7 @@ export function IntakeQuestions({
       listClass = "choices--slider";
       choices = (
         <LogSlider
+          key={current}
           label={title}
           unit={null}
           money

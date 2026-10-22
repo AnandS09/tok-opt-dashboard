@@ -1,4 +1,5 @@
 import type { Scenario, ScenarioResponse, Tables } from "../contract";
+import { withCustomers } from "./intake";
 
 /** Everything the page holds. One `scenario` object is what all knobs write to (spec 5). */
 export interface AppState {
@@ -61,13 +62,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "example_failed":
       return { ...state, loadingExample: false, exampleError: action.message };
     case "scenario_edited":
-      return state.scenario ? { ...state, scenario: action.update(state.scenario) } : state;
+      return state.scenario && state.tables
+        ? { ...state, scenario: withCustomers(action.update(state.scenario), state.tables) }
+        : state;
     case "answer_edited":
-      return state.scenario && state.response
+      return state.scenario && state.response && state.tables
         ? {
             ...state,
-            scenario: action.update(state.scenario),
-            response: { ...state.response, scenario: action.update(state.response.scenario) },
+            scenario: withCustomers(action.update(state.scenario), state.tables),
+            response: { ...state.response, scenario: withCustomers(action.update(state.response.scenario), state.tables) },
           }
         : state;
     case "scenario_reset":
