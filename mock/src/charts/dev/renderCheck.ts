@@ -28,7 +28,7 @@ import { SVGRenderer } from "echarts/renderers";
 import type { ChartDef, ChartId, Provenance, Results, Scenario, SolveResult, Tables } from "../../contract";
 import { ComparatorSelect } from "../../components/ComparatorSelect";
 import { compute } from "../../compute";
-import { getComparator, selectedComparator, setComparator } from "../../store/comparator";
+import { choiceFor, selectedComparator } from "../../store/comparator";
 import { allocationCsv, buildAllocationOption, comparatorBar, planBar } from "../c1Allocation";
 import { C3Key } from "../C3Key";
 import { buildCostPerMtokOption, costPerMtokParts } from "../c3CostPerMtok";
@@ -1005,11 +1005,11 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
  * The "Compared with" selector (spec 6.1): a labelled select that lists every
  * comparator `today_alternatives` offers (the derived best single option
  * included), shows the one in effect as selected, marks the typical buyer, and
- * writes its choice to `store/comparator.ts` and nowhere else.
+ * reports its choice through `onChange` and keeps no state of its own.
  */
 export function selectorProblems(name: string, results: Results): string[] {
   const problems: string[] = [];
-  const markup = renderToStaticMarkup(createElement(ComparatorSelect, { results }));
+  const markup = renderToStaticMarkup(createElement(ComparatorSelect, { results, value: selectedComparator(results, null), onChange: () => undefined }));
   const where = `${name} comparator select`;
   const id = /<select[^>]*\sid="([^"]+)"/.exec(markup)?.[1];
   if (!id) return [`${where}: no select element`];
@@ -1031,19 +1031,17 @@ export function selectorProblems(name: string, results: Results): string[] {
     if (opt && alt.is_typical !== opt[3].includes("typical")) problems.push(`${where}: the typical-buyer mark is wrong on ${alt.pattern_id}`);
   }
   if (!results.today_alternatives.some((a) => a.kind === "best_single")) problems.push(`${where}: no best single option to list`);
-  // The choice goes through the store: it is kept, offered back, and a choice no longer offered falls back to the engine's.
+  // A stored choice is shown, a choice no longer offered falls back to the engine's, and the typical buyer is stored as no choice.
   const other = results.today_alternatives.find((a) => a.pattern_id !== results.comparator);
   if (other) {
-    setComparator(other.pattern_id);
-    if (getComparator() !== other.pattern_id) problems.push(`${where}: setComparator did not keep ${other.pattern_id}`);
-    if (selectedComparator(results, getComparator()) !== other.pattern_id) problems.push(`${where}: a stored choice is not shown as selected`);
-    const shown = renderToStaticMarkup(createElement(ComparatorSelect, { results }));
-    if (!new RegExp(`<option value="${other.pattern_id}"[^>]*selected`).test(shown)) problems.push(`${where}: the markup does not show the stored choice`);
-    setComparator("not-offered");
-    if (selectedComparator(results, getComparator()) !== results.comparator) problems.push(`${where}: a choice that is not offered did not fall back`);
-    setComparator(null);
-    if (getComparator() !== null) problems.push(`${where}: setComparator(null) did not clear the choice`);
+    if (selectedComparator(results, other.pattern_id) !== other.pattern_id) problems.push(`${where}: a stored choice is not shown as selected`);
+    const shown = renderToStaticMarkup(createElement(ComparatorSelect, { results, value: other.pattern_id, onChange: () => undefined }));
+    if (!new RegExp(`<option value="${other.pattern_id}"[^>]*selected`).test(shown)) problems.push(`${where}: the markup does not show the chosen value`);
+    if (selectedComparator(results, "not-offered") !== results.comparator) problems.push(`${where}: a choice that is not offered did not fall back`);
+    if (choiceFor(results, other.pattern_id) !== other.pattern_id) problems.push(`${where}: a picked non-typical option is not stored`);
   }
+  const typical = results.today_alternatives.find((a) => a.is_typical);
+  if (typical && choiceFor(results, typical.pattern_id) !== null) problems.push(`${where}: picking the typical buyer is not stored as no choice`);
   return problems;
 }
 

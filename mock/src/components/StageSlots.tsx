@@ -7,12 +7,15 @@
  *   ComparatorSlot  under the hero            the "Compared with" selector (6.1)
  *   BenefitsSlot    under each figure title   the benefit boxes (6.4)
  *
- * Until a slot is built it draws nothing (the two above the stage) or, for the
- * boxes, the one-sentence takeaway the page has always shown. `data-slot` names each one for tests and for the step that
+ * The comparator slot holds the "Compared with" selector. Until the other two
+ * are built the goal-tabs slot draws nothing and the boxes slot shows the
+ * one-sentence takeaway the page has always shown. `data-slot` names each one for tests and for the step that
  * replaces it. The view state and its setters arrive in `ctx`.
  */
 import type { ChartDef, Results } from "../contract";
+import { choiceFor, selectedComparator } from "../store/comparator";
 import type { StageSlotContext } from "../store/stage";
+import { ComparatorSelect } from "./ComparatorSelect";
 
 /** Text of a chart function that may throw while an input is mid-change. */
 function attempt(fn: () => string): string {
@@ -38,9 +41,16 @@ export function GoalTabsSlot({ ctx }: { ctx: StageSlotContext }) {
 // ---------------------------------------------------------------------------
 
 export function ComparatorSlot({ ctx }: { ctx: StageSlotContext }) {
-  void ctx;
-  // Nothing is drawn until the selector is mounted here.
-  return <div data-slot="comparator" />;
+  const { results, view, setComparator } = ctx;
+  return (
+    <div data-slot="comparator">
+      <ComparatorSelect
+        results={results}
+        value={selectedComparator(results, view.comparator)}
+        onChange={(id) => setComparator(choiceFor(results, id))}
+      />
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
