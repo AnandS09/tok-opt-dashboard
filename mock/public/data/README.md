@@ -15,7 +15,8 @@ Files follow the column contracts of spec section 7.3. Empty cells mean "no valu
 | `seat_plans.csv` | 2 | `plan_id, vendor, usd_per_user_month, included_usage_note, overage_model_id` |
 | `quality.csv` | 77 | `model_id, benchmark, score, source_url` |
 | `workloads.csv` | 8 | `workload_id, label, tok_in_per_user_day, tok_out_per_user_day, quality_floor, default_model_mix, basis` |
-| `buying_patterns.csv` | 7 | `pattern_id, label, kind, stage, vendor, pricing_rule, popularity_rank, popularity_source, source_url, as_of` |
+| `buying_patterns.csv` | 7 | `pattern_id, label, kind, stage, vendor, pricing_rule, source_url, as_of` |
+| `pattern_popularity.csv` | 17 | `pattern_id, stage, popularity_rank, popularity_source` |
 | `baseline_providers.csv` | 48 | `pattern_id, workload_id, offer_id, plan_id, share_default` |
 | `case_studies.csv` | 3 | `case_id, label, model_mix_json, description` |
 | `manifest.json` | n/a | `data_version`, `generated_at`, `placeholder`, `notice`, `parameters` (`working_days_per_quarter`, `months_per_quarter`, `latency_classes`), `files` (version, row count, sha-256 per file) |
@@ -33,7 +34,8 @@ Spec 7.3 lists `offer_id or plan_id` as one column of `baseline_providers.csv`. 
 | `seat_plans.overage_model_id` | `models.model_id` |
 | `quality.model_id` | `models.model_id` |
 | `quality.benchmark` = `composite:<workload_id>` | `workloads.workload_id` |
-| `baseline_providers.pattern_id` | `buying_patterns.pattern_id` (never the `best_single` pattern, which has no rows) |
+| `baseline_providers.pattern_id` | `buying_patterns.pattern_id` (never the `best_single` pattern, which has no rows). For a `vendor_end_to_end` pattern every row's offer must belong to a model whose `models.vendor` equals the pattern's `vendor`. |
+| `pattern_popularity.pattern_id` | `buying_patterns.pattern_id` (never the `best_single` pattern, which is derived and never ranked) |
 | `baseline_providers.workload_id` | `workloads.workload_id` |
 | `baseline_providers.offer_id` | `model_offers.offer_id` |
 | `baseline_providers.plan_id` | `seat_plans.plan_id` |
@@ -54,7 +56,8 @@ Spec 7.3 lists `offer_id or plan_id` as one column of `baseline_providers.csv`. 
 | `quality.csv` rows | Readers must filter on the `composite:` prefix: a row is a composite if and only if `benchmark` starts with `composite:`, and every other row is a raw benchmark score. Averaging or plotting all rows of a model together would count the composites twice. Raw rows (`bench_code`, `bench_reasoning`, `bench_domain`) plus one row per model and workload named `composite:<workload_id>`, the precomputed weighted mean of the three raw rows. Weights over (code, reasoning, domain): software_design .6/.3/.1, hardware_design .2/.4/.4, support .1/.3/.6, research .1/.6/.3, customer_service .1/.3/.6, product_ai .4/.4/.2, documents .1/.4/.5, ops_agents .5/.3/.2. `workloads.quality_floor` is on the composite scale. |
 | Seat plans | `included_usage_note` starts with `[placeholder] cap_mtok_per_user_month=N;`. Per user, tokens (in plus out) above N million a month are billed at the direct list price of `overage_model_id`, in the workload's own in/out proportion. |
 | `baseline_providers` shares | `share_default` sums to 1 per pattern and workload. The `seats` pattern: per-user cost is `users x workload share x plan price x 3 months`, plus overage. The `api` pattern: one provider (Placeholder vendor 1, direct channel). The `platform` pattern: Bedrock only, with the offer's `commit_discount_pct` applied when the list-price spend at that offer reaches its `min_commit_usd` (an empty minimum means always), and at list price below it (BD-3). Whether a pattern applies the commit discount is its `pricing_rule` in `buying_patterns.csv` (`commit` does, `list` does not); the three stages are `seats` list, `api` list and `platform` commit, so only the platform stage applies a commit discount. |
-| `buying_patterns` | One row per Today option (spec 6.1, 7.4). `kind` is `way_to_buy` (the three stages, each the typical buyer for its `stage`), `vendor_end_to_end` (one vendor's models bought through one channel, empty `stage`) or `best_single` (no baseline rows; the engine derives it as the cheapest single token-priced offer whose model meets every workload floor in effect, priced by the row's `pricing_rule`). `popularity_rank` is one integer per pattern, lower is more popular, ties broken by `pattern_id`, empty means never a default grey. Exactly one `way_to_buy` pattern exists per stage. |
+| `buying_patterns` | One row per Today option (spec 6.1, 7.4). `kind` is `way_to_buy` (the three stages, each the typical buyer for its `stage`), `vendor_end_to_end` (one vendor's models bought through one channel, empty `stage`, every baseline row an offer of that vendor's models) or `best_single` (no baseline rows; the engine derives it as the cheapest single token-priced offer of a proprietary model that meets every workload floor in effect, priced by the row's `pricing_rule`; open-weight models are never the best single option). Exactly one `way_to_buy` pattern exists per stage. |
+| `pattern_popularity` | One row per pattern per stage (spec 7.4): how popular the pattern is among visitors whose `stage_today` is `stage`. `popularity_rank` is a whole number from 1, lower is more popular, ties are broken by `pattern_id`; a pattern with no row for a stage is never a default grey option for that stage; the `best_single` pattern has no rows. |
 | `working_days_per_quarter` | 63, in `manifest.json` `parameters`. Spec 7.2 step 1 needs it and no CSV carries it. A quarter is 3 months for seat prices. |
 | Workloads outside a scenario's mix | Present in `workloads.csv` and `baseline_providers.csv` so the Workload mix knob and the guided questions can use them. S1 only uses software and hardware design. The four workloads added for the guided questions (customer_service, product_ai, documents, ops_agents) are in no scenario file. |
 | Scenario fields | `named_models` in `s2.json` is `["opus", "fable"]`, the free-text names the prompt used, lower case, as the contract says. They are not ids in `models.csv`, they map to no row, and the engine ignores `named_models` for pricing (the model mix drives it). `s1` and `hardware_heavy` have no `target`; `s2` has one. S1 `stage_today` is `api` and S2 is `platform`, the values an extractor would infer from company size (spec 5). Both leave `tiers_allowed` as `"all"`. |
@@ -86,19 +89,27 @@ Nothing below was measured. Each range was picked to look plausible and to keep 
 
 ## Invented in the v0.3 foundation step
 
-Everything below is invented placeholder data, like the rest of the folder. The rows carry the placeholder source address `https://example.invalid/placeholder-invented-data/patterns/<pattern_id>` and the `as_of` date 2026-10-21. `manifest.json` `data_version` is `0.2.0-placeholder`; `buying_patterns.csv` and `baseline_providers.csv` carry that version, every other file keeps `0.1.0-placeholder`.
+Everything below is invented placeholder data, like the rest of the folder. The pattern rows carry the placeholder source address `https://example.invalid/placeholder-invented-data/patterns/<pattern_id>` and the `as_of` date 2026-10-21. `manifest.json` `data_version` is `0.3.0-placeholder`; `buying_patterns.csv` and `pattern_popularity.csv` carry that version, `baseline_providers.csv` carries `0.2.0-placeholder`, every other file keeps `0.1.0-placeholder`.
 
-**`buying_patterns.csv`, all seven rows and the two invented columns.** The popularity ranks and their source label `INVENTED PLACEHOLDER: not a survey or market-share figure` are invented, so are the labels, and no row describes a real market share.
+**`buying_patterns.csv`, all seven rows.** The labels are invented and no row describes a real vendor or market share.
 
-| `pattern_id` | `kind` | `stage` | `pricing_rule` | `popularity_rank` | What it is |
-|---|---|---|---|---|---|
-| `seats` | `way_to_buy` | `seats` | `list` | 3 | The v0.2 Seats stage, unchanged |
-| `api` | `way_to_buy` | `api` | `list` | 1 | The v0.2 API stage, unchanged |
-| `platform` | `way_to_buy` | `platform` | `commit` | 2 | The v0.2 Platform stage, unchanged |
-| `vendor1_direct` | `vendor_end_to_end` | empty | `list` | 5 | Placeholder vendor 1's models bought direct |
-| `vendor2_direct` | `vendor_end_to_end` | empty | `list` | 4 | Placeholder vendor 2's models bought direct |
-| `vendor2_bedrock` | `vendor_end_to_end` | empty | `commit` | 6 | Placeholder vendor 2's models bought through Bedrock |
-| `best_single` | `best_single` | empty | `commit` | empty | Derived by the engine, no baseline rows |
+| `pattern_id` | `kind` | `stage` | `pricing_rule` | What it is |
+|---|---|---|---|---|
+| `seats` | `way_to_buy` | `seats` | `list` | The v0.2 Seats stage, unchanged |
+| `api` | `way_to_buy` | `api` | `list` | The v0.2 API stage, unchanged |
+| `platform` | `way_to_buy` | `platform` | `commit` | The v0.2 Platform stage, unchanged |
+| `vendor1_direct` | `vendor_end_to_end` | empty | `list` | Placeholder vendor 1's models bought direct |
+| `vendor2_direct` | `vendor_end_to_end` | empty | `list` | Placeholder vendor 2's models bought direct |
+| `vendor2_bedrock` | `vendor_end_to_end` | empty | `commit` | Placeholder vendor 2's models bought through Bedrock |
+| `best_single` | `best_single` | empty | `commit` | Derived by the engine, no baseline rows |
+
+**`pattern_popularity.csv`, all 17 rows.** Every rank and its source label `INVENTED PLACEHOLDER: not a survey or market-share figure` is invented. The ranks differ by stage on purpose, so the default grey options differ between stages. `vendor2_bedrock` has no row for the `seats` stage, so it is never a default grey for a seats visitor.
+
+| Stage | Rank 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| `seats` | `seats` | `vendor1_direct` | `api` | `vendor2_direct` | `platform` | none |
+| `api` | `api` | `vendor2_direct` | `platform` | `seats` | `vendor1_direct` | `vendor2_bedrock` |
+| `platform` | `platform` | `vendor2_bedrock` | `api` | `vendor2_direct` | `seats` | `vendor1_direct` |
 
 **`baseline_providers.csv`, 48 rows.** The first 24 rows are the v0.2 rows with `stage` renamed to `pattern_id` (`seats`, `api`, `platform`, eight workloads each). The last 24 rows are invented: three vendor patterns (`vendor1_direct`, `vendor2_direct`, `vendor2_bedrock`) by eight workloads, `share_default` 1.0. Each row names the offer of the vendor's cheapest model, ranked by list price at that channel, whose composite score meets the workload's `quality_floor`. That gives `mid_a_direct_global` for `vendor1_direct`, `frontier_b_direct_global` for `vendor2_direct` and `frontier_b_bedrock_useast` for `vendor2_bedrock`, on every workload.
 

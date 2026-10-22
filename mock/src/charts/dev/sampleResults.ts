@@ -45,6 +45,7 @@ export const sampleResults: Results = {
   effective_open_share: 0.3,
   floor_unmet_workloads: [],
   comparator: "api",
+  infravana_side: { quality_floor_by_workload: { software_design: 70 }, latency_class: "interactive" },
   today_alternatives: [
     {
       pattern_id: "api",
@@ -139,6 +140,7 @@ export const sampleResultsEdge: Results = {
   effective_open_share: 0,
   floor_unmet_workloads: [],
   comparator: "only",
+  infravana_side: { quality_floor_by_workload: { support: 60 }, latency_class: "batch" },
   today_alternatives: [
     {
       pattern_id: "only",

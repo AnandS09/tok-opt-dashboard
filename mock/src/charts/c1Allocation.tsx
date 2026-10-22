@@ -355,6 +355,6 @@ export const allocationChart: ChartDef = {
   howComputed: ALLOCATION_HOW_COMPUTED,
   toCsv: allocationCsv,
   // Benefit boxes (spec 6.4) are built in a later step.
-  benefits: () => [],
+  benefits: (_results, _context) => [],
   Component: AllocationChart,
 };

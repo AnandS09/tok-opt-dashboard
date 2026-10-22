@@ -1,5 +1,5 @@
 /**
- * Data loader (spec 7.3): fetches the ten CSVs and `manifest.json` under a
+ * Data loader (spec 7.3): fetches the eleven CSVs and `manifest.json` under a
  * base URL, parses them with PapaParse, and validates headers, cell kinds
  * and foreign keys. Every failure throws an Error whose message names the
  * file and, where there is one, the column (spec 7.3 "fail loudly").
@@ -17,6 +17,7 @@ import type {
   Manifest,
   ModelOfferRow,
   ModelRow,
+  PatternPopularityRow,
   QualityRow,
   ScenarioResponse,
   SeatPlanRow,
@@ -32,6 +33,7 @@ import {
   LATENCY_CLASSES,
   MODEL_OFFERS,
   MODELS,
+  PATTERN_POPULARITY,
   QUALITY,
   SEAT_PLANS,
   THROUGHPUT_CURVES,
@@ -298,6 +300,8 @@ function validateReferences(t: Tables): void {
 
   const patternById = new Map(t.buying_patterns.map((p) => [p.pattern_id, p]));
   const patternIds = new Set(patternById.keys());
+  const vendorOfModel = new Map(t.models.map((m) => [m.model_id, m.vendor]));
+  const modelVendorByOffer = new Map(t.model_offers.map((o) => [o.offer_id, vendorOfModel.get(o.model_id)]));
   const customerWorkloads = new Set(t.workloads.filter((w) => w.basis === "customer").map((w) => w.workload_id));
   const shareSums = new Map<string, number>();
   t.baseline_providers.forEach((r, i) => {
@@ -323,6 +327,15 @@ function validateReferences(t: Tables): void {
         throw new Error(`${file}: column "offer_id" on line ${lineOf(i)} is required for pattern ${r.pattern_id} and customer workloads`);
       }
       need(file, "offer_id", i, r.offer_id, ids.offers, MODEL_OFFERS.file);
+      // A vendor end-to-end pattern buys only that vendor's models.
+      if (pattern.kind === "vendor_end_to_end") {
+        const vendor = modelVendorByOffer.get(r.offer_id);
+        if (vendor !== pattern.vendor) {
+          throw new Error(
+            `${file}: column "offer_id" on line ${lineOf(i)} buys "${r.offer_id}", a model of vendor "${vendor}", but pattern ${r.pattern_id} is an end-to-end pattern of vendor "${pattern.vendor}"`,
+          );
+        }
+      }
     }
     const key = `${r.pattern_id}|${r.workload_id}`;
     shareSums.set(key, (shareSums.get(key) ?? 0) + r.share_default);
@@ -356,14 +369,6 @@ function validateBuyingPatterns(t: Tables): void {
     if (p.kind === "vendor_end_to_end" && p.vendor === null) {
       throw new Error(`${where} "vendor" on line ${lineOf(i)} is required for a vendor_end_to_end pattern`);
     }
-    if (p.popularity_rank !== null) {
-      if (!Number.isInteger(p.popularity_rank) || p.popularity_rank < 1) {
-        throw new Error(`${where} "popularity_rank" on line ${lineOf(i)} must be a whole number from 1`);
-      }
-      if (p.popularity_source === null) {
-        throw new Error(`${where} "popularity_source" on line ${lineOf(i)} is required when popularity_rank is set`);
-      }
-    }
   });
   for (const stage of STAGES) {
     const typical = t.buying_patterns.filter((p) => p.kind === "way_to_buy" && p.stage === stage);
@@ -374,6 +379,29 @@ function validateBuyingPatterns(t: Tables): void {
   if (t.buying_patterns.filter((p) => p.kind === "best_single").length > 1) {
     throw new Error(`${file}: column "kind" has more than one best_single pattern`);
   }
+
+  // Popularity: one rank per pattern per stage, only for patterns that have rows.
+  const popFile = PATTERN_POPULARITY.file;
+  const kindOf = new Map(t.buying_patterns.map((p) => [p.pattern_id, p.kind]));
+  const ranked = new Set<string>();
+  t.pattern_popularity.forEach((r, i) => {
+    const where = `${popFile}: column`;
+    const kind = kindOf.get(r.pattern_id);
+    if (kind === undefined) {
+      throw new Error(`${where} "pattern_id" on line ${lineOf(i)} refers to "${r.pattern_id}", which is not in ${file}`);
+    }
+    if (kind === "best_single") {
+      throw new Error(`${where} "pattern_id" on line ${lineOf(i)} names the best_single pattern, which is derived and never ranked`);
+    }
+    if (!Number.isInteger(r.popularity_rank) || r.popularity_rank < 1) {
+      throw new Error(`${where} "popularity_rank" on line ${lineOf(i)} must be a whole number from 1`);
+    }
+    const key = `${r.pattern_id}|${r.stage}`;
+    if (ranked.has(key)) {
+      throw new Error(`${where} "stage" on line ${lineOf(i)} ranks "${r.pattern_id}" twice for stage "${r.stage}"`);
+    }
+    ranked.add(key);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -394,6 +422,7 @@ export async function loadTables(baseUrl: string): Promise<Tables> {
     QUALITY,
     WORKLOADS,
     BUYING_PATTERNS,
+    PATTERN_POPULARITY,
     BASELINE_PROVIDERS,
     CASE_STUDIES,
   ];
@@ -412,8 +441,9 @@ export async function loadTables(baseUrl: string): Promise<Tables> {
     quality: rows[5] as QualityRow[],
     workloads: rows[6] as WorkloadRow[],
     buying_patterns: rows[7] as BuyingPatternRow[],
-    baseline_providers: rows[8] as BaselineProviderRow[],
-    case_studies: rows[9] as CaseStudyRow[],
+    pattern_popularity: rows[8] as PatternPopularityRow[],
+    baseline_providers: rows[9] as BaselineProviderRow[],
+    case_studies: rows[10] as CaseStudyRow[],
     manifest: parseManifest(manifestText),
   };
   validateReferences(tables);

@@ -1,5 +1,5 @@
 /**
- * Column contracts for the ten CSVs (spec 7.3, mock/public/data/README.md).
+ * Column contracts for the eleven CSVs (spec 7.3, mock/public/data/README.md).
  * A table is valid when its header row has exactly these columns and every
  * cell has the kind declared here. A trailing `?` marks a column that may be
  * empty (parsed as `null`).
@@ -165,12 +165,21 @@ export const BUYING_PATTERNS: TableSpec = {
     stage: "string?",
     vendor: "string?",
     pricing_rule: "string",
-    popularity_rank: "number?",
-    popularity_source: "string?",
     source_url: "string",
     as_of: "string",
   },
   enums: { kind: PATTERN_KINDS, stage: STAGES, pricing_rule: PRICING_RULES },
+};
+
+export const PATTERN_POPULARITY: TableSpec = {
+  file: "pattern_popularity.csv",
+  columns: {
+    pattern_id: "string",
+    stage: "string",
+    popularity_rank: "number",
+    popularity_source: "string",
+  },
+  enums: { stage: STAGES },
 };
 
 export const BASELINE_PROVIDERS: TableSpec = {

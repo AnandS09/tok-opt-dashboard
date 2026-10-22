@@ -1,6 +1,6 @@
 {
-  "data_version": "0.2.0-placeholder",
-  "generated_at": "2026-10-21T12:00:00Z",
+  "data_version": "0.3.0-placeholder",
+  "generated_at": "2026-10-21T14:00:00Z",
   "placeholder": true,
   "notice": "INVENTED PLACEHOLDER DATA. Nothing in this folder is measured, quoted or taken from a vendor, benchmark or price page. Every throughput row is provenance=modelled. Do not present any of it as real.",
   "parameters": {
@@ -65,9 +65,15 @@
       "placeholder": true
     },
     "buying_patterns.csv": {
-      "version": "0.2.0-placeholder",
+      "version": "0.3.0-placeholder",
       "row_count": 7,
-      "checksum": "sha256:8972a668514cb277ea90337060c3194edda30e2ec178d701810d899d2c221c01",
+      "checksum": "sha256:8fb420ff09f5af0c82d0e10f53132d01a2041fe6a25f89168016950b8c72c7a3",
+      "placeholder": true
+    },
+    "pattern_popularity.csv": {
+      "version": "0.3.0-placeholder",
+      "row_count": 17,
+      "checksum": "sha256:919fd2de6abe5b36dbeddbcffd1268485ef58836666a608fc656dee1f73a8630",
       "placeholder": true
     },
     "baseline_providers.csv": {

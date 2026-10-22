@@ -252,11 +252,10 @@ export interface BaselineProviderRow {
  *
  *   - `way_to_buy` patterns carry the `stage` they are the typical buyer for
  *     (one per stage); `vendor_end_to_end` patterns have an empty stage and
- *     name their `vendor`; the `best_single` row has no baseline rows.
- *   - `popularity_rank` is one integer per pattern (lower is more popular,
- *     ties broken by `pattern_id`); empty means the pattern is never a
- *     default grey option. The mock's ranks are invented, labelled in
- *     `popularity_source`.
+ *     name their `vendor` (every offer in their baseline rows is a model of
+ *     that vendor); the `best_single` row has no baseline rows.
+ *   - Popularity is not here: it differs by the visitor's stage, so it lives
+ *     in `pattern_popularity.csv` (`PatternPopularityRow`).
  */
 export interface BuyingPatternRow {
   pattern_id: PatternId;
@@ -265,12 +264,25 @@ export interface BuyingPatternRow {
   stage: Stage | null;
   vendor: string | null;
   pricing_rule: PricingRule;
-  popularity_rank: number | null;
-  /** Where the rank comes from; present whenever `popularity_rank` is. */
-  popularity_source: string | null;
   source_url: string;
   /** ISO date the pattern was captured (spec 12 BD-2, BD-5). */
   as_of: string;
+}
+
+/**
+ * Spec 7.4 `popularity_rank`: one integer rank per pattern per stage. Row
+ * (`pattern_id`, `stage`) says how popular the pattern is among visitors
+ * whose `stage_today` is `stage`; lower is more popular, ties are broken by
+ * `pattern_id`. A pattern with no row for a stage is never a default grey
+ * option for that stage. The mock's ranks are invented, labelled in
+ * `popularity_source`.
+ */
+export interface PatternPopularityRow {
+  pattern_id: PatternId;
+  stage: Stage;
+  /** A whole number from 1. */
+  popularity_rank: number;
+  popularity_source: string;
 }
 
 /** Spec 7.3 `case_studies.csv`. Drives the case-study presets (spec 6). */
@@ -333,6 +345,7 @@ export interface Tables {
   quality: QualityRow[];
   workloads: WorkloadRow[];
   buying_patterns: BuyingPatternRow[];
+  pattern_popularity: PatternPopularityRow[];
   baseline_providers: BaselineProviderRow[];
   case_studies: CaseStudyRow[];
   manifest: Manifest;
@@ -403,15 +416,26 @@ export interface Scenario {
   /** Spec 6.2: the active goal tab. Absent means `G1`. */
   goal?: GoalId;
   /**
-   * Spec 6.2 G4: the give-up the visitor accepts, read only while `goal` is
-   * `G4`. Each step is an index into a list that comes from data: 0 keeps
-   * the visitor's own quality floor (`quality_step`) or latency class
-   * (`speed_step`), each further step gives up one more level.
+   * Spec 6.2 G4: the give-up the visitor accepts. It is read only while
+   * `goal` is `G4`, and `compute()` applies it to the InfraVana plan only;
+   * Today never changes. Step 0 of each control means no give-up; each
+   * further step gives up one more level (see `Tradeoff`).
    */
   tradeoff?: Tradeoff;
 }
 
-/** Spec 6.2 G4 `tradeoff`: two separate stepped controls. */
+/**
+ * Spec 6.2 G4 `tradeoff`: two separate stepped controls, whole numbers from 0.
+ *
+ *   - `quality_step`: InfraVana's quality floor for each workload drops to
+ *     the next lower distinct composite score of `quality.csv` for that
+ *     workload, `quality_step` times (it stops at the lowest score). It acts
+ *     on the open-weight share only (spec 12 BD-8).
+ *   - `speed_step`: InfraVana's latency class moves down the list
+ *     interactive, standard, batch, `speed_step` times (it stops at batch).
+ *     Moving a proprietary offer to a batch or flex price tier waits for the
+ *     speed rows of spec 12 BD-11.
+ */
 export interface Tradeoff {
   quality_step: number;
   speed_step: number;
@@ -614,15 +638,31 @@ export interface Results {
    */
   comparator: PatternId;
   /**
+   * The floors and speed InfraVana was planned at. With no trade-off
+   * (`goal` not `G4`, or both steps 0) they equal the Today-side values
+   * `quality_floor_by_workload` and `scenario.latency_class`. In G4 the page
+   * calls `compute()` twice, once at the visitor's own floors and once with
+   * the trade-off, takes Today from the first call and shows both sides'
+   * floors and speeds from the two calls (spec 6.2, 9).
+   */
+  infravana_side: InfravanaSide;
+  /**
    * Spec 6.1, 7.4: every Today option that applies to the scenario's
    * workloads, in display order: the grey options first (`is_grey`, at most
-   * four, in popularity order with the typical buyer always among them, and
+   * four, in popularity order for `stage_today` with the typical buyer always among them, and
    * the comparator among them when it is not one by rank), then the rest by
    * popularity (unranked last), then the derived best single option. The
    * comparator itself is one of the entries. An option appears only if its
    * pattern has baseline rows for every workload in the mix.
    */
   today_alternatives: TodayAlternative[];
+}
+
+/** The quality floors and latency class the InfraVana side was planned at (spec 6.2 G4). */
+export interface InfravanaSide {
+  /** Keys are `workload_id`s, as in `Results.quality_floor_by_workload`. */
+  quality_floor_by_workload: Record<string, number>;
+  latency_class: LatencyClass;
 }
 
 /** One Today option in `Results.today_alternatives` (spec 6.1, 7.4). */
@@ -738,11 +778,31 @@ export interface ChartDef {
   /**
    * Spec 6.4 benefit boxes, in candidate order (the page shows the first
    * three that are non-zero and differ from the active tab's headline). Every
-   * number is derived from `results`; none is typed. `caption` stays as the
-   * chart's accessible name.
+   * number is derived from `results` and `context`; none is typed. `caption`
+   * stays as the chart's accessible name.
    */
-  benefits: (results: Results) => BenefitBox[];
+  benefits: (results: Results, context: BenefitContext) => BenefitBox[];
   Component: ComponentType<ChartProps>;
+}
+
+/**
+ * What the benefit boxes need besides `Results` (spec 6.4): the scenario,
+ * the active goal tab and, for that tab, its solved volumes or frontier.
+ */
+export interface BenefitContext {
+  scenario: Scenario;
+  /** The active goal tab. */
+  goal: GoalId;
+  /** The `solveAtBudget` result for the active tab (G2 and G3), else null. */
+  solve: SolveResult | null;
+  /** The `frontier` result C10 shows, else null. */
+  frontier: FrontierResult | null;
+  /**
+   * The count the per-head boxes divide by: the team's people when the mix
+   * has employee work, else the customers when it has customer work, null
+   * when neither count applies. See `benefitHeadcount` in compute.
+   */
+  headcount: number | null;
 }
 
 /** How a `BenefitBox.value` is to be formatted. */

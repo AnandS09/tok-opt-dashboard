@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { loadScenario, loadTables } from "../data/load";
-import { compute } from "./index";
+import { compute, computeCore } from "./index";
 
 // Every fixture file, read as text at build time, so the test needs no
 // filesystem types and no server.
@@ -35,4 +35,46 @@ it("computes the default S1 numbers from the fixture files", async () => {
   expect(results.allocation.total_usd).toBeCloseTo(100012.5, 2);
   expect(infravanaSpend).toBeCloseTo(70440.09, 2);
   expect(results.comparator).toBe("api");
+});
+
+async function loadS1() {
+  serveFixtures();
+  const tables = await loadTables("data");
+  const { scenario } = await loadScenario("data", "s1");
+  return { tables, scenario };
+}
+
+const greys = (r: ReturnType<typeof compute>) =>
+  r.today_alternatives.filter((a) => a.is_grey).map((a) => a.pattern_id);
+
+it("ranks Today options per stage, so the grey options differ by stage", async () => {
+  const { tables, scenario } = await loadS1();
+  expect(greys(compute({ ...scenario, stage_today: "seats" }, tables))).not.toEqual(
+    greys(compute({ ...scenario, stage_today: "api" }, tables)),
+  );
+});
+
+it("derives the best single option from proprietary offers only", async () => {
+  const { tables, scenario } = await loadS1();
+  const best = compute({ ...scenario, workload_mix: { software_design: 1 } }, tables)
+    .today_alternatives.find((a) => a.pattern_id === "best_single");
+  expect(best?.detail).toMatch(/^mid_a /);
+});
+
+it("computeCore is compute without the Today options", async () => {
+  const { tables, scenario } = await loadS1();
+  const { today_alternatives, ...rest } = compute(scenario, tables);
+  expect(today_alternatives.length).toBeGreaterThan(0);
+  expect(computeCore(scenario, tables)).toEqual(rest);
+});
+
+it("applies a G4 trade-off to the InfraVana side only", async () => {
+  const { tables, scenario } = await loadS1();
+  const own = compute({ ...scenario, goal: "G4" }, tables);
+  const traded = compute({ ...scenario, goal: "G4", tradeoff: { quality_step: 3, speed_step: 1 } }, tables);
+  expect(traded.allocation.today).toEqual(own.allocation.today);
+  expect(traded.quality_floor_by_workload).toEqual(own.quality_floor_by_workload);
+  expect(own.infravana_side.quality_floor_by_workload).toEqual(own.quality_floor_by_workload);
+  expect(traded.infravana_side.quality_floor_by_workload.software_design).toBeLessThan(78);
+  expect(traded.infravana_side.latency_class).toBe("standard");
 });

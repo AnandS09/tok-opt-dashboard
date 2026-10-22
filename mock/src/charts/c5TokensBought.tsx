@@ -163,6 +163,6 @@ export const tokensBoughtChart: ChartDef = {
   howComputed: TOKENS_HOW_COMPUTED,
   toCsv: tokensBoughtCsv,
   // Benefit boxes (spec 6.4) are built in a later step.
-  benefits: () => [],
+  benefits: (_results, _context) => [],
   Component: TokensBoughtChart,
 };
