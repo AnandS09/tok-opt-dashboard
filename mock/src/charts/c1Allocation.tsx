@@ -217,7 +217,10 @@ export function buildAllocationOption(
   const extent = Math.max(a.total_usd, a.budget_usd, ...cmp.options.map((o) => o.alt.total_usd));
   const axisMax = niceCeil(extent);
   const left = stage ? labelColumn(dims.width) + t.space3 : GRID_THUMB.left;
-  const right = stage ? 24 : GRID_THUMB.right;
+  // Option labels sit right of their bar, or right of the budget line when the line is in the way, so the
+  // margin holds the longest of them: a label never moves between rows.
+  const optionLabelPx = narrow ? 0 : Math.max(0, ...cmp.options.map((o) => textWidth(optionLabels(o)[0], t.fontXs, t.weightBold, t.fontSans)));
+  const right = stage ? 24 + (optionLabelPx > 0 ? Math.ceil(optionLabelPx) + t.space2 : 0) : GRID_THUMB.right;
   const grid = stage ? { left, right, top: 36, bottom: 28 } : GRID_THUMB;
   const plotWidth = Math.max(0, dims.width - left - right);
   const pxPer = plotWidth / axisMax;
@@ -231,13 +234,17 @@ export function buildAllocationOption(
     return tries.find((text) => textWidth(text, t.fontXs, t.weightBold, t.fontSans) <= room) ?? "";
   };
 
-  /** True when a label right of a bar would leave the plot or sit on the budget line. */
-  const noRoomRight = (end: number, text: string): boolean => {
+  /** How far right of its bar's end a label must start to clear the budget line, in pixels (0 when the line is not in the way). */
+  const pastBudgetLine = (end: number, text: string): number => {
     const start = end * pxPer;
     const stop = start + t.space2 + textWidth(text, t.fontXs, t.weightBold, t.fontSans);
     const budgetX = a.budget_usd * pxPer;
-    return stop > plotWidth || (budgetX >= start && budgetX <= stop + t.space2);
+    return budgetX >= start && budgetX <= stop + t.space2 ? budgetX + t.space2 - start : 0;
   };
+
+  const budgetText = `Budget ${fmtBudget(a.budget_usd)}`;
+  const budgetClips =
+    left + a.budget_usd * pxPer + textWidth(budgetText, t.fontXs, t.weightRegular, t.fontSans) / 2 > dims.width - t.space1;
 
   const series: BarSeriesOption[] = pieces.map((p, index) => {
     const item: BarSeriesOption = {
@@ -264,12 +271,13 @@ export function buildAllocationOption(
     };
     if (stage && p.option) {
       // An option bar is one block: its quality and cost sit right of it, beside the bar rather than in a legend.
-      // Right of the bar when it fits, else above it, where the whole text fits whatever the bar's length.
+      // Right of the bar; when the budget line is in the way it starts right of the line, still in its own row.
       const [full] = optionLabels(p.option);
       item.label = {
         // On a narrow chart the cost and quality go under the row name instead, where there is room for both.
         show: !narrow,
-        position: noRoomRight(p.usd, full) ? "top" : "right",
+        position: "right",
+        offset: [pastBudgetLine(p.usd, full), 0],
         formatter: full,
         color: t.text,
         fontSize: t.fontXs,
@@ -306,7 +314,9 @@ export function buildAllocationOption(
             label: {
               show: true,
               position: "start",
-              formatter: `Budget ${fmtBudget(a.budget_usd)}`,
+              // Centred on the line, but ending at it when centring would run past the right edge of the chart.
+              align: budgetClips ? "right" : "center",
+              formatter: budgetText,
               color: t.textSecondary,
               fontSize: t.fontXs,
             },

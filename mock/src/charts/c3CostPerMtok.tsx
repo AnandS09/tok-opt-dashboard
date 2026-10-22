@@ -1,11 +1,12 @@
 import { useCallback } from "react";
 import { BarChart, ScatterChart } from "echarts/charts";
 import type { BarSeriesOption, ScatterSeriesOption } from "echarts/charts";
-import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
+import { GridComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, CostPerMtokRow, ModelTier, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
+import { C3Key } from "./C3Key";
 import { ChartFigure } from "./ChartFigure";
 import { LATENCY_LABEL } from "../components/format";
 import { comparisonOf, qualityText } from "./comparison";
@@ -19,7 +20,7 @@ import { PROVENANCE_TEXT, outlineOf } from "./provenanceStyle";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
 
-use([BarChart, ScatterChart, GridComponent, LegendComponent, TooltipComponent]);
+use([BarChart, ScatterChart, GridComponent, TooltipComponent]);
 
 type SideKey = "today" | "infravana";
 
@@ -72,6 +73,10 @@ function shownRows(results: Results, cmp: Comparison): CostPerMtokRow[] {
 const BAND_EDGE = 8;
 const MARKER_SIZE = 12;
 const BAR_WIDTH_PCT = 30;
+/** Narrower bars on a phone leave the markers room beside the pair. */
+const BAR_WIDTH_PCT_NARROW = 20;
+/** and a wider gap, so a value label wider than its bar does not touch the bar beside it. */
+const BAR_GAP_PCT_NARROW = 60;
 /** A bar never grows past this many pixels, so a chart with one class does not draw two slabs. */
 const BAR_MAX_PX = 96;
 const BAR_GAP_PCT = 12;
@@ -90,30 +95,16 @@ export function buildCostPerMtokOption(
   const narrow = dims.width < 600;
   const colour: Record<SideKey, string> = { today: t.today1, infravana: t.accent };
 
-  // The legend wraps; its height is reserved above the plot from the measured width of its entries.
-  const entries = [...sides.map((s) => s.name), ...cmp.options.map((o) => o.alt.label)];
-  const legendFont = t.fontSm;
-  const entryWidths = entries.map((e) => textWidth(e, legendFont, 400, t.fontSans) + MARKER_SIZE + 8 + 10);
-  let legendLines = 1;
-  let used = 0;
-  for (const w of entryWidths) {
-    if (used > 0 && used + w > dims.width) {
-      legendLines += 1;
-      used = 0;
-    }
-    used += w;
-  }
-  const legendHeight = legendLines * (t.lineSm + 6);
-  const grid = stage
-    ? { left: 64, right: 24, top: legendHeight + 28, bottom: 40 }
-    : { left: 4, right: 4, top: 6, bottom: 6 };
+  const grid = stage ? { left: 64, right: 24, top: 28, bottom: 40 } : { left: 4, right: 4, top: 6, bottom: 6 };
 
+  const barPct = narrow ? BAR_WIDTH_PCT_NARROW : BAR_WIDTH_PCT;
+  const gapPct = narrow ? BAR_GAP_PCT_NARROW : BAR_GAP_PCT;
   const bars: BarSeriesOption[] = sides.map(({ key, name }) => ({
     type: "bar",
     name,
-    barWidth: `${BAR_WIDTH_PCT}%`,
+    barWidth: `${barPct}%`,
     barMaxWidth: BAR_MAX_PX,
-    barGap: `${BAR_GAP_PCT}%`,
+    barGap: `${gapPct}%`,
     silent: !stage,
     emphasis: { disabled: true },
     // The series colour is what the legend swatch takes; the outline of each bar is set per item below.
@@ -142,11 +133,21 @@ export function buildCostPerMtokOption(
   // Markers stand to the right of the bar pair, spread so that two options with close prices do not coincide.
   const plotWidth = Math.max(0, dims.width - grid.left - grid.right);
   const band = rows.length > 0 ? plotWidth / rows.length : plotWidth;
-  const barPx = Math.min((band * BAR_WIDTH_PCT) / 100, BAR_MAX_PX);
-  const pairHalf = (barPx * (2 + BAR_GAP_PCT / 100)) / 2;
-  const room = band / 2 - BAND_EDGE;
-  const first = Math.min(pairHalf + MARKER_SIZE, room);
-  const step = cmp.options.length > 1 ? Math.max(0, Math.min(narrow ? 9 : 20, (room - first) / (cmp.options.length - 1))) : 0;
+  const barPx = Math.min((band * barPct) / 100, BAR_MAX_PX);
+  const pairHalf = (barPx * (2 + gapPct / 100)) / 2;
+  const room = band / 2 - (narrow ? 2 : BAND_EDGE);
+  const first = Math.min(pairHalf + (narrow ? 8 : MARKER_SIZE), room);
+  const priceWidth = Math.max(
+    0,
+    ...cmp.options.flatMap((o) =>
+      Object.values(o.alt.usd_per_mtok_by_class).flatMap((p) => (p === null ? [] : [textWidth(fmtUsdPerMtok(p), t.fontXs, t.weightRegular, t.fontSans)])),
+    ),
+  );
+  // Each marker carries its price above it when the markers can be spaced a price apart (the tooltip carries it otherwise).
+  const labelStep = Math.ceil(priceWidth) + t.space1;
+  const roomStep = cmp.options.length > 1 ? (room - first) / (cmp.options.length - 1) : Infinity;
+  const priced = stage && !narrow && roomStep >= labelStep;
+  const step = cmp.options.length > 1 ? Math.max(0, Math.min(priced ? labelStep : narrow ? MARKER_SIZE : 20, roomStep)) : 0;
 
   const markers: ScatterSeriesOption[] = cmp.options.map((o, i) => {
     const style = optionStyle(o.rank);
@@ -155,12 +156,21 @@ export function buildCostPerMtokOption(
       name: o.alt.label,
       symbol: style.marker,
       symbolSize: MARKER_SIZE,
+      symbolKeepAspect: true,
       symbolOffset: [first + i * step, 0],
       z: 5,
       silent: !stage,
       emphasis: { disabled: true },
       // A scatter point is drawn at 80% opacity by default, which would not be the token colour.
       itemStyle: { color: t[style.fill], borderColor: t.surface, borderWidth: t.savingsOutlineWidth, opacity: 1 },
+      label: {
+        show: priced,
+        position: "top",
+        distance: t.space1,
+        color: t.textSecondary,
+        fontSize: t.fontXs,
+        formatter: (p) => fmtUsdPerMtok(Number((p.value as number[])[1])),
+      },
       // A class where the option has no price has no point, so no marker is drawn there.
       data: rows.flatMap((r, k) => {
         const price = o.alt.usd_per_mtok_by_class[r.model_class];
@@ -172,27 +182,6 @@ export function buildCostPerMtokOption(
   return {
     ...baseOption(t, stage),
     grid,
-    legend: stage
-      ? {
-          top: 0,
-          left: 0,
-          itemWidth: MARKER_SIZE,
-          itemHeight: MARKER_SIZE,
-          itemGap: 10,
-          textStyle: { color: t.text, fontSize: legendFont },
-          selectedMode: false,
-          // The legend is read-only. Its defaults draw a transparent black box with a grey border and a grey
-          // inactive colour; each is set to a token, so nothing in the drawing is an ECharts default.
-          backgroundColor: t.surface,
-          borderColor: t.surface,
-          borderWidth: 0,
-          inactiveColor: t.border,
-          data: [
-            ...sides.map((s) => ({ name: s.name, icon: "rect" })),
-            ...cmp.options.map((o) => ({ name: o.alt.label, icon: optionStyle(o.rank).marker })),
-          ],
-        }
-      : undefined,
     tooltip: stage
       ? {
           ...tooltipChrome(t),
@@ -309,10 +298,11 @@ export function costPerMtokParts(results: Results): ProvenancePart[] {
   const [today, infravana] = sidesOf(cmp);
   const parts: ProvenancePart[] = [];
   for (const r of shownRows(results, cmp)) {
+    // Which class a provenance belongs to matters: a small bar can only be told apart by its badge.
     if (r.today_usd_per_mtok !== null)
-      parts.push({ group: today.name, part: "", provenance: r.today_provenance });
+      parts.push({ group: today.name, part: classLabel(r), provenance: r.today_provenance });
     if (r.infravana_usd_per_mtok !== null)
-      parts.push({ group: infravana.name, part: "", provenance: r.infravana_provenance });
+      parts.push({ group: infravana.name, part: classLabel(r), provenance: r.infravana_provenance });
   }
   for (const o of cmp.options) {
     parts.push({ group: "Other Today options", part: o.alt.label, provenance: o.alt.provenance });
@@ -341,8 +331,7 @@ export function CostPerMtokChart({ results, size }: ChartProps) {
   return (
     <ChartFigure
       size={size}
-      height={320}
-      phoneHeight={460}
+      header={size === "stage" ? <C3Key results={results} /> : undefined}
       parts={costPerMtokParts(results)}
       ariaLabel={costPerMtokCaption(results)}
       build={build}

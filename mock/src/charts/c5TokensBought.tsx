@@ -105,7 +105,7 @@ export function buildTokensBoughtOption(
   /** The right-hand label of a bar, as lines. On a narrow chart it is the figure alone, so the bars keep their width. */
   const labelLines = (bar: Bar): { text: string; style: "v" | "inf" | "sub" }[] => {
     const main = {
-      text: narrow ? fmtTokens(bar.tokens) : `${fmtTokens(bar.tokens)} tokens`,
+      text: narrow ? fmtTokensSig(bar.tokens) : `${fmtTokensSig(bar.tokens)} tokens`,
       style: bar.kind === "infravana" ? ("inf" as const) : ("v" as const),
     };
     return narrow ? [main] : [main, ...detailLines(bar).map((text) => ({ text, style: "sub" as const }))];
@@ -173,7 +173,7 @@ export function buildTokensBoughtOption(
             if (!bar) return "";
             const lines = [
               `<strong>${esc(bar.name)}</strong>`,
-              `${fmtTokens(bar.tokens)} tokens a quarter for ${fmtUsd(b.budget_usd)}`,
+              `${fmtTokensSig(bar.tokens)} tokens a quarter for ${fmtBudget(b.budget_usd)}`,
             ];
             const alt = bar.kind === "comparator" ? cmp.comparator : (bar.option?.alt ?? null);
             if (alt) {
@@ -309,7 +309,7 @@ export function TokensBoughtChart({ results, size }: ChartProps) {
         headers: ["Series", "Tokens a quarter"],
         rows: bars.map((bar) => [
           bar.name,
-          `${fmtTokens(bar.tokens)}${bar.kind === "option" && figures.estimateOthers ? ` (${ESTIMATED_LABEL.toLowerCase()})` : ""}`,
+          `${fmtTokensSig(bar.tokens)}${bar.kind === "option" && figures.estimateOthers ? ` (${ESTIMATED_LABEL.toLowerCase()})` : ""}`,
         ]),
       }}
     />
