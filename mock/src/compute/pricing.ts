@@ -21,6 +21,16 @@ export function isTokenPriced(offer: ModelOfferRow): offer is TokenPricedOffer {
   return offer.usd_per_mtok_in !== null && offer.usd_per_mtok_out !== null;
 }
 
+/**
+ * True for the list price every default view buys at. Batch and flex rows are
+ * the same model at a cheaper, slower price and only the G4 speed step and the
+ * C10 speed view may use them (spec 6.2, 6.3, 12 BD-11), so every other
+ * reader of `model_offers` filters on this.
+ */
+export function isStandardTier(offer: ModelOfferRow): boolean {
+  return offer.price_tier === "standard";
+}
+
 /** USD at list price for `tokensIn` input and `tokensOut` output tokens. */
 export function listCostUsd(offer: TokenPricedOffer, tokensIn: number, tokensOut: number): number {
   return (

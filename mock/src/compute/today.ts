@@ -34,6 +34,7 @@ import {
   TOKENS_PER_MTOK,
   SpendBook,
   committedCostUsd,
+  isStandardTier,
   isTokenPriced,
   listCostUsd,
   worstProvenance,
@@ -94,7 +95,7 @@ function directOffer(tables: Tables, modelId: string, tokensIn: number, tokensOu
   let best: TokenPricedOffer | null = null;
   let bestUsd = Infinity;
   for (const offer of tables.model_offers) {
-    if (offer.model_id !== modelId || offer.channel !== "direct" || !isTokenPriced(offer)) continue;
+    if (offer.model_id !== modelId || offer.channel !== "direct" || !isStandardTier(offer) || !isTokenPriced(offer)) continue;
     const usd = (tokensIn * offer.usd_per_mtok_in + tokensOut * offer.usd_per_mtok_out) / TOKENS_PER_MTOK;
     if (usd < bestUsd) {
       best = offer;

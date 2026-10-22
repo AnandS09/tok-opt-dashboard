@@ -13,7 +13,13 @@ import type {
   Tables,
 } from "../contract";
 import type { WorkloadDemand } from "./demand";
-import { committedCostUsd, isTokenPriced, listCostUsd, type TokenPricedOffer } from "./pricing";
+import {
+  committedCostUsd,
+  isStandardTier,
+  isTokenPriced,
+  listCostUsd,
+  type TokenPricedOffer,
+} from "./pricing";
 
 const COMPOSITE_PREFIX = "composite:";
 
@@ -109,7 +115,7 @@ export function deriveBestSingle(
 
   let best: { offer: TokenPricedOffer; usd: number } | null = null;
   for (const offer of tables.model_offers) {
-    if (!isTokenPriced(offer) || !proprietary.has(offer.model_id)) continue;
+    if (!isTokenPriced(offer) || !isStandardTier(offer) || !proprietary.has(offer.model_id)) continue;
     const meetsEveryFloor = demand.every((d) => {
       const score = scores.get(`${offer.model_id}|${d.workload_id}`);
       return score !== undefined && score >= d.quality_floor;

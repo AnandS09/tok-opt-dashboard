@@ -58,6 +58,7 @@ import {
   TOKENS_PER_MTOK,
   cheapestOffer,
   committedCostUsd,
+  isStandardTier,
   isTokenPriced,
   worstProvenance,
   type TokenPricedOffer,
@@ -143,6 +144,8 @@ export function planInfravana(
   const offersByModel = new Map<string, TokenPricedOffer[]>();
   const selfHostable = new Set<string>();
   for (const offer of [...tables.model_offers].sort((a, b) => a.offer_id.localeCompare(b.offer_id))) {
+    // Batch and flex rows are read only by the G4 speed step and the C10 speed view.
+    if (!isStandardTier(offer)) continue;
     if (offer.channel === "self-host") {
       selfHostable.add(offer.model_id);
     } else if (isTokenPriced(offer)) {
