@@ -73,6 +73,25 @@ describe("the typical buyer (spec 6.1)", () => {
     expect(greys(compute(at("api"), t))).toEqual(["vendor2_direct", "platform", "seats", "api"]);
   });
 
+  it("stays grey, with four greys, when it ranks outside the top four and another option is the comparator", () => {
+    for (const stage of STAGES) {
+      // Push the typical buyer down to rank 9; every other ranked pattern moves up.
+      const ranks: Record<string, number> = {};
+      let next = 1;
+      const current = base.pattern_popularity
+        .filter((r) => r.stage === stage)
+        .sort((a, b) => a.popularity_rank - b.popularity_rank);
+      for (const row of current) ranks[row.pattern_id] = row.pattern_id === stage ? 9 : next++;
+      const t = ranked(stage, ranks);
+      for (const comparator of Object.keys(ranks).filter((id) => id !== stage)) {
+        const r = compute(at(stage, { comparator }), t);
+        expect(greys(r), `${stage} vs ${comparator}`).toHaveLength(4);
+        expect(greys(r), `${stage} vs ${comparator}`).toContain(stage);
+        expect(greys(r), `${stage} vs ${comparator}`).toContain(comparator);
+      }
+    }
+  });
+
   it("is still included when it has no rank at all", () => {
     const t = ranked("api", { vendor2_direct: 1, platform: 2, seats: 3, vendor1_direct: 4, vendor2_bedrock: 5 });
     const r = compute(at("api"), t);
@@ -247,6 +266,64 @@ describe("at most four greys (spec 6.1 acceptance 1 and 9)", () => {
 
   it("an unknown comparator throws, naming it", () => {
     expect(() => compute({ ...s1, comparator: "no_such_pattern" }, base)).toThrow(/no_such_pattern/);
+  });
+});
+
+describe("the S1 Today options table of spec 6.1, recomputed through compute()", () => {
+  // [option, Today, InfraVana against it, saving percent], as the spec table lists them on placeholder data.
+  const TABLE: [string, number, number, number][] = [
+    ["api", 100_012.5, 70_440.09, 29.57],
+    ["seats", 99_317.62, 70_440.09, 29.08],
+    ["platform", 95_691.96, 70_440.09, 26.39],
+    ["vendor1_direct", 20_002.5, 14_613.02, 26.94],
+    ["vendor2_direct", 60_007.5, 43_948.24, 26.76],
+    ["vendor2_bedrock", 58_287.29, 43_948.24, 24.6],
+    ["best_single", 16_562.07, 14_613.02, 11.77],
+  ];
+
+  it.each(TABLE)("%s: Today %f, InfraVana %f, saving %f percent", (comparator, today, infravana, saving) => {
+    const r = compute({ ...s1, comparator }, base);
+    // Within a cent: 58,287.285 is the exact value of the Bedrock row.
+    expect(Math.abs(r.allocation.total_usd - today)).toBeLessThan(0.006);
+    expect(Math.abs(infravanaSpend(r) - infravana)).toBeLessThan(0.006);
+    expect(r.headline.cost_savings_pct).toBeCloseTo(saving, 2);
+  });
+
+  it("every Today option's own total matches the table, whichever option is the comparator", () => {
+    const r = compute(s1, base);
+    for (const [id, today] of TABLE) {
+      const alt = r.today_alternatives.find((a) => a.pattern_id === id);
+      expect(Math.abs((alt?.total_usd ?? NaN) - today), id).toBeLessThan(0.006);
+    }
+  });
+
+  it("InfraVana buys the same plan against the three stages: it keeps the comparator's tier shares (conservative routing, BD-8)", () => {
+    const spends = ["api", "seats", "platform"].map((c) => infravanaSpend(compute({ ...s1, comparator: c }, base)));
+    expect(new Set(spends.map((x) => x.toFixed(6))).size).toBe(1);
+  });
+
+  it("every Today option shows a quality figure inside the ranges the spec quotes, and meets the default floors", () => {
+    const r = compute(s1, base);
+    const quality = (id: string) => r.today_alternatives.find((a) => a.pattern_id === id);
+    for (const a of r.today_alternatives) {
+      expect(a.quality_score, a.pattern_id).not.toBeNull();
+      expect(a.meets_floors, a.pattern_id).toBe(true);
+    }
+    // Spec 6.1: frontier_b scores 86.3 to 88.3, mid_a 80.9 to 82.0, frontier_a 90.9 to 92.4.
+    expect(quality("vendor2_direct")?.quality_score).toBeGreaterThanOrEqual(86.3);
+    expect(quality("vendor2_direct")?.quality_score).toBeLessThanOrEqual(88.3);
+    expect(quality("vendor1_direct")?.quality_score).toBeGreaterThanOrEqual(80.9);
+    expect(quality("vendor1_direct")?.quality_score).toBeLessThanOrEqual(82.0);
+    expect(quality("api")?.quality_score).toBeGreaterThanOrEqual(90.9);
+    expect(quality("api")?.quality_score).toBeLessThanOrEqual(92.4);
+  });
+
+  it("marks an option that misses a workload floor: at floor 85 the mid-tier vendor option does, the frontier ones do not", () => {
+    const r = compute({ ...s1, quality_floor: 85 }, base);
+    const meets = (id: string) => r.today_alternatives.find((a) => a.pattern_id === id)?.meets_floors;
+    expect(meets("vendor1_direct")).toBe(false);
+    expect(meets("best_single")).toBe(true); // the best single option is chosen to meet every floor
+    expect(meets("api")).toBe(true);
   });
 });
 

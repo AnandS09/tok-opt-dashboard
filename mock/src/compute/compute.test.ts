@@ -116,6 +116,25 @@ describe("the default scenarios give the pinned numbers", () => {
     expect(r.headline.cost_savings_pct).toBeCloseTo((100 * (today - infravana)) / today, 2);
   });
 
+  it("a scenario's comparator names Today: S1 against vendor 2 direct", () => {
+    const r = compute({ ...s1, comparator: "vendor2_direct" }, tables);
+    expect(r.comparator).toBe("vendor2_direct");
+    expect(r.allocation.total_usd).toBeCloseTo(60_007.5, 2);
+    expect(compute(s1, tables).comparator).toBe("api");
+  });
+
+  it("S1 at 5,000 people costs $2,000.25 a person for Today and $1,408.80 for InfraVana (spec 6.2)", () => {
+    const r = compute(withBaseline(s1, 5000, 90e6), tables);
+    expect(r.allocation.total_usd / 5000).toBeCloseTo(2000.25, 2);
+    expect(infravanaSpend(r) / 5000).toBeCloseTo(1408.8, 2);
+  });
+
+  it("S1 at 1 user costs about $2,000 a quarter, so a $10M budget covers about 5,000 times the work (spec 5.2)", () => {
+    const r = compute(withBaseline(s1, 1, 10e6), tables);
+    expect(r.allocation.total_usd).toBeCloseTo(2000.25, 2);
+    expect(r.tokens_bought.today_tokens / r.tokens_bought.demand_tokens).toBeCloseTo(4999.4, 1);
+  });
+
   it("S1 saves 29.57 percent and its default comparator is the pay-as-you-go API", () => {
     const r = compute(s1, tables);
     expect(r.headline.cost_savings_pct).toBeCloseTo(29.57, 2);
@@ -218,6 +237,20 @@ describe("infravana_side", () => {
       lowest = floor;
     }
     expect(stepped(30, 0).infravana_side.quality_floor_by_workload.software_design).toBe(lowest);
+  });
+
+  it("a quality step goes strictly below the current floor, even when a model scores exactly the floor", () => {
+    // Composite scores for software engineering: 92.4, 88.3, 82.0, 80.2, 72.7, 60.6, 48.6; the floor is 78.
+    const t = clone(tables);
+    const row = t.quality.find((q) => q.model_id === "open_y" && q.benchmark === "composite:software_design");
+    if (row === undefined) throw new Error("fixture row missing");
+    row.score = 78;
+    const floorAt = (quality_step: number) =>
+      compute({ ...s1, goal: "G4", tradeoff: { quality_step, speed_step: 0 } }, t).infravana_side.quality_floor_by_workload
+        .software_design;
+    expect(floorAt(0)).toBe(78);
+    expect(floorAt(1)).toBe(60.6);
+    expect(floorAt(2)).toBe(48.6);
   });
 
   it("each step down never raises InfraVana's spend, and Today never changes", () => {
