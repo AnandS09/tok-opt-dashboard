@@ -1,7 +1,8 @@
 # Infravana Playground: static mock
 
-Build step 1 of `spec.md` section 11. React + TypeScript + Vite, ECharts
-(per-chart imports), PapaParse, plain CSS.
+The static mock, built to `spec.md` (v0.3): v0.2 build steps 1 to 3 are done
+and the v0.3 order of section 11 continues from them. React + TypeScript +
+Vite, ECharts (per-chart imports), PapaParse, plain CSS.
 
 **All data in this mock is invented placeholder data. It is not measured and
 must never be presented as measured.**

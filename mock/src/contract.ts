@@ -4,7 +4,7 @@
  * Three parts of the app meet at this file:
  *   - compute engine : (Scenario, Tables) -> Results         (spec 7.2)
  *   - charts         : Results -> ChartDef / React component (spec 6)
- *   - album shell    : consumes ChartDef[] from charts/registry.ts (spec 4.1)
+ *   - stage shell    : consumes ChartDef[] from charts/registry.ts (spec 4.1)
  *
  * It is the interface between them, so a change here changes all three.
  *
@@ -28,7 +28,7 @@ import type { ComponentType } from "react";
 // ---------------------------------------------------------------------------
 
 /**
- * Spec 5 / 7.1 `stage_today`, and `buying_patterns.csv` `stage` (the stage a
+ * Spec 4.3 / 5 / A.2 `stage_today`, and `buying_patterns.csv` `stage` (the stage a
  * `way_to_buy` pattern is the typical buyer for). It stays a three-value
  * enum for the intake (spec 7.4).
  */
@@ -70,7 +70,7 @@ export type OfferChannel =
   | "neocloud"
   | "self-host";
 
-/** Spec 7.1 `latency_class`. */
+/** Spec 4.3 (speed step) and A.2 `latency_class`. */
 export type LatencyClass = "interactive" | "standard" | "batch";
 
 /**
@@ -80,10 +80,10 @@ export type LatencyClass = "interactive" | "standard" | "batch";
  */
 export type WorkloadBasis = "employee" | "customer";
 
-/** Spec 7.1 `unit`. */
+/** Spec A.2 `unit` (the parked language-model call; 7.1 keeps the `Scenario` shape). */
 export type DemandUnit = "people" | "workflows";
 
-/** Spec 7.1 `verdict`. */
+/** Spec A.2 `verdict` (the parked language-model call; the guided intake of 4.3 always yields `ok`). */
 export type Verdict = "ok" | "off_topic" | "unsafe" | "unclear";
 
 /** Spec 6 chart registry ids. */
@@ -339,10 +339,10 @@ export interface Tables {
 }
 
 // ---------------------------------------------------------------------------
-// Scenario (spec 7.1)
+// Scenario (spec 7.1 stub; the JSON it keeps the shape of is in spec A.2)
 // ---------------------------------------------------------------------------
 
-/** Spec 7.1 `scenario.baseline` and `scenario.target`. */
+/** Spec A.2 `scenario.baseline` and `scenario.target`. */
 export interface ScenarioState {
   users: number;
   budget_usd_per_quarter: number;
@@ -351,8 +351,8 @@ export interface ScenarioState {
 }
 
 /**
- * Spec 7.1 `model_mix` and spec 5 "Model mix" knob.
- * `frontier + mid + small` sums to 1. The 7.1 example omits `small`; it is
+ * Spec A.2 `model_mix` and spec 5 "Model mix" knob.
+ * `frontier + mid + small` sums to 1. The A.2 example omits `small`; it is
  * required here and is 0 when the example's two shares already sum to 1.
  * `open_weight_share` is an independent 0..1 proprietary/open split.
  */
@@ -364,7 +364,7 @@ export interface ModelMix {
 }
 
 /**
- * Spec 7.1 `scenario` object: the single object all knobs bind to (spec 5)
+ * Spec 7.1 / A.2 `scenario` object: the single object all knobs bind to (spec 5)
  * and the first argument of `compute()` (spec 7.2).
  */
 export interface Scenario {
@@ -387,7 +387,7 @@ export interface Scenario {
   latency_class: LatencyClass;
   unit: DemandUnit;
   /**
-   * Spec 5 "Quality floor" knob (not in the 7.1 JSON). A benchmark score applied to every
+   * Spec 5 "Quality floor" knob (not in the A.2 JSON). A benchmark score applied to every
    * workload type, same scale as `QualityRow.score` and
    * `WorkloadRow.quality_floor`. When absent, each workload uses its own
    * `quality_floor` from workloads.csv. Both sides of every comparison use
@@ -418,9 +418,10 @@ export interface Tradeoff {
 }
 
 /**
- * Spec 7.1 whole stage-2 LLM response: the verdict envelope around a
- * Scenario. `verdict` lives here, not on Scenario (spec 7.1 JSON shape).
- * If `verdict !== "ok"` no dashboard renders (spec 7.1 behaviour).
+ * Spec A.2 whole stage-2 LLM response (parked; the example scenario files
+ * still carry it): the verdict envelope around a Scenario. `verdict` lives
+ * here, not on Scenario (spec A.2 JSON shape). If `verdict !== "ok"` no
+ * dashboard renders (spec A.2 behaviour).
  */
 export interface ScenarioResponse {
   verdict: Verdict;
@@ -429,8 +430,8 @@ export interface ScenarioResponse {
   scenario: Scenario;
   /**
    * Chart ids picked by the LLM (spec 6 selection rules). May name ids that
-   * have no entry in the chart registry. The album shell skips those ids and
-   * counts only registered charts in the filmstrip and its "n/N" label.
+   * have no entry in the chart registry. The stage shell skips those ids and
+   * counts only registered charts in the index and its "n / N" label (spec 4.1).
    */
   charts: ChartId[];
   /** Fields the user did not state, filled with CSV-backed defaults. */
@@ -556,7 +557,7 @@ export interface TokensBoughtResult {
 }
 
 /**
- * Spec 4.1 headline strip numbers ("Same budget: 2.4x tokens | -38% cost").
+ * Spec 4.2 / 6.2 hero numbers ("Same budget: 2.4x tokens | -38% cost").
  * Derived from the series of C1 and C5 by the compute engine.
  */
 export interface Headline {
@@ -571,7 +572,7 @@ export interface Headline {
 
 /**
  * Output of `compute(scenario, tables)` (spec 7.2): exactly what charts C1,
- * C3 and C5 (spec 6) and the headline strip (spec 4.1) need. Charts C2, C4
+ * C3 and C5 (spec 6) and the hero (spec 4.2, 6.2) need. Charts C2, C4
  * and C6 to C9 add their own fields in later build steps.
  */
 export interface Results {
@@ -703,12 +704,12 @@ export interface FrontierResult {
 }
 
 // ---------------------------------------------------------------------------
-// Chart registry types (spec 6, spec 4.1 "Thumbnails are live")
+// Chart registry types (spec 6, spec 4.1 grid view of live thumbnails)
 // ---------------------------------------------------------------------------
 
 /**
  * Props of every chart component. `stage` is the large interactive render;
- * `thumb` is the small non-interactive filmstrip render of the same
+ * `thumb` is the small non-interactive grid-view render of the same
  * component (spec 4.1).
  */
 export interface ChartProps {
@@ -717,22 +718,25 @@ export interface ChartProps {
 }
 
 /**
- * One registry entry (spec 6). Album order is the order of the array in
- * charts/registry.ts (spec 4.1: fixed by registry priority, not LLM order).
+ * One registry entry (spec 6). Stage order is the order of the array in
+ * charts/registry.ts (spec 4.1: registry order, no language-model selection).
  */
 export interface ChartDef {
   id: ChartId;
   title: string;
-  /** One-sentence takeaway shown as the stage caption (spec 6, 14). */
+  /**
+   * One-sentence takeaway: the chart's accessible name and table caption
+   * (spec 6.4). The benefit boxes replace it on the page once they are built.
+   */
   caption: (results: Results) => string;
   /**
    * Short plain-language explanation for the "How this is computed" drawer
-   * (spec 4.1, 9). Static text; no jargon (spec 3).
+   * (spec 9). Static text; no jargon (spec 3).
    */
   howComputed: string;
   /**
    * CSV text (header row first, RFC 4180 quoting) of exactly the rows this
-   * chart plots, for the "Download CSV" link (spec 4.1, 9).
+   * chart plots, for the "Download CSV" link (spec 9).
    */
   toCsv: (results: Results) => string;
   /**
