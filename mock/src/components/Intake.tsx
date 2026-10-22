@@ -39,14 +39,7 @@ const SPEED_HINT: Record<LatencyClass, string> = {
   batch: "Jobs run in the background, as in nightly reports",
 };
 
-const ICON_SHAPES: Record<CompanyType | "provider", ReactNode> = {
-  provider: (
-    <>
-      <rect x="4" y="3" width="16" height="6" rx="1" />
-      <rect x="4" y="15" width="16" height="6" rx="1" />
-      <path d="M7 6h.01M7 18h.01M12 9v6" />
-    </>
-  ),
+const ICON_SHAPES: Record<CompanyType, ReactNode> = {
   ai_first: (
     <>
       <path d="M12 3l9 4.5-9 4.5-9-4.5z" />
@@ -231,11 +224,7 @@ export function IntakeQuestions({
             </button>
           ))}
           <a className="choice choice--provider" href={contactUrl}>
-            <svg className="choice__icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-              {ICON_SHAPES.provider}
-            </svg>
-            <span className="choice__label">I sell AI compute</span>
-            <span className="choice__hint">Cloud or GPU provider: talk to us instead</span>
+            <span className="choice__label">I sell AI compute (cloud or GPU provider)</span>
           </a>
         </>
       );

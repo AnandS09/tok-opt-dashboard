@@ -86,8 +86,13 @@
   font-weight: var(--font-weight-regular);
 }
 
-.choices--list .choice--provider .choice__icon {
-  color: var(--color-text-secondary);
+/* One line, no icon and no hint (spec 4.3, BD-18): the text starts in the icon column. */
+.choices--list .choice--provider {
+  grid-template-columns: minmax(0, 1fr) 20px;
+}
+
+.choices--list .choice--provider .choice__label {
+  grid-column: 1;
 }
 
 /* Work and speed have no icon, and work is a multi-select: a tick box in place of the arrow. */
@@ -358,6 +363,19 @@
   .choices--list .choice__label,
   .choices--list .choice__hint {
     grid-column: 2;
+  }
+
+  .choices--list .choice--provider {
+    grid-template-columns: minmax(0, 1fr) 16px;
+    grid-template-rows: auto;
+  }
+
+  .choices--list .choice--provider .choice__label {
+    grid-column: 1;
+  }
+
+  .choices--list .choice--provider::after {
+    grid-row: 1;
   }
 
   .choices--list .choice__hint {
