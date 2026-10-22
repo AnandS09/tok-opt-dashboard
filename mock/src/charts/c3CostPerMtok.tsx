@@ -57,16 +57,14 @@ function optionPriced(cmp: Comparison, cls: ModelTier): boolean {
 }
 
 /**
- * The classes drawn: those priced on both sides or holding an option's
- * marker, else those priced on either side (never an empty group).
+ * The classes drawn: those priced on either side or holding an option's
+ * marker. A class only InfraVana buys (work routed to open models) stays, so
+ * the chart never hides where the routed work is priced.
  */
 function shownRows(results: Results, cmp: Comparison): CostPerMtokRow[] {
-  const rows = results.cost_per_mtok.by_model_class;
-  const drawn = rows.filter(
-    (r) =>
-      (r.today_usd_per_mtok !== null && r.infravana_usd_per_mtok !== null) || optionPriced(cmp, r.model_class),
+  return results.cost_per_mtok.by_model_class.filter(
+    (r) => r.today_usd_per_mtok !== null || r.infravana_usd_per_mtok !== null || optionPriced(cmp, r.model_class),
   );
-  return drawn.length > 0 ? drawn : rows.filter((r) => r.today_usd_per_mtok !== null || r.infravana_usd_per_mtok !== null);
 }
 
 /** Horizontal room kept free of markers at each edge of a class band. */

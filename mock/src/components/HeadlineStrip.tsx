@@ -1,3 +1,4 @@
+import { comparisonOf } from "../charts/comparison";
 import { BRAND } from "../charts/labels";
 import type { Results } from "../contract";
 import { fmtMultiple, fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
@@ -34,7 +35,10 @@ export function HeadlineStrip({ results, contactUrl }: HeadlineStripProps) {
 
   return (
     <section className="hero card" aria-label="Result">
-      {!short && savedPct > 0 ? <p className="hero__lead">For the same AI work</p> : null}
+      {/* Spec 6.1: every InfraVana number names the Today option it is measured against. */}
+      <p className="hero__lead">
+        {!short && savedPct > 0 ? "For the same AI work, compared" : "Compared"} with {comparisonOf(results).label}
+      </p>
       <p className={short || savedPct <= 0 ? "hero__figure" : "hero__figure hero__figure--saving"}>{figure}</p>
       {savedPct > 0 ? (
         <ul className="hero__stats">

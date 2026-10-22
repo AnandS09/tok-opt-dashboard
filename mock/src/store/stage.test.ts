@@ -65,3 +65,11 @@ describe("the page's compute call with a stored comparator", () => {
     expect(() => computeForView(broken, tables)).toThrow();
   });
 });
+
+describe("a G4 link before the G4 tab exists", () => {
+  it("leaves the numbers at the visitor's own floors and speed", () => {
+    const g4 = withView(s1, { goal: "G4", comparator: null, qualityStep: 9, speedStep: 2 }, tables);
+    expect(g4.tradeoff).toBeUndefined();
+    expect(computeForView(g4, tables).headline).toEqual(compute(s1, tables).headline);
+  });
+});

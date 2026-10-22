@@ -123,8 +123,8 @@ export default function App() {
   // The goal, comparator and G4 steps join the scenario here; the chart in focus does not, so changing chart never recomputes.
   const { goal, comparator, qualityStep, speedStep } = view;
   const viewedScenario = useMemo(
-    () => (scenario && tables ? withView(scenario, { goal, comparator, qualityStep, speedStep }, tables) : scenario),
-    [scenario, tables, goal, comparator, qualityStep, speedStep],
+    () => (scenario && tables && answered ? withView(scenario, { goal, comparator, qualityStep, speedStep }, tables) : scenario),
+    [scenario, tables, answered, goal, comparator, qualityStep, speedStep],
   );
   const liveScenario = useThrottledValue(viewedScenario, RECOMPUTE_MS);
   const computed = useMemo<{ results: Results | null; error: string | null }>(() => {
