@@ -387,7 +387,7 @@ describe("solveAtBudget: the scan (spec 6.2 acceptance 1)", () => {
 // ---------------------------------------------------------------------------
 
 describe("solveAtBudget: timing", () => {
-  it("each solve on S1, S2 and hardware_heavy finishes inside a generous bound (spec target 0.5 s; bound 5 s)", () => {
+  it("each solve on S1, S2 and hardware_heavy finishes inside a generous bound (spec target 0.5 s; bound 3 s)", () => {
     const worst = { ms: 0, which: "" };
     for (const [name, s] of [["S1", s1], ["S2", s2], ["hardware_heavy", hardwareHeavy]] as const) {
       for (const axis of ["intensity", "users"] as const) {
@@ -400,7 +400,7 @@ describe("solveAtBudget: timing", () => {
         }
       }
     }
-    expect(worst.ms, `slowest solve: ${worst.which}`).toBeLessThan(5_000);
+    expect(worst.ms, `slowest solve: ${worst.which}`).toBeLessThan(3_000);
   }, 60_000);
 });
 
