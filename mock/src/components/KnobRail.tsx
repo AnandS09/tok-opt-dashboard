@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import type { Scenario, Stage, Tables, WorkloadBasis } from "../contract";
 import { hasBasis, setCustomers } from "../store/intake";
+import { CUSTOMERS_RANGE } from "../data/ranges";
 import { rebalance } from "../store/mix";
 import { fmtShare, hwLabel } from "../shared/format";
-import { STAGE_HINT, STAGE_LABEL } from "./format";
+import { fmtInt, STAGE_HINT, STAGE_LABEL } from "./format";
+import { LogSlider } from "./LogSlider";
 import { MixSliders } from "./MixSliders";
 import { Segmented, type SegmentOption } from "./Segmented";
 
@@ -111,17 +113,15 @@ export function KnobRail({ openShare, tables, scenario, onEdit, onReset }: KnobR
         {workloadSliders("customer")}
         {customerWork ? (
           <div className="field">
-            <label className="field__label" htmlFor="knob-customers">
-              Customers or subscribers
-            </label>
-            <input
-              id="knob-customers"
-              className="input"
-              type="number"
-              min={0}
-              step={1000}
-              value={scenario.baseline.customers ?? 0}
-              onChange={(event) => onEdit((s) => setCustomers(s, Math.max(0, Number(event.target.value) || 0)))}
+            <LogSlider
+              label="Customers or subscribers"
+              unit="customers"
+              range={CUSTOMERS_RANGE}
+              marks={[]}
+              marksLabel="Common numbers of customers"
+              value={scenario.baseline.customers ?? CUSTOMERS_RANGE.min}
+              formatMark={fmtInt}
+              onChange={(n) => onEdit((s) => setCustomers(s, n))}
             />
           </div>
         ) : null}
