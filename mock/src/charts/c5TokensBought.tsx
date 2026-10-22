@@ -6,6 +6,7 @@ import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
+import { tokensBoughtBenefits } from "./benefits";
 import { c5Figures } from "../compute/goals";
 import type { C5Figures } from "../compute/goals";
 import { ChartFigure } from "./ChartFigure";
@@ -333,7 +334,6 @@ export const tokensBoughtChart: ChartDef = {
   caption: tokensBoughtCaption,
   howComputed: TOKENS_HOW_COMPUTED,
   toCsv: tokensBoughtCsv,
-  // Benefit boxes (spec 6.4) are built in a later step.
-  benefits: (_results, _context) => [],
+  benefits: tokensBoughtBenefits,
   Component: TokensBoughtChart,
 };

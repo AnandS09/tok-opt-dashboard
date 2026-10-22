@@ -1,4 +1,4 @@
-import type { SavingsSource } from "../contract";
+import type { ModelTier, SavingsSource } from "../contract";
 
 /** Series names and brand spelling shared by the charts (UI copy follows the live site). */
 export const BRAND = "InfraVana";
@@ -12,4 +12,11 @@ export const INFRAVANA_LABEL = `With ${BRAND}`;
 export const SAVINGS_LABEL: Record<SavingsSource, string> = {
   arbitrage: "Saved: better price",
   routing: "Saved: cheaper models",
+};
+
+/** Plain name of a model class, as the charts and the benefit boxes write it. */
+export const MODEL_CLASS_NAME: Record<ModelTier, string> = {
+  frontier: "Flagship",
+  mid: "Mid-size",
+  small: "Small",
 };
