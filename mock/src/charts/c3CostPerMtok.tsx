@@ -1,26 +1,27 @@
 import { useCallback } from "react";
-import { BarChart } from "echarts/charts";
-import type { BarSeriesOption } from "echarts/charts";
+import { BarChart, ScatterChart } from "echarts/charts";
+import type { BarSeriesOption, ScatterSeriesOption } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
-import type { ChartDef, ChartProps, CostPerMtokRow, Provenance, Results } from "../contract";
+import type { ChartDef, ChartProps, CostPerMtokRow, ModelTier, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
-import { ChartFrame } from "./ChartFrame";
+import { ChartFigure } from "./ChartFigure";
 import { LATENCY_LABEL } from "../components/format";
+import { comparisonOf, qualityText } from "./comparison";
+import type { Comparison } from "./comparison";
 import { esc, fmtUsdPerMtok, pricesTogether, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
+import { textWidth } from "./measure";
+import { optionStyle } from "./patterns";
+import type { ProvenancePart } from "./ProvenanceNotes";
+import { PROVENANCE_TEXT, outlineOf } from "./provenanceStyle";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
 
-use([BarChart, GridComponent, LegendComponent, TooltipComponent]);
+use([BarChart, ScatterChart, GridComponent, LegendComponent, TooltipComponent]);
 
 type SideKey = "today" | "infravana";
-
-const SIDES: { key: SideKey; name: string }[] = [
-  { key: "today", name: TODAY_LABEL },
-  { key: "infravana", name: INFRAVANA_LABEL },
-];
 
 function valueOf(row: CostPerMtokRow, side: SideKey): number | null {
   return side === "today" ? row.today_usd_per_mtok : row.infravana_usd_per_mtok;
@@ -41,71 +42,185 @@ function classLabel(row: CostPerMtokRow): string {
   return `${CLASS_NAME[row.model_class]} models`;
 }
 
-/** The classes drawn: those priced on both sides, else those priced on either (never an empty group). */
-function shownRows(results: Results): CostPerMtokRow[] {
-  const rows = results.cost_per_mtok.by_model_class;
-  const both = rows.filter((r) => r.today_usd_per_mtok !== null && r.infravana_usd_per_mtok !== null);
-  return both.length > 0 ? both : rows.filter((r) => r.today_usd_per_mtok !== null || r.infravana_usd_per_mtok !== null);
+/** The two grouped bars: the comparator's name carries the Today it is measured against. */
+function sidesOf(cmp: Comparison): { key: SideKey; name: string }[] {
+  return [
+    { key: "today", name: `${TODAY_LABEL}: ${cmp.label}` },
+    { key: "infravana", name: INFRAVANA_LABEL },
+  ];
 }
 
-/** The ECharts option for C3: grouped bars by model class, today next to InfraVana. */
+/** The classes some option has a price in, so that its marker has a place to stand. */
+function optionPriced(cmp: Comparison, cls: ModelTier): boolean {
+  return cmp.options.some((o) => o.alt.usd_per_mtok_by_class[cls] !== null);
+}
+
+/**
+ * The classes drawn: those priced on both sides or holding an option's
+ * marker, else those priced on either side (never an empty group).
+ */
+function shownRows(results: Results, cmp: Comparison): CostPerMtokRow[] {
+  const rows = results.cost_per_mtok.by_model_class;
+  const drawn = rows.filter(
+    (r) =>
+      (r.today_usd_per_mtok !== null && r.infravana_usd_per_mtok !== null) || optionPriced(cmp, r.model_class),
+  );
+  return drawn.length > 0 ? drawn : rows.filter((r) => r.today_usd_per_mtok !== null || r.infravana_usd_per_mtok !== null);
+}
+
+/** Horizontal room kept free of markers at each edge of a class band. */
+const BAND_EDGE = 8;
+const MARKER_SIZE = 12;
+const BAR_WIDTH_PCT = 30;
+/** A bar never grows past this many pixels, so a chart with one class does not draw two slabs. */
+const BAR_MAX_PX = 96;
+const BAR_GAP_PCT = 12;
+
+/** The ECharts option for C3: grouped bars by model class, the comparator next to InfraVana, and a marker per priced class for each other option. */
 export function buildCostPerMtokOption(
   results: Results,
   size: "stage" | "thumb",
   t: Tokens,
-  _dims: Dims,
+  dims: Dims,
 ): EChartsCoreOption {
   const stage = size === "stage";
-  const rows = shownRows(results);
-  const colour: Record<SideKey, string> = { today: t.today2, infravana: t.accent };
+  const cmp = comparisonOf(results);
+  const sides = sidesOf(cmp);
+  const rows = shownRows(results, cmp);
+  const narrow = dims.width < 600;
+  const colour: Record<SideKey, string> = { today: t.today1, infravana: t.accent };
 
-  const series: BarSeriesOption[] = SIDES.map(({ key, name }) => {
+  // The legend wraps; its height is reserved above the plot from the measured width of its entries.
+  const entries = [...sides.map((s) => s.name), ...cmp.options.map((o) => o.alt.label)];
+  const legendFont = t.fontSm;
+  const entryWidths = entries.map((e) => textWidth(e, legendFont, 400, t.fontSans) + MARKER_SIZE + 8 + 10);
+  let legendLines = 1;
+  let used = 0;
+  for (const w of entryWidths) {
+    if (used > 0 && used + w > dims.width) {
+      legendLines += 1;
+      used = 0;
+    }
+    used += w;
+  }
+  const legendHeight = legendLines * (t.lineSm + 6);
+  const grid = stage
+    ? { left: 64, right: 24, top: legendHeight + 28, bottom: 40 }
+    : { left: 4, right: 4, top: 6, bottom: 6 };
+
+  const bars: BarSeriesOption[] = sides.map(({ key, name }) => ({
+    type: "bar",
+    name,
+    barWidth: `${BAR_WIDTH_PCT}%`,
+    barMaxWidth: BAR_MAX_PX,
+    barGap: `${BAR_GAP_PCT}%`,
+    silent: !stage,
+    emphasis: { disabled: true },
+    // The series colour is what the legend swatch takes; the outline of each bar is set per item below.
+    itemStyle: { color: colour[key] },
+    // A null stays null: ECharts draws no bar for it, never a bar at zero.
+    data: rows.map((r) => {
+      const value = valueOf(r, key);
+      if (value === null) return null;
+      const o = outlineOf(provenanceOf(r, key), false, t);
+      return {
+        value,
+        itemStyle: { color: colour[key], borderColor: o.borderColor, borderWidth: o.borderWidth, borderType: o.borderType },
+      };
+    }),
+    label: {
+      show: stage,
+      position: "top",
+      fontSize: t.fontXs,
+      color: key === "infravana" ? t.accentStrong : t.text,
+      fontWeight: key === "infravana" ? t.weightBold : undefined,
+      lineHeight: t.lineXs,
+      formatter: (p) => fmtUsdPerMtok(Number(p.value)),
+    },
+  }));
+
+  // Markers stand to the right of the bar pair, spread so that two options with close prices do not coincide.
+  const plotWidth = Math.max(0, dims.width - grid.left - grid.right);
+  const band = rows.length > 0 ? plotWidth / rows.length : plotWidth;
+  const barPx = Math.min((band * BAR_WIDTH_PCT) / 100, BAR_MAX_PX);
+  const pairHalf = (barPx * (2 + BAR_GAP_PCT / 100)) / 2;
+  const room = band / 2 - BAND_EDGE;
+  const first = Math.min(pairHalf + MARKER_SIZE, room);
+  const step = cmp.options.length > 1 ? Math.max(0, Math.min(narrow ? 9 : 20, (room - first) / (cmp.options.length - 1))) : 0;
+
+  const markers: ScatterSeriesOption[] = cmp.options.map((o, i) => {
+    const style = optionStyle(o.rank);
     return {
-      type: "bar",
-      name,
-      barWidth: "30%",
-      barGap: "12%",
+      type: "scatter",
+      name: o.alt.label,
+      symbol: style.marker,
+      symbolSize: MARKER_SIZE,
+      symbolOffset: [first + i * step, 0],
+      z: 5,
       silent: !stage,
       emphasis: { disabled: true },
-      itemStyle: { color: colour[key] },
-      // A null stays null: ECharts draws no bar for it, never a bar at zero.
-      data: rows.map((r) => {
-        const value = valueOf(r, key);
-        return value === null
-          ? null
-          : { value, itemStyle: { color: colour[key] } };
+      // A scatter point is drawn at 80% opacity by default, which would not be the token colour.
+      itemStyle: { color: t[style.fill], borderColor: t.surface, borderWidth: t.savingsOutlineWidth, opacity: 1 },
+      // A class where the option has no price has no point, so no marker is drawn there.
+      data: rows.flatMap((r, k) => {
+        const price = o.alt.usd_per_mtok_by_class[r.model_class];
+        return price === null ? [] : [[k, price]];
       }),
-      label: {
-        show: stage,
-        position: "top",
-        fontSize: t.fontXs,
-        color: t.text,
-        lineHeight: t.lineXs,
-        formatter: (p) => fmtUsdPerMtok(Number(p.value)),
-      },
     };
   });
 
   return {
     ...baseOption(t, stage),
-    grid: stage ? { left: 64, right: 24, top: 48, bottom: 40 } : { left: 4, right: 4, top: 6, bottom: 6 },
+    grid,
     legend: stage
-      ? { top: 0, right: 0, itemWidth: 12, itemHeight: 12, textStyle: { color: t.text, fontSize: t.fontSm }, selectedMode: false }
+      ? {
+          top: 0,
+          left: 0,
+          itemWidth: MARKER_SIZE,
+          itemHeight: MARKER_SIZE,
+          itemGap: 10,
+          textStyle: { color: t.text, fontSize: legendFont },
+          selectedMode: false,
+          // The legend is read-only. Its defaults draw a transparent black box with a grey border and a grey
+          // inactive colour; each is set to a token, so nothing in the drawing is an ECharts default.
+          backgroundColor: t.surface,
+          borderColor: t.surface,
+          borderWidth: 0,
+          inactiveColor: t.border,
+          data: [
+            ...sides.map((s) => ({ name: s.name, icon: "rect" })),
+            ...cmp.options.map((o) => ({ name: o.alt.label, icon: optionStyle(o.rank).marker })),
+          ],
+        }
       : undefined,
     tooltip: stage
       ? {
           ...tooltipChrome(t),
           trigger: "item",
           formatter: (params: unknown) => {
-            const p = params as { dataIndex: number; seriesIndex: number };
+            const p = params as { seriesType: string; dataIndex: number; seriesIndex: number; value: unknown };
+            if (p.seriesType === "scatter") {
+              const option = cmp.options[p.seriesIndex - sides.length];
+              const k = Array.isArray(p.value) ? Number(p.value[0]) : -1;
+              const row = rows[k];
+              const price = row && option ? option.alt.usd_per_mtok_by_class[row.model_class] : null;
+              if (!row || !option || price === null) return "";
+              return [
+                `<strong>${esc(classLabel(row))}</strong> (${esc(TODAY_LABEL)}: ${esc(option.alt.label)})`,
+                `${fmtUsdPerMtok(price)} per million tokens`,
+                esc(qualityText(option.alt)),
+                `Source: ${PROVENANCE_TEXT[option.alt.provenance].toLowerCase()}`,
+              ].join("<br/>");
+            }
             const row = rows[p.dataIndex];
-            const side = SIDES[p.seriesIndex];
+            const side = sides[p.seriesIndex];
             if (!row || !side) return "";
             const value = valueOf(row, side.key);
             if (value === null) return "";
             return [
               `<strong>${esc(classLabel(row))}</strong> (${esc(side.name)})`,
               `${fmtUsdPerMtok(value)} per million tokens`,
+              `Source: ${PROVENANCE_TEXT[provenanceOf(row, side.key)].toLowerCase()}`,
             ].join("<br/>");
           },
         }
@@ -134,46 +249,75 @@ export function buildCostPerMtokOption(
       axisTick: { show: false },
       splitLine: { lineStyle: { color: t.grid } },
     },
-    series,
+    series: [...bars, ...markers],
   };
 }
 
 /**
- * One sentence from Results: today's and InfraVana's price for every class
- * both sides have a value for. Makes no claim about direction, so it cannot
- * disagree with the headline.
+ * One sentence from Results: the comparator's and InfraVana's price for every
+ * class both sides have a value for. It names the comparator and makes no
+ * claim about direction, so it cannot disagree with the headline.
  */
 export function costPerMtokCaption(results: Results): string {
+  const cmp = comparisonOf(results);
   const both = results.cost_per_mtok.by_model_class.filter(
     (r) => r.today_usd_per_mtok !== null && r.infravana_usd_per_mtok !== null,
   );
   if (both.length === 0) return "There is no model size with a price on both sides to compare.";
   // Every price of the sentence has the same number of decimals.
   const price = pricesTogether(both.flatMap((r) => [r.today_usd_per_mtok ?? 0, r.infravana_usd_per_mtok ?? 0]));
+  const buyer = cmp.comparator ? `with ${cmp.label}` : "today";
   const parts = both.map(
     (r) =>
-      `${price(r.today_usd_per_mtok ?? 0)} today and ${price(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${CLASS_NAME[r.model_class].toLowerCase()} models`,
+      `${price(r.today_usd_per_mtok ?? 0)} ${buyer} and ${price(r.infravana_usd_per_mtok ?? 0)} with ${BRAND} for ${CLASS_NAME[r.model_class].toLowerCase()} models`,
   );
   return `A million tokens costs ${parts.join(", ")}.`;
 }
 
 const COST_HOW_COMPUTED =
   "This is the price of a million tokens (the small pieces of text that models read and write), grouped by size of model: flagship, mid-size and small. " +
-  "For each group it shows what you pay today next to what the same work costs with " +
+  "For each group it shows what you pay with the way of buying the page compares against, next to what the same work costs with " +
   `${BRAND}, with answers needed just as fast on both sides. ` +
-  "Only the model sizes your team uses are shown. All prices here are illustrative.";
+  "Each shape beside a pair marks another way companies buy today, where that way buys models of this size; there is no shape where it buys none. " +
+  "All prices here are illustrative.";
 
-/** Header first, then one row per bar drawn; a class with no value on a side has no row for it. */
+/** Header first, then one row per bar and one per marker drawn; a class with no value has no row for it. */
 export function costPerMtokCsv(results: Results): string {
+  const cmp = comparisonOf(results);
+  const sides = sidesOf(cmp);
   const rows: (string | number | null)[][] = [];
   for (const r of results.cost_per_mtok.by_model_class) {
-    for (const { key, name } of SIDES) {
+    for (const { key, name } of sides) {
       const value = valueOf(r, key);
       if (value === null) continue;
       rows.push([r.model_class, name, value, provenanceOf(r, key)]);
     }
   }
+  for (const o of cmp.options) {
+    for (const r of results.cost_per_mtok.by_model_class) {
+      const price = o.alt.usd_per_mtok_by_class[r.model_class];
+      if (price === null) continue;
+      rows.push([r.model_class, `${TODAY_LABEL}: ${o.alt.label}`, price, o.alt.provenance]);
+    }
+  }
   return toCsvText(["model_class", "series", "usd_per_mtok", "provenance"], rows);
+}
+
+/** Where each drawn series comes from, for the badges under the chart. */
+export function costPerMtokParts(results: Results): ProvenancePart[] {
+  const cmp = comparisonOf(results);
+  const [today, infravana] = sidesOf(cmp);
+  const parts: ProvenancePart[] = [];
+  for (const r of shownRows(results, cmp)) {
+    if (r.today_usd_per_mtok !== null)
+      parts.push({ group: today.name, part: "", provenance: r.today_provenance });
+    if (r.infravana_usd_per_mtok !== null)
+      parts.push({ group: infravana.name, part: "", provenance: r.infravana_provenance });
+  }
+  for (const o of cmp.options) {
+    parts.push({ group: "Other Today options", part: o.alt.label, provenance: o.alt.provenance });
+  }
+  return parts;
 }
 
 export function CostPerMtokChart({ results, size }: ChartProps) {
@@ -182,15 +326,24 @@ export function CostPerMtokChart({ results, size }: ChartProps) {
     [results, size],
   );
   const speed = LATENCY_LABEL[results.cost_per_mtok.latency_class];
-  const rows = shownRows(results).flatMap((r) =>
-    SIDES.map(({ key, name }) => {
+  const cmp = comparisonOf(results);
+  const sides = sidesOf(cmp);
+  const rows = shownRows(results, cmp).flatMap((r) => [
+    ...sides.map(({ key, name }) => {
       const value = valueOf(r, key);
       return [classLabel(r), name, value === null ? "not used" : fmtUsdPerMtok(value)];
     }),
-  );
+    ...cmp.options.map((o) => {
+      const price = o.alt.usd_per_mtok_by_class[r.model_class];
+      return [classLabel(r), `${TODAY_LABEL}: ${o.alt.label}`, price === null ? "not used" : fmtUsdPerMtok(price)];
+    }),
+  ]);
   return (
-    <ChartFrame
+    <ChartFigure
       size={size}
+      height={320}
+      phoneHeight={460}
+      parts={costPerMtokParts(results)}
       ariaLabel={costPerMtokCaption(results)}
       build={build}
       subtitle={`With answers needed ${speed}`}
