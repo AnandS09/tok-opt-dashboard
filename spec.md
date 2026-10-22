@@ -1,6 +1,6 @@
-# Infravana Inference Playground: UI Spec (draft v0.3)
+# Infravana Inference Playground: UI Spec (draft v0.4, NOT FROZEN)
 
-Status: MVP draft. Builds on [intent.md](intent.md). v0.3 folds in your decisions of 2026-10-21: the guided intake is the front door and the language-model layer is parked for a later version (Appendix A); the page takes the Research Note design language; charts sit on a carousel stage; every chart compares several "Today" options; goal tabs, an iso-cost Pareto chart and benefit boxes are added; the provenance rules of section 9 are restored.
+Status: MVP draft v0.4, **NOT FROZEN**. v0.4 adds section 15, the requirements for your twelve visual and flow asks of 2026-10-22. Every design slot in it is pending your pick from the boards in mock/docs/design-v0.4/, and nothing in section 15 is built until you have chosen the designs, approved the spec and frozen it. Builds on [intent.md](intent.md). v0.3 folds in your decisions of 2026-10-21: the guided intake is the front door and the language-model layer is parked for a later version (Appendix A); the page takes the Research Note design language; charts sit on a carousel stage; every chart compares several "Today" options; goal tabs, an iso-cost Pareto chart and benefit boxes are added; the provenance rules of section 9 are restored.
 
 Tags used in this document:
 
@@ -11,6 +11,9 @@ Tags used in this document:
 | **[REQUIREMENT]** | Follows from something you already decided, or something the spec already promised. |
 | **[PROPOSED]** | Drafted for v0.3 and not yet confirmed by you. Every one is repeated in "Questions for you" (12.4). |
 | **P-n** | One of ten v0.3 proposals (P-1 to P-10). Each is tagged where it sits; the ones you have answered are now BD entries. |
+| **[OPEN]** | Not known yet. Settled by you, by data or by a measurement, never filled in by a guess. |
+| **[v0.4 DRAFT, supersedes ...]** | A clause changed in place by a v0.4 ask. The wording it replaces is kept verbatim in Appendix A.7, so it can be restored if you decline the ask. Not final until the spec is frozen. |
+| **R-n** | One of the twelve v0.4 requirements, one per ask (section 15). |
 | **[F]** | A number from report spec-feasibility-001 (2026-10-21), **measured on the invented placeholder data** by running `compute()` at commit `9813032`. The structure carries over to real data; the sizes do not. |
 
 Most section numbers keep their v0.2 meaning, so code comments that cite "spec 7.2" or "spec 9" stay valid. New material sits in new subsections and in the appendix. These v0.2 sections changed meaning; build step 1 (section 11) updates the code comments and docs that cite them:
@@ -27,6 +30,25 @@ Most section numbers keep their v0.2 meaning, so code comments that cite "spec 7
 | 14 | v0.2 design language (`#fafafa`, white cards, Arial) | Research Note; the v0.2 text is replaced, not parked |
 
 Each new or changed requirement is written as **Requirement / Why / Data and compute / Acceptance**.
+
+## What changed in v0.4
+
+Your twelve asks of 2026-10-22 on the running playground, with the process you set: "Before you start on an implementation sprint, I would like you to first show me images of what you propose to do. The selected design becomes part of the spec." Each ask is one requirement in section 15. Clauses the asks change are edited in place and tagged; the replaced wording is in Appendix A.7. Your answers of 2026-10-22 on asks 2, 9, 10, 11 and 12 are folded in and recorded in 12.5, which also lists the questions still open.
+
+| Ask | Requirement | Clauses changed in place |
+|---|---|---|
+| 1 | R-1: an icon on "I sell AI compute" | 4.3 table |
+| 2 | R-2: "Step n" with no total, and a progress rule already partly filled on step 1 | 4.3 requirement, acceptance (6) |
+| 3 | R-3: the live estimate uses the visitor's own answers only | 4.3 requirement, data, live estimate, acceptance (5) |
+| 4 | R-4: preset marks that never crowd | 5.1 (pointer only) |
+| 5 | R-5: the editable sentence redesigned | 14.3 sentence |
+| 6 | R-6: goal tabs that stand out; all four shown | 6.2, 10 |
+| 7 | R-7: "Compared with" explained on the page | 6.1 |
+| 8 | R-8: a chart index that never wraps | 4, 4.1 |
+| 9 | R-9: no ordinal numbers on charts: titles, index, grid view | 4, 4.1, 14, 14.3 |
+| 10 | R-10: provenance in a collapsed "Sources" table under each chart; no badge boxes or outlines | 6.3, 7.3, 9, 14.3, 14.4, BD-9, BD-11 |
+| 11 | R-11: solid colour fills, no patterns; Today options in distinct hues | 6, 6.1, 14, 14.1, 14.4 |
+| 12 | R-12: calm chrome, vivid and hopeful chart marks | 14, 14.1, 14.3, 14.5 |
 
 ## What changed in v0.3
 
@@ -101,8 +123,8 @@ Top to bottom: header; the guided intake (4.3) until it is answered, then the ed
 | HERO  $X less each quarter than <named Today>    [Talk to us]         |
 | Compared with: [Typical API buyer  v]                                 |
 +-----------------------------------------------------------------------+
-| 1 Where the money goes | 2 What the budget buys | 3 ... |  [Grid view]|
-| <  Figure 1. Where the money goes                                   > |
+| Where the money goes | What the budget buys | ...          [Grid view]|
+| <  Where the money goes                                             > |
 |    [ $X saved vs ... ] [ $X from channels ] [ $X from routing ]       |
 |    STAGE: one chart, large                                            |
 |    Source: ... Note: invented placeholders.  [How is this worked out?]|
@@ -111,26 +133,28 @@ Top to bottom: header; the guided intake (4.3) until it is answered, then the ed
 +-----------------------------------------------------------------------+
 ```
 
+**[v0.4 DRAFT, supersedes the numbered index and the "Figure 1." title of this sketch; R-8, R-9.]** The places of the goal tabs, the "Compared with" control and the sentence are pending their designs (R-5 to R-7).
+
 ### 4.1 The stage (the album, reworked as a carousel)
 
-- **Requirement.** One chart is in focus at a time. The visitor picks it from a **numbered, titled index** (default) or from a **grid of live thumbnails** behind a "Grid view" button. Arrows, keyboard and swipe move between charts with a smooth transition.
+- **Requirement [v0.4 DRAFT, supersedes "numbered, titled index"; R-8, R-9].** One chart is in focus at a time. The visitor picks it from a **titled index** (default) that never wraps to a second line (R-8), or from a **grid of live thumbnails** behind a "Grid view" button. Arrows, keyboard and swipe move between charts with a smooth transition.
 - **Why.** You asked for "carousel like where one chart is in focus at a time", and "Both" for the picker. The stacked cards of commit 8e00537 replaced the v0.2 album; this restores it in a simpler form.
 - **Data and compute.** None new. Every chart renders from the same `Results`.
 
 | v0.2 album rule | v0.3 | Status |
 |---|---|---|
 | One chart fills the stage | Same | Kept |
-| Filmstrip of live thumbnails under the stage | A one-line numbered index ("1 Where the money goes", "2 ..."), active item marked with `aria-current`. Numbers match the "Figure n." titles (14.3). | Changed |
+| Filmstrip of live thumbnails under the stage | **[v0.4 DRAFT, supersedes the numbered index whose numbers matched the "Figure n." titles; R-8, R-9]** A one-line index of chart titles ("Where the money goes", "What the budget buys", ...) with no numbers, since the charts are independent and of equal priority (your answer of 2026-10-22), active item marked with `aria-current`. It never wraps to a second line; how it holds more titles than fit is the design chosen for R-8. | Changed |
 | Grid view as a "contact sheet" | The live thumbnails live here. Click one to bring it into focus and close the grid. Render only thumbnails in view and throttle redraws while a control is dragged. | Kept, now the only home of thumbnails |
 | Order fixed by registry priority (C1, C5, C3, then extras the LLM chose) | Registry order. The v0.3 set is C1, C5, C3, C10 **[ASSUMPTION]**; others join as they are built (11). | Changed: no LLM selection |
 | Arrows, left/right keys, swipe, click a thumbnail | Same, plus click an index item. Left and right wrap at the ends **[ASSUMPTION]**. | Kept |
 | URL hash `#slide=C2` | The hash holds `slide`, `goal`, `cmp=<pattern_id>` (omitted for the default) and, in G4, `q=<step>&s=<step>`; loading the hash restores each. C10 adds `c10=speed` when the speed view is on **[ASSUMPTION]**. (P-8) | Extended |
 | Short cross-fade; respect `prefers-reduced-motion` | A short slide plus cross-fade, timed by a motion token (14.5); 0 ms under `prefers-reduced-motion`. The new chart's title is announced. | Kept |
 | Headline strip pinned above the stage | Goal tabs, hero and comparator selector stay above the stage on every chart | Kept |
-| Mobile: full-width swipe, dots plus thumbnail drawer, knobs in a bottom sheet | Below 600px: full-width stage with swipe; the index collapses to "2 / 4 What the budget buys" that opens the full list; the grid view becomes two columns; fine-tune stays a collapsed panel | Changed |
+| Mobile: full-width swipe, dots plus thumbnail drawer, knobs in a bottom sheet | Below 600px: full-width stage with swipe; the index collapses to the focused chart's title, for example "What the budget buys", with no position count, and opens the full list **[v0.4 DRAFT, supersedes the "2 / 4" count; R-9]**; the grid view becomes two columns; fine-tune stays a collapsed panel | Changed |
 | Fullscreen for presenting **[ASSUMPTION]** | Same | Kept |
 
-- **Acceptance.** (1) Only one chart canvas is interactive at a time. (2) Each of arrow button, left/right key, swipe, index click and grid click reaches every chart. (3) Loading `#slide=C3` opens C3. (4) With reduced motion set, a change of chart has no animation. (5) At 375px the index fits one line and the page does not scroll sideways. (6) An `aria-live="polite"` region holds the focused chart's title, and its text changes on every change of chart. (7) Loading `#slide=C1&goal=G4&cmp=<id>&q=<n>&s=<n>` restores the chart, tab, comparator and both G4 steps.
+- **Acceptance.** (1) Only one chart canvas is interactive at a time. (2) Each of arrow button, left/right key, swipe, index click and grid click reaches every chart. (3) Loading `#slide=C3` opens C3. (4) With reduced motion set, a change of chart has no animation. (5) **[v0.4 DRAFT, supersedes "At 375px the index fits one line"; R-8]** At every width R-8 tests, with all ten registry charts (C1 to C10) in the index, the index takes one line and the page does not scroll sideways. (6) An `aria-live="polite"` region holds the focused chart's title, and its text changes on every change of chart. (7) Loading `#slide=C1&goal=G4&cmp=<id>&q=<n>&s=<n>` restores the chart, tab, comparator and both G4 steps.
 
 ### 4.2 Other rules
 
@@ -141,22 +165,22 @@ Top to bottom: header; the guided intake (4.3) until it is answered, then the ed
 
 ### 4.3 The guided intake (the front door)
 
-- **Requirement [REQUIREMENT].** The intake is the first thing a visitor sees. It asks the steps below one at a time, shows "Step n of N" with a progress rule (N counts the steps shown for the chosen company type, and before step 1 the label reads "Step 1"), lets the visitor go back or click an earlier answer to change it, and shows a live estimate beside the questions.
+- **Requirement [REQUIREMENT].** The intake is the first thing a visitor sees. It asks the steps below one at a time, shows "Step n" with a progress rule and never the total (**[v0.4 DRAFT, supersedes "Step n of N"; R-2]**; on step 1 the rule is already partly filled, with one step's share of the longest path), lets the visitor go back or click an earlier answer to change it, and shows a live estimate beside the questions, computed from the visitor's own answers only (**[v0.4 DRAFT, supersedes the estimate computed from the example scenario; R-3]**).
 - **Why.** Your decision: "Guided intake for the first cut, the llm layer comes in a later version". It is built (commit 62d75f2) but the spec never described it.
-- **Data and compute.** Each answer writes into the one `Scenario`; nothing in the intake is a second source of truth. The estimate is one `compute()` call after each answer.
+- **Data and compute.** Each answer writes into the one `Scenario`; nothing in the intake is a second source of truth. **[v0.4 DRAFT, supersedes "The estimate is one `compute()` call after each answer"; R-3]** Once the answers R-3 names are in, the estimate is one `compute()` call after each answer, on a scenario built from the visitor's answers and the defaults of section 5 only.
 
 | Step | Question | Shown when | Input | Writes |
 |---|---|---|---|---|
-| Company type | What kind of company are you? | Always | 5 options: AI-first startup, Software or internet company, Traditional enterprise, Telecom or national cloud, Chip or hardware design company. A quieter final row "I sell AI compute (cloud or GPU provider)" goes to contact (BD-18). | `stage_today` (api or platform per type), the type's workloads, their blended `model_mix`, default customers |
+| Company type | What kind of company are you? | Always | 5 options: AI-first startup, Software or internet company, Traditional enterprise, Telecom or national cloud, Chip or hardware design company. A quieter final row "I sell AI compute (cloud or GPU provider)" goes to contact (BD-18) and carries an icon drawn like the five company icons **[v0.4 DRAFT, supersedes the row without an icon; R-1]**. | `stage_today` (api or platform per type), the type's workloads, their blended `model_mix`, default customers |
 | Work | What do you use AI for? | Always | Multi-select of the type's workloads, Continue | `workload_mix` (even split within each basis) |
 | Team size | How many people on your team will use AI? | The type offers employee work | 5.1 control | `baseline.users` |
 | Customers | How many customers (or subscribers) use your AI? | The type offers customer work | 5.1 control | `baseline.customers` |
 | Budget | What is your AI budget each quarter? | Always | 5.1 control | `baseline.budget_usd_per_quarter` |
 | Speed | How fast do answers need to come back? | Always | 3 options: interactive, standard, batch | `latency_class` |
 
-- **Live estimate.** A margin note (14.3) with Today, With InfraVana and "You save", per quarter, measured against the typical buyer for the stage (6.1). It is hidden on step 1 and appears from step 2 (BD-18). The saving steps with scale: S1 on the API stage saves 20.00% at 0.5 to 7.3 users and 29.57% from 50 users [F], because commit minimums are met only at volume. That is real behaviour, not a bug.
+- **Live estimate [v0.4 DRAFT, supersedes "It is hidden on step 1 and appears from step 2 (BD-18)"; R-3].** A margin note (14.3) with Today, With InfraVana and "You save", per quarter, measured against the typical buyer for the stage (6.1). It is hidden on step 1. From step 2 it shows no figure until the visitor has answered the steps R-3 names, and every figure it shows is computed from the visitor's own answers only, never from the example scenario the intake starts from. The saving steps with scale: S1 on the API stage saves 20.00% at 0.5 to 7.3 users and 29.57% from 50 users [F], because commit minimums are met only at volume. That is real behaviour, not a bug.
 - **Layout (BD-18, closes P-1).** All options of a step are equal in width and height and align on one grid; before v0.3 five company cards wrapped as three plus two with an empty cell. You asked the designer to decide from renders, and the study in `mock/docs/theme-options/intake-studies/README.md` recommends "A. Ruled list of equal rows": one full-width row per option, equal row heights, the same pattern on phones, and "I sell AI compute" as a quieter last row under the same rule that does not pose as a kind of buyer.
-- **Acceptance.** (1) Every step in the table appears only under its condition. (2) Every answer changes the estimate within one frame of the click. (3) At 375, 768 and 1280px every option in a step has the same width and height and the same left edge (a layout test reads their bounding boxes). (4) No step leaves an empty cell in its last row. (5) On step 1 the estimate panel is absent from the page; from step 2 it is present. (6) The step label reads "Step 1" before a type is chosen and "Step n of N" after, with N equal to the number of rows of the table shown for that type.
+- **Acceptance.** (1) Every step in the table appears only under its condition. (2) **[v0.4 DRAFT, supersedes "Every answer changes the estimate"; R-3]** Once the estimate shows figures (R-3), every answer changes it within one frame of the click. (3) At 375, 768 and 1280px every option in a step has the same width and height and the same left edge (a layout test reads their bounding boxes). (4) No step leaves an empty cell in its last row. (5) **[v0.4 DRAFT, supersedes "from step 2 it is present"; R-3]** On step 1 the estimate panel is absent from the page; from step 2 it shows no figure until the answers R-3 names are in, then figures that pass R-3's acceptance. (6) **[v0.4 DRAFT, supersedes the "Step 1" and "Step n of N" labels; R-2]** On every step the label matches "Step n", with n the step's position for the chosen type (1 before a type is chosen), and never contains "of" or a total; the progress rule's filled share on step 1 is greater than zero.
 
 ## 5. Knobs
 
@@ -181,6 +205,7 @@ When a knob change makes the scenario infeasible (budget too low for the workloa
 ### 5.1 Continuous but clickable inputs
 
 - **Requirement (BD-12, BD-18).** Team size, customers and budget each use a log-scale slider with clickable preset marks and a typed number field. Team size and customers keep today's presets as marks (for example 25, 50, 100, 500 people for small-team types and 100, 500, 1,000, 5,000 for large ones). Budget marks are one per decade ($10K, $100K, $1M, $10M), because the old four would sit about 6% apart on a $1K to $100M log track (BD-18). The typed field accepts forms such as "2500", "20M" or "$1.5m". On tracks narrower than 640px the marks become a row of 44px buttons under the slider (BD-18). Clicking a mark sets that value; dragging or typing sets any value in range.
+- **v0.4.** R-4 adds a spacing rule for the preset marks of all three sliders. The mark placement above, and acceptance (5) below, may change with the design chosen for ask 4; until then they stand.
 - **Why.** You asked for team size "more continuous yet clickable", then chose "Team size, customers and budget (Recommended)". A log scale fits a 1 to 10,000 range in one track.
 - **Data and compute.** None new. Dragging recomputes on a throttle, as in 4.1.
 - **Acceptance.** (1) A preset mark sets the exact preset value. (2) Typing 73 gives 73. (3) Keyboard arrows step the value, and Page Up/Down jump between marks. (4) The slider, the field and the sentence blank always show the same value. (5) Below a 640px track width the marks render as 44px-high buttons in a row; at 640px and above they sit under the track at their values. (6) Typing "20M" in the budget field sets $20,000,000.
@@ -222,7 +247,7 @@ Selection rules:
 
 - When the LLM layer returns: C1, C3 and C5 are mandatory. The LLM adds 1 to 3 more, for a total of 4 to 6.
 - The "case study" requirement in the intent doc (frontier-heavy, mixed, open vs proprietary) is handled by a **case-study selector** above the grid, with presets that set the model-mix knobs and re-render. It is not extra charts. **[ASSUMPTION]**
-- Visual rules follow the `dataviz` skill: Infravana is one consistent accent colour, "today" providers are neutral greys, and every chart carries direct labels. The visible one-sentence takeaway is replaced by benefit boxes (6.4); the sentence stays as the chart's accessible name and table caption.
+- Visual rules follow the `dataviz` skill: Infravana is one consistent accent colour, "today" providers take the Today slot colours of the palette chosen for R-11 and R-12 **[v0.4 DRAFT, supersedes "neutral greys"]**, and every chart carries direct labels. The visible one-sentence takeaway is replaced by benefit boxes (6.4); the sentence stays as the chart's accessible name and table caption.
 
 ### 6.1 The comparison set: several Today options, one InfraVana bar
 
@@ -231,7 +256,7 @@ Selection rules:
   - **Which ones (BD-13).** "Let the data decide, no named defaults": the default greys are up to four, taken in popularity-rank order from a rank the data supplies per stage (`pattern_popularity.csv`, 7.4 **[PROPOSED]**; placeholder ranks in the mock, invented and labelled), so the grey order can differ between the seats, api and platform stages. The typical buyer is the one fixed member; the data decides the rest. The typical buyer is the `way_to_buy` pattern whose `stage` equals `stage_today`; it is never listed twice. If it does not rank in the top four, it takes the fourth slot so the four-grey limit holds **[ASSUMPTION]**.
   - **Best single option.** A selectable extra comparator that shows its own paired InfraVana result (BD-13). It is the cheapest single **proprietary** offer that meets every floor in the mix; open-weight hosted offers are not considered **[PROPOSED]**, as the S1 example below and the feasibility numbers assume. When best single option is the comparator, it replaces the lowest-ranked grey that is not the typical buyer; the grey count never exceeds four.
   - **One named comparator [REQUIREMENT].** The InfraVana bar is always measured against one named Today, the comparator. The hero, the benefit boxes and every chart name it.
-  - **A page-wide "Compared with" selector [PROPOSED].** It sits above the stage, defaults to the typical buyer, and changing it recomputes InfraVana against the new comparator on every chart and tab.
+  - **A page-wide "Compared with" selector [PROPOSED].** It defaults to the typical buyer, and changing it recomputes InfraVana against the new comparator on every chart and tab. Where it sits, and the one-line explanation beside it, are set by R-7 **[v0.4 DRAFT, supersedes "It sits above the stage"]**.
   - **Quality beside cost (BD-13).** Every Today bar shows its quality score next to its cost. The score is the token-weighted mean of the composite scores of the models it buys, plus a mark when it misses any workload floor **[ASSUMPTION]** (the measure is mine).
 - **Why.** You asked to "Add more comparison points", naming "Where the money goes" (C1) as the example and adding "similar comments for other charts"; then "put upto four most popular options as grey and infravana one", and "Let the data decide, no named defaults". Under the conservative routing rule (BD-8) InfraVana keeps the comparator's model mix, so each Today implies a different InfraVana result. On S1 [F]:
 
@@ -250,25 +275,25 @@ Selection rules:
 
 | Chart | Comparator Today and InfraVana | Each other grey Today option | Why |
 |---|---|---|---|
-| C1 | Two bars, each segmented by channel, as now | An unsegmented total bar with a pattern, a direct label and its quality score. Each option bar takes one pattern reserved for its option rank, never one used by the comparator's channel segments **[PROPOSED]**; the designer sets the patterns (14.4) | C1 colours its Today segments with the same greys, so several segmented Today bars would collide [F]; unsegmented bars avoid that |
+| C1 | Two bars, each segmented by channel, as now | **[v0.4 DRAFT, supersedes the patterned option bars; R-11]** An unsegmented total bar with a solid fill, a direct label and its quality score. Each option bar takes the fill of its option slot from the chosen palette, never one used by the comparator's channel segments | C1 colours its Today segments with the same greys, so several segmented Today bars would collide [F]; unsegmented bars avoid that |
 | C3 | Grouped bars per model class, as now | A marker per model class where that option has a price; none where it has none | Bars for 6 or 7 Today options would mean 18 to 21 bars with many empty cells [F] |
 | C5 | One bar each | One bar each, with a direct label and its quality score | One value per bar, so it fits [F] |
 | C10 | The InfraVana line | One reference per grey option (6.3) | |
 
-  Four greys is a hard limit. In Research Note the four grey slots have only two distinct values (14.1), so slots 3 and 4 need the restored patterns (14.4).
+  Four greys is a hard limit. **[v0.4 DRAFT, supersedes "slots 3 and 4 need the restored patterns"; R-11]** The four slots are told apart by solid fills that differ in hue and lightness, from the palette chosen for R-11 and R-12, behind direct labels. "Grey" stays the name of a Today slot whatever its colour (15).
 - **Data and compute.** See 7.4: a `buying_patterns.csv` with a pattern per Today option, a `pattern_id` column replacing the three-value `stage` key of `baseline_providers.csv`, a pricing rule (list or commit) per pattern instead of `stage_today === "platform"`, best single option derived in compute rather than typed, and `Results.today_alternatives[]` so one call returns every shown Today with its total and its price per model class (for the C3 markers). That is up to seven extra `computeToday` calls inside `compute()`, which now takes 0.137 to 0.192 ms per call (review-w0-001, measured on placeholder data; 0.104 ms before the alternatives [F]). Per-stage ranks come from `pattern_popularity.csv` (7.4).
-- **Acceptance.** (1) No chart shows more than four greys. (2) The typical buyer is always present, and the others follow the `popularity_rank` order for the visitor's stage; changing a rank in `pattern_popularity.csv` changes the set with no code change. (3) Every InfraVana number on the page names the same comparator. (4) Picking a comparator changes the hero, boxes and charts to that pairing, and S1 against vendor 2 direct shows 60,007.50 against 43,948.24 on placeholder data. (5) Every grey bar shows a quality figure. (6) C1 shows one unsegmented, patterned, labelled bar per grey option other than the comparator, and no pattern appears both on a comparator channel segment and on an option bar; C3 shows one marker per such option per priced class. (7) The chosen comparator stays the same after switching tab, switching chart and reloading the URL. (8) A pattern other than `kind = best_single` (which is derived, not read from rows) with no `baseline_providers.csv` rows for the visitor's workloads is absent from the selector and the grey set, and the next by rank takes its slot. (9) With best single option as comparator, there are still at most four greys and the typical buyer is one of them. (10) Best single option is always a proprietary offer: on S1 with software engineering as the only work, it is never an open-weight offer such as open_x via neocloud. (11) With ranks that differ by stage, S1 at stage seats and at stage api shows different greys.
+- **Acceptance.** (1) No chart shows more than four greys. (2) The typical buyer is always present, and the others follow the `popularity_rank` order for the visitor's stage; changing a rank in `pattern_popularity.csv` changes the set with no code change. (3) Every InfraVana number on the page names the same comparator. (4) Picking a comparator changes the hero, boxes and charts to that pairing, and S1 against vendor 2 direct shows 60,007.50 against 43,948.24 on placeholder data. (5) Every grey bar shows a quality figure. (6) **[v0.4 DRAFT, supersedes the patterned option bars; R-11]** C1 shows one unsegmented, solid-filled, labelled bar per grey option other than the comparator, and no fill appears both on a comparator channel segment and on an option bar; C3 shows one marker per such option per priced class. (7) The chosen comparator stays the same after switching tab, switching chart and reloading the URL. (8) A pattern other than `kind = best_single` (which is derived, not read from rows) with no `baseline_providers.csv` rows for the visitor's workloads is absent from the selector and the grey set, and the next by rank takes its slot. (9) With best single option as comparator, there are still at most four greys and the typical buyer is one of them. (10) Best single option is always a proprietary offer: on S1 with software engineering as the only work, it is never an open-weight offer such as open_x via neocloud. (11) With ranks that differ by stage, S1 at stage seats and at stage api shows different greys.
 
 ### 6.2 Goal tabs G1 to G4
 
-- **Requirement.** Four tabs above the hero choose how the result is framed. Each tab states which compute function produced its headline (in its "How is this worked out?" drawer). The tab is stored in the URL (`goal=G2`). P-8 [PROPOSED] covers the set, the order and the URL; the separate-optimisation rule is decided (BD-15).
+- **Requirement.** Four tabs above the hero choose how the result is framed. **[v0.4 DRAFT, supersedes the tab group as built, with G3 greyed out; R-6]** All four are always shown, and the group reads as the main control of the result, not as background text. Each tab states which compute function produced its headline (in its "How is this worked out?" drawer). The tab is stored in the URL (`goal=G2`). P-8 [PROPOSED] covers the set, the order and the URL; the separate-optimisation rule is decided (BD-15).
 - **Why.** You asked for tabs: "Some other executive might llike more users for the same money or they can take a performance hit (slower model) and save even more etc." Your rule: reframe if the results are equivalent, otherwise a separate optimisation. **They are not equivalent in general [F]:** the three views agree to 4 decimals on the four shipped scenarios, but drift by 0.5% to 11% where volume crosses a commit minimum (S2 at a $30K budget: 1.4628 claimed, 1.3002 solved), by about 3.5% with customer workloads (1.4115 against 1.4613), and by under 1% for seats. **So G2 and G3 are separate optimisations**, which you chose: "Yes, separate optimisations (Recommended)" (BD-15).
 
 | Tab | Definition | Headline | Compute function | Acceptance |
 |---|---|---|---|---|
 | G1 Less money for the same AI | The visitor's volume, priced both ways | "$X less each quarter than <comparator>" and the % | `compute()` as today | Headline = sum of C1 savings segments; S1 shows 29.57% on placeholder data |
 | G2 More AI for the same money | Same people and customers. Scale the token intensity of **all** workloads, employee and customer, until each side's spend reaches the budget, as the measured G2 did **[ASSUMPTION]** | "N times the AI work for your budget" | `solveAtBudget(scenario, tables, "intensity")` | No scanned scale above the result has spend at or below the budget; S2 at $30K gives about 1.30, not 1.46 [F]; S1 at 5,000 people and $90M gives about 1.42 (solver acceptance below) |
-| G3 More people for the same money | Same work per person. Scale **employee workloads only** until each side's spend reaches the budget; customers stay fixed | "N times the people for your budget" | `solveAtBudget(scenario, tables, "users")` | Customers unchanged in the solved scenario; S1 with 10,000 customers gives about 1.46 [F]. Disabled, with a one-line reason, when the mix has no employee work (10) **[ASSUMPTION]**. Capped at the users range (5.2) |
+| G3 More people for the same money | Same work per person. Scale **employee workloads only** until each side's spend reaches the budget; customers stay fixed | "N times the people for your budget" | `solveAtBudget(scenario, tables, "users")` | Customers unchanged in the solved scenario; S1 with 10,000 customers gives about 1.46 [F]. **[v0.4 DRAFT, supersedes "Disabled, with a one-line reason, when the mix has no employee work"; R-6]** In the mock it can always be chosen; when the mix has no employee work it shows a labelled placeholder figure (10). Capped at the users range (5.2) |
 | G4 Accept a trade-off | Two separate stepped controls: a quality step and a speed step. Today does not change | Two numbers: the saving at your own floors (the G1 figure) and the extra saving bought by the give-up, with both sides' floors and speeds stated beside them | Two `compute()` calls: one at your own floors, one with `tradeoff`; Today comes from the untraded call **[PROPOSED]** | Each step down never raises InfraVana spend; Today is identical at every step and equals the untraded call's; the first number equals G1's; the floors and speed shown for InfraVana are `infravana_side`'s |
 
 - **`solveAtBudget` [PROPOSED].** Spend is not monotone in volume (a commit minimum can make spend fall as volume rises [F]), so the solver scans rather than inverting a formula.
@@ -297,7 +322,7 @@ Selection rules:
 - **What current data gives [F].** Quality view: 5 to 9 real steps, with Y up to 1.5 times Today's on S1. Speed view: 16 to 28 points but flat within 0.2% to 1.5% and then one cliff, and Today has no speed value at all. Not credible as is.
 - **When the speed view is available.** The C10 speed view and the G4 speed step are enabled only when at least one proprietary offer has speed data (BD-11 rows or real); otherwise they are disabled with a reason.
 - **Data it needs to be credible.** Per-channel speed (tok/s per user and p95 TTFT) for proprietary offers; batch or flex price tiers; capacity or GPU-count limits, so a higher speed actually costs more (the engine assumes unlimited capacity); finer concurrency points than the current six (1, 8, 32, 64, 128, 256). The invented rows of BD-11 cover the first two; the last two are a question (12.4).
-- **Acceptance.** (1) Every point equals a direct `compute()` at that threshold. (2) Y never rises as the threshold tightens. (3) The marker for the current setting sits at the lowest of the visitor's workload floors (78 on S1 at defaults). (4) The speed view carries the provenance badge and the invented-data source line (BD-11). (5) The switch state is in the URL (`c10=speed`). (6) With no proprietary speed rows loaded, the speed switch is disabled and shows its reason.
+- **Acceptance.** (1) Every point equals a direct `compute()` at that threshold. (2) Y never rises as the threshold tightens. (3) The marker for the current setting sits at the lowest of the visitor's workload floors (78 on S1 at defaults). (4) **[v0.4 DRAFT, supersedes "carries the provenance badge"; R-10]** The speed view's Sources table lists the invented rows as modelled, and the invented-data source line is present (BD-11). (5) The switch state is in the URL (`c10=speed`). (6) With no proprietary speed rows loaded, the speed switch is disabled and shows its reason.
 
 ### 6.4 Benefit boxes
 
@@ -363,7 +388,7 @@ The backend is out of scope. These are the files the UI needs. Each file ships w
 | `case_studies.csv` | `case_id, label, model_mix_json, description` (drives the presets) |
 | `manifest.json` | file versions, row counts, checksums, `generated_at` |
 
-Provenance: every series whose provenance is not `measured` is badged "modelled" or "vendor-reported", as section 9 says (BD-9). v0.2 said "no badge means measured"; that still holds, but a badge is never skipped for a non-measured series.
+Provenance **[v0.4 DRAFT, supersedes the badges; R-10]**: every series whose provenance is not `measured` has a row, "modelled" or "vendor-reported", in its chart's collapsed Sources table, as section 9 says (BD-9), with a link to its source where the data holds one. A series with no row is measured, and a non-measured series is never left out. The `provenance` columns are unchanged. The contract gains an optional `source_url` column on `hardware.csv` and `seat_plans.csv`, the two files that feed a chart series and hold no address today (`hardware.csv` has the text column `hr_price_source`); `model_offers.csv`, `buying_patterns.csv` and `quality.csv` keep their `source_url` and `throughput_curves.csv` its `run_url`. Every address in the current fixtures is the invented placeholder address, so no real source exists yet.
 
 Loading: fetch all CSVs once at page load, parse with a streaming parser in a web worker, validate against schemas (fail loudly with a friendly banner if a column is missing), and hold them in memory. Throughput curves are the largest file. Expect tens of thousands of rows at most, which is fine in memory. **[ASSUMPTION]**
 
@@ -393,13 +418,13 @@ Parked for a later version with the prompt; the v0.2 text is in Appendix A.4 int
 
 ## 9. Trust and transparency
 
-- **Provenance badges** on every series: *measured* (a run with a link), *modelled*, or *vendor-reported*. Mixed charts show both with different line styles.
+- **Sources table [v0.4 DRAFT, supersedes the provenance badges and line styles; R-10].** Under each chart a collapsed "Sources" disclosure, like "Fine-tune the assumptions", opens a table with one row per series or group that is *vendor-reported* or *modelled*, and a link to its source where the data holds one. A series with no row is *measured* (a run with a link). No badge box, outline or line style carries provenance.
 - **Assumptions panel** listing defaults the LLM filled in, plus the baseline definition, the $/GPU-hr sources and the data version. In v0.3 it lists the intake's defaults (for example customers per company type) instead.
 - **"How this is computed"** drawer per chart, with a Download CSV link for exactly the rows the chart uses.
 - Both sides of every comparison use the same quality floor and latency target. The UI states them next to the headline. G4 is the one labelled exception, because you chose to give something up; it states both sides' floors and speeds (6.2) **[PROPOSED]**.
-- **Restored in full [REQUIREMENT].** You chose "Restore the full spec rules": badges, dashed (modelled) and dotted (vendor-reported) outlines, and series patterns, all of which commit 8e00537 removed. The designer specifies them on the Research Note values during the build (14.4).
+- **Restored in v0.3, reversed by v0.4 asks [v0.4 DRAFT, supersedes the restored badges, outlines and patterns; R-10, R-11].** In v0.3 you chose "Restore the full spec rules". Your v0.4 asks 10 and 11 and your answers of 2026-10-22 remove the badges, the dashed and dotted outlines and the patterns, and keep the information in a collapsed Sources table under each chart (R-10, R-11, 12.5).
 - Every chart carries a source line, and any chart that uses invented speed or batch rows also says "Source: invented placeholder data" (BD-11).
-- **Acceptance.** (1) Every chart in the v0.3 set renders a source line under its canvas. (2) With BD-11 rows loaded, the G4 view and the C10 speed view each show "Source: invented placeholder data" and the provenance badge; the G1 view does not. (3) The footer text contains "invented" whenever BD-11 rows are loaded. (4) A modelled series shows its badge and dashed outline (14.4).
+- **Acceptance.** (1) Every chart in the v0.3 set renders a source line under its canvas. (2) **[v0.4 DRAFT, supersedes "and the provenance badge"; R-10]** With BD-11 rows loaded, the G4 view and the C10 speed view each show "Source: invented placeholder data" and a Sources table listing the invented rows as modelled; the G1 view shows neither the invented source line nor the invented rows. (3) The footer text contains "invented" whenever BD-11 rows are loaded. (4) **[v0.4 DRAFT, supersedes "shows its badge and dashed outline"; R-10]** A modelled series has a row in its chart's Sources table and no dashed outline.
 
 ## 10. States and edge cases
 
@@ -411,14 +436,14 @@ The prompt states of v0.2 (Initial, Loading, Rejected by screen, Attempts exhaus
 | No work picked | Continue is disabled and the estimate says "Pick at least one kind of work". |
 | Infeasible budget | Inline banner with the covered fraction. Charts still render. |
 | Budget far above the work | The coverage message of 5.2 instead of a multiple. |
-| G3 with no employee work | The tab is shown disabled with "Your answers include no team work" **[ASSUMPTION]**. |
+| G3 with no employee work | **[v0.4 DRAFT, supersedes the disabled tab; R-6]** In the mock the tab can be chosen and shows a labelled placeholder figure. Wherever a later build cannot offer a tab, it looks as R-6 says, with the reason "Your answers include no team work" **[ASSUMPTION]**. |
 | Comparator has no rows for this mix | It is left out of the selector and the grey set; the next by popularity fills the slot. `kind = best_single` is derived, not read from rows, so this rule never removes it. |
 | Speed data missing | The C10 speed view and the G4 speed step are enabled only when at least one proprietary offer has speed data (BD-11 rows or real); otherwise they are disabled with a reason. |
 | Missing data for a selected tier | The tier is greyed out in the knob with a tooltip. |
 | Mobile | See 4.1: swipeable stage, collapsed index, two-column grid view, fine-tune collapsed. |
 | Accessibility | Keyboard-operable controls and stage (arrow keys, index items and thumbnails focusable, `aria-current` on the active one), new chart title announced on change, a data table behind each chart, WCAG AA contrast checked on real token values (see 14). |
 
-- **Acceptance.** (1) Removing every `baseline_providers.csv` row of one pattern (other than `best_single`) for the visitor's workloads drops it from the selector and the grey set, and the next ranked pattern appears. (2) With no proprietary speed rows loaded, the G4 speed step and the C10 speed switch are disabled and each shows its reason; loading one such row enables both. (3) With no employee work, G3 is disabled and shows its reason.
+- **Acceptance.** (1) Removing every `baseline_providers.csv` row of one pattern (other than `best_single`) for the visitor's workloads drops it from the selector and the grey set, and the next ranked pattern appears. (2) With no proprietary speed rows loaded, the G4 speed step and the C10 speed switch are disabled and each shows its reason; loading one such row enables both. (3) **[v0.4 DRAFT, supersedes "G3 is disabled and shows its reason"; R-6]** With no employee work, in the mock G3 can be chosen and its hero carries the placeholder label of R-6.
 
 ## 11. Suggested build order
 
@@ -490,9 +515,9 @@ We are sprinting to an MVP and the backend doesn't exist yet. Each item below is
 | BD-6 | Notice colour | Amber family (`#fff6dd`, `#6b4a00`, `#a07a1a`) for state banners only, never charts. Fallback: white banner, dark border, icon. | Reversible; one token group. | Your sign-off. |
 | BD-7 | Brand spelling | UI copy writes "InfraVana", as the live site does; the spec, files and code keep "Infravana". | Copy only. | Your sign-off. |
 | BD-8 | Conservative routing rule | InfraVana never changes the tier shares. Savings come from the cheapest channel per proprietary model (arbitrage) and the cheapest eligible hardware or channel for the open-weight share (routing). No tier moves; capacity unlimited. | Least flattering reading of 7.2; needs no invented reroute share. You confirmed it on 2026-10-21 for v0.3. | When real data and a rule for a reroute share exist. |
-| BD-9 | Badging | Every non-measured series is badged, following section 9 over 7.3. | Display only. | Your sign-off. |
+| BD-9 | Badging | **[v0.4 DRAFT, supersedes "is badged"; R-10]** Every non-measured series has a row in its chart's collapsed Sources table (R-10), following section 9 over 7.3. | Display only. | Your answer of 2026-10-22 (12.5). |
 | BD-10 | Examples | The mock loads the S1 example on start, and the example chips open their scenario directly instead of filling a prompt box. The intake now sits in front. | Reversible once a prompt flow exists. | When the layer returns. |
-| BD-11 | Invented speed and batch rows | Fixtures gain invented proprietary speed and batch or flex price rows, under five guardrails: (1) every invented row carries the placeholder source address (`https://example.invalid/placeholder-invented-data/...`) and `provenance=modelled`, and the data README lists exactly which rows are invented; (2) a check script fails if any proprietary speed or batch-price row lacks the placeholder marker; (3) the rows, and the batch or flex move they allow (7.2), act only on the G4 tab and the C10 speed view, so the default tab's numbers do not change; (4) any chart that uses them shows the provenance badge and a "Source: invented placeholder data" line, and the footer says so; (5) the same columns are listed (7.4) as inputs the real backend must supply. | The rows are labelled, checked and fenced off from the default view. | When the backend supplies real rows. |
+| BD-11 | Invented speed and batch rows | Fixtures gain invented proprietary speed and batch or flex price rows, under five guardrails: (1) every invented row carries the placeholder source address (`https://example.invalid/placeholder-invented-data/...`) and `provenance=modelled`, and the data README lists exactly which rows are invented; (2) a check script fails if any proprietary speed or batch-price row lacks the placeholder marker; (3) the rows, and the batch or flex move they allow (7.2), act only on the G4 tab and the C10 speed view, so the default tab's numbers do not change; (4) any chart that uses them lists them in its Sources table and shows a "Source: invented placeholder data" line, and the footer says so **[v0.4 DRAFT, supersedes "shows the provenance badge"; R-10, 12.5]**; (5) the same columns are listed (7.4) as inputs the real backend must supply. | The rows are labelled, checked and fenced off from the default view. | When the backend supplies real rows. |
 | BD-12 | Continuous inputs | "Team size, customers and budget (Recommended)": all three use the log slider with clickable presets and a typed number (5.1). Budget runs to $100M a quarter so 10,000 users fit (5.2). | Control and range only; compute unchanged. | Customers range is my default (5.2, 12.4). |
 | BD-13 | Today set | "Let the data decide, no named defaults": up to four greys in `popularity_rank` order from the data (invented, labelled ranks in the mock); the typical buyer for the stage always present as the comparator; best single option a selectable extra comparator with its own paired InfraVana result; quality shown beside every Today bar (6.1). | The ranking lives in data. | When the backend names a real popularity source. |
 | BD-14 | Benefit boxes | "Two or three numbers per chart (Recommended)": each naming its comparator, derived from that chart's data, never repeating the hero headline (6.4). | Display only. | Contents per chart reviewed at build. |
@@ -507,7 +532,7 @@ The most expensive of these to change later is the **CSV schema** in section 7.3
 
 ### 12.4 Questions for you
 
-Only points you have not answered are listed. Closed by your answers on 2026-10-21, now decisions: P-1 (BD-18), P-2 (BD-12), P-5 and P-6 (BD-13), P-7 (BD-14), P-9 (BD-11), P-10 (12.2 row 24), G2 and G3 as separate optimisations (BD-15), fonts (BD-16), commits (BD-17). Each item below goes ahead as written unless you say otherwise.
+Only points you have not answered are listed. Closed by your answers on 2026-10-21, now decisions: P-1 (BD-18), P-2 (BD-12), P-5 and P-6 (BD-13), P-7 (BD-14), P-9 (BD-11), P-10 (12.2 row 24), G2 and G3 as separate optimisations (BD-15), fonts (BD-16), commits (BD-17). Each item below goes ahead as written unless you say otherwise. **v0.4:** items 1 (patterns), 5 (where the selector sits) and 19 (G3 disabled) are changed by v0.4 asks; the questions on them are in 12.5.
 
 **Rulings that close contradictions [PROPOSED].**
 
@@ -574,6 +599,34 @@ Only points you have not answered are listed. Closed by your answers on 2026-10-
 29. **Product name.** The theme screenshots title the page "AI Budget Playground", while the spec calls it "Infravana Inference Playground". Which name ships? (14)
 30. **Sign-off** on BD-6 (amber notices), BD-7 (brand spelling), BD-9 (badging) and BD-10 (examples). (12.3)
 
+### 12.5 v0.4: your answers and the questions still open
+
+**Resolved by your answers of 2026-10-22.** Each reverses something decided earlier; the clauses are edited in place and the v0.3 wording is in Appendix A.7.
+
+| Ask | Your answer | What it reverses | Where |
+|---|---|---|---|
+| 2 | "just show a slightly increased bar wrt 6 steps and don't spell how many steps", then keep "Step n": the label reads "Step 1", "Step 2" and so on with no total, and the progress rule is already partly filled on step 1 (1 of 6) | 4.3 acceptance (6): "Step 1" before a type is chosen, "Step n of N" after | R-2, 4.3 |
+| 9 | No ordinal numbers anywhere: not in the figure titles, not on the index, not in the grid view, because the charts are independent and of equal priority | The "Figure n." titles of the Research Note theme (14.3) and the numbered index of your answer "Both" (12.2 row 14) | R-9, 4.1, 14, 14.3 |
+| 10 | Keep the information, which is the data's source of truth, in a collapsed disclosure under each chart, like "Fine-tune the assumptions", holding a table with a row per box, its provenance and a link to the source where one exists; the boxes and the dashed and dotted outlines go; no address is invented | Your v0.3 "Restore the full spec rules" for badges and outlines (12.2 row 15), BD-9, and guardrail (4) of BD-11 | R-10, 7.3, 9, 14.4, BD-9, BD-11 |
+| 11, 12 | Today options may take distinct hues; the charts are the selling data and should look colourful, impressive and hopeful; the chrome stays calm; the designer proposes, you choose | The patterns of "Restore the full spec rules" (12.2 row 15) and the greys for Today (14, 14.1, section 6) | R-11, R-12, 6, 6.1, 14, 14.1, 14.4 |
+
+**Open questions.** Each goes ahead on the default shown, tagged where it sits, unless you say otherwise.
+
+1. **R-3, which answers come first.** Default **[ASSUMPTION]**: the estimate shows figures once the head-count steps the type asks (team size, customers, or both) and the budget are answered. So on most paths figures first appear on the speed step. On the v0.3 rules none of the three figures depends on the budget (7.2 step 4), so they could appear after the head count alone. Which do you want?
+2. **R-3, speed before it is answered.** Default **[ASSUMPTION]**: until speed is answered the estimate prices interactive speed, the section 5 default, and says so under its figures. Waiting for speed would mean no figures during the intake at all, because speed is the last step.
+3. **R-3, the panel before the figures.** Default **[ASSUMPTION]**: from step 2 the panel is present with one line naming the answers still needed, not hidden. Continue on the value a control showed when the step opened counts as an answer.
+4. **R-1, the compute-seller row.** Default **[ASSUMPTION]**: it gains an icon and keeps the quieter treatment of BD-18.
+5. **R-4, scope and gap.** Default **[ASSUMPTION]**: the no-crowding rule covers all three sliders (team size, customers, budget), with at least 8px between neighbouring marks. If the chosen design drops marks, the preset lists of 5.1 change with it.
+6. **R-5, baseline tolerance.** Default **[ASSUMPTION]**: every blank's text sits within 1px of the sentence's baseline.
+7. **R-6, G3 in the mock.** Default **[ASSUMPTION]**: with no team work G3 can be chosen and shows a labelled placeholder figure, whose value is **[OPEN]** and comes with the chosen design; meanwhile C5 and the benefit boxes show the G1 figures. This reverses "G3 is disabled without team work" (6.2, 10, 12.4 item 19).
+8. **R-6, how prominent the tabs are.** Default **[ASSUMPTION]**: one row at 768px and wider, each tab at least 44px high, the selected tab marked by a fill and a cue that is not colour.
+9. **R-7, the explanation line.** Default **[ASSUMPTION]**: "Your savings are measured against this way of buying today. Pick another to compare with it." Where the control sits comes with the chosen design; this replaces "It sits above the stage" (6.1, 12.4 item 5).
+10. **R-8, how many charts and which widths.** The registry table lists ten charts (C1 to C10), so the index is tested with ten. Default **[ASSUMPTION]**: the unbuilt charts are stood in by their registry names, at 600, 768, 1024, 1280 and 1920px.
+11. **R-10, details of the Sources table.** Defaults **[ASSUMPTION]**: the disclosure is labelled "Sources"; measured series get no row, so a chart with only measured series has no disclosure; a row whose data holds several addresses lists each; the placeholder address `https://example.invalid/...` counts as no source and reads "placeholder, no source yet".
+12. **R-11, how different two fills must be.** Default **[ASSUMPTION]**: at least 10 in CIEDE2000 between any two fills in one chart, and Today hues at least 30 degrees from the accent's. The largest number of fills one chart needs is **[OPEN]** until it is counted on the fixtures.
+13. **R-12, how the palette is checked.** Defaults **[ASSUMPTION]**: every chart fill has more chroma than every chrome token; at least two hues beyond the accent, the notice amber not counted; InfraVana keeps the accent hue, its value open with the brand owner (12.4 item 28).
+14. **Corners and shadows.** Default **[ASSUMPTION]**: corner radii follow the chosen designs (14.3 acceptance (5)); the no-shadow rule (14.3 acceptance (4)) stays unless a board you choose shows shadows.
+
 ## 13. Stack for embedding
 
 The current infravana.ai page is a single static HTML file (it appears to be served behind Cloudflare, judging by the email-protection script, which I haven't confirmed). There is no existing framework to match, so I'd pick the lightest setup that gives us what the spec needs.
@@ -591,11 +644,13 @@ The current infravana.ai page is a single static HTML file (it appears to be ser
 
 ## 14. Design language: Research Note
 
-The page reads as a published research note: warm paper, serif figure titles, numbered and sourced figures, structure drawn by rules instead of cards and shadows. You chose it on 2026-10-21. Source of every value below: `mock/docs/theme-options/source/d1-research-note.css`; contrast figures from `mock/docs/theme-options/contrast-tables.md` (WCAG 2.x, table d1) unless marked otherwise. The brief stands: the page must not look AI-generated and should look like a leading-edge infrastructure startup. The option's named risk is that it is calm rather than "leading edge" and can read as a blog.
+The page reads as a published research note: warm paper, serif figure titles, sourced figures with no figure numbers (**[v0.4 DRAFT, supersedes "numbered and sourced figures"]**, R-9), structure drawn by rules instead of cards and shadows. You chose it on 2026-10-21. Source of every value below: `mock/docs/theme-options/source/d1-research-note.css`; contrast figures from `mock/docs/theme-options/contrast-tables.md` (WCAG 2.x, table d1) unless marked otherwise. The brief stands: the page must not look AI-generated and should look like a leading-edge infrastructure startup. The option's named risk is that it is calm rather than "leading edge" and can read as a blog. v0.4 asks 11 and 12 address that risk (R-11, R-12).
 
-What it keeps from v0.2: the steel-blue logo, unedited; greys for Today and the accent for InfraVana; the accent used for "With InfraVana" and nowhere else; the footer line "Illustrative figures only. Prices and savings are placeholders, not quotes."; light mode only **[ASSUMPTION]**.
+What it keeps from v0.2: the steel-blue logo, unedited; the accent for InfraVana, with Today's colours taken from the palette chosen for R-11 and R-12 (**[v0.4 DRAFT, supersedes "greys for Today"]**); the accent used for "With InfraVana" and nowhere else; the footer line "Illustrative figures only. Prices and savings are placeholders, not quotes."; light mode only **[ASSUMPTION]**.
 
 ### 14.1 Palette
+
+**[v0.4 DRAFT: this table is superseded once you choose a palette for R-11 and R-12.]** It is the v0.3 palette. The chosen board's token table will replace it here, and this table will then move to Appendix A.7. Until then its values stand, except the Today row below.
 
 | Role | Token | Value | Contrast (d1 table) |
 |---|---|---|---|
@@ -611,12 +666,11 @@ What it keeps from v0.2: the steel-blue logo, unedited; greys for Today and the 
 | Primary button | `--color-accent-deep` / hover `--color-accent-hover` | `#2f4856` / `#233843` | Label 9.21:1 |
 | Selected option background | `--color-accent-soft` | `#e8ebea` | Accent text 6.09:1, body 14.23:1 |
 | Saved money only | `--color-positive` / fill `--color-saved` | `#1f6b5e` / `#dcebe5` | Figure 5.75:1 on page; label on fill 13.86:1 |
-| Today greys, slots 1 to 4 | `--color-today-1` to `-4` | `#2a2a28`, `#43413d`, `#43413d`, `#2a2a28` | Marks 13.08:1 and 9.26:1; labels on them 13.77:1 and 9.75:1 |
+| Today options, slots 1 to 4 | `--color-today-1` to `-4` | **[OPEN]** from the palette chosen for R-11 and R-12 **[v0.4 DRAFT, supersedes the two greys]** | Measured on the chosen values (R-11) |
 | Notices (BD-6) | notice bg / text / border | `#fff6dd` / `#6b4a00` / `#a07a1a` | Text 7.48:1; border 3.61:1 on page |
 
 - The accent `#466577` is the logo hue deepened (hue 202°, saturation 26%); the logo-sampled `#5f7a89` of `mock/docs/design-tokens.md` is superseded for the theme, pending the brand owner (12.4).
-- Greys differ from the accent in lightness: 2.32:1 (today-1) and 1.64:1 (today-2) [d1 table]. Every InfraVana series still carries a direct label.
-- Only two distinct greys exist, and they are close to each other: 1.41:1 (computed for this spec with the same WCAG formula, not in the d1 table). Neighbouring Today parts therefore need separators and patterns (14.4).
+- **[v0.4 DRAFT, supersedes the two-grey rule and its patterns; R-11]** v0.3 had only two distinct greys, 1.41:1 apart, which is why it needed patterns. v0.4 removes the patterns: the Today slots take solid fills in distinct hues, differing in hue and lightness (your answer of 2026-10-22), neighbouring parts keep separators, and every part keeps its direct label. Every InfraVana series still carries a direct label.
 
 ### 14.2 Type
 
@@ -632,29 +686,187 @@ What it keeps from v0.2: the steel-blue logo, unedited; greys for Today and the 
 - **Header:** title in Newsreader, italic tagline, a 1px ink rule below; the logo has no plate.
 - **Intake:** step labels in small capitals with tracking; a 2px progress rule; options on the surface with a 1px rule, selected or hovered option in white with an accent-strong border; equal rows per BD-18.
 - **Estimate:** a margin note with one vertical ink rule at its left; italic serif title. Under 600px it moves above the questions with a top rule.
-- **Sentence:** large serif with blanks underlined in accent-strong.
+- **Sentence [v0.4 DRAFT, superseded by the design chosen for R-5].** Until a design is chosen, large serif with blanks underlined in accent-strong. R-5 sets the rules the chosen design must meet.
 - **Hero:** a double rule above, italic lead, large serif figure.
-- **Figures:** each chart is "Figure n." (italic, secondary) plus its title, with a 1px ink rule above. Each ends with a source-and-note line: "Source: InfraVana cost model on illustrative price tables. Note: all figures are invented placeholders, not quotes." The figure number matches the index number (4.1).
+- **Figures [v0.4 DRAFT, supersedes the "Figure n." label and the matching index number; R-9].** Each chart shows its title alone, with no "Figure n." label, and a 1px ink rule above. Each ends with a source-and-note line: "Source: InfraVana cost model on illustrative price tables. Note: all figures are invented placeholders, not quotes." Under it sits the collapsed Sources disclosure of R-10.
 - **Benefit boxes (6.4):** to be drawn by the designer in this language (for example a ruled row of figures with serif numbers and a small comparator line), not as shadowed cards.
 - **Notices:** amber family (BD-6), chrome only.
-- **Acceptance (14.1 to 14.3).** (1) A test reads every token of 14.1 from the computed styles of the page and finds it equal to the table value. (2) Each figure title's number equals its index number in 4.1. (3) The hero's top border computes to `3px double`. (4) No element on the page has a non-`none` box shadow. (5) Every corner radius computes to 2px or 0.
+- **Acceptance (14.1 to 14.3).** (1) A test reads every token of 14.1 from the computed styles of the page and finds it equal to the table value. (2) **[v0.4 DRAFT, supersedes "Each figure title's number equals its index number"; R-9]** Each figure title's text equals its index item's text in 4.1, and neither contains a figure number. (3) The hero's top border computes to `3px double`. (4) No element on the page has a non-`none` box shadow. (5) **[v0.4 DRAFT, supersedes "2px or 0"; R-5, R-6, R-12]** Every corner radius computes to a value in the radius tokens of the design in force: 2px or 0 until the designs for R-5, R-6 and R-12 are chosen.
 
 ### 14.4 Chart series and provenance marks [REQUIREMENT]
 
-- **Requirement.** During the build the designer specifies, on the Research Note values, the provenance and series rules you restored: provenance badges; a dashed outline for modelled and a dotted outline for vendor-reported parts; series patterns (hatch, dots, cross-hatch) for Today slots and InfraVana segments; and solid lines only between Today series in line charts, since dash style means provenance. In C1 the designer also sets which patterns are reserved for option bars, one per option rank, kept apart from those of the comparator's channel segments (6.1).
-- **Starting point.** The rules removed in commit 8e00537, in `mock/docs/design-tokens.md` as it stood before that commit (sections 3 to 3e: Today slots and patterns, InfraVana segments, perforated provenance borders, label chips, label list). Their colours and ratios were cut for the old palette, so every ratio must be re-measured on the d1 values.
-- **Why it is needed here.** With two distinct greys at 1.41:1, slots 3 and 4 of 6.1 cannot be told apart by colour, so patterns are the cue, behind direct labels.
-- **Acceptance.** (1) A d1 contrast table covers every new pair (pattern on fill, dashed border on fill and on page). (2) A modelled series in any chart shows its dashed outline and badge. (3) Four Today bars are distinguishable in greyscale print.
+**[v0.4 DRAFT, supersedes 14.4 as written in v0.3: the badges, the dashed and dotted outlines, the series patterns and their acceptance; R-10, R-11. The v0.3 text is in Appendix A.7.]**
+
+- **Requirement.** Chart series are solid fills and solid lines, told apart by hue and lightness and by direct labels (R-11), in the palette chosen for R-12. Provenance is kept in a collapsed Sources table under each chart (R-10), not shown by badges, outlines or line styles. In line charts no dash or dot style carries provenance **[ASSUMPTION]**.
+- **Why.** Your v0.4 asks reverse the v0.3 restoration: "They look ugly. If they serve no purpose, then lets remove them." (ask 10) and "The bars are hideous with the pattern fill." (ask 11). Your answers of 2026-10-22 keep the information in the Sources table and let Today options take distinct hues (12.5).
+- **Acceptance.** The acceptance lists of R-10 and R-11.
 
 ### 14.5 Motion, contrast and charts
 
 - **Motion:** calm, nothing decorative. One fade token drives the carousel transition (4.1) and drops to 0 ms under `prefers-reduced-motion`.
-- **Contrast:** every text pair passes 4.5:1 and every mark and border 3:1 on the d1 values, 0 failures across 32 pairs. Any new token is added to the table before it ships.
+- **Contrast [v0.4 DRAFT, supersedes "on the d1 values, 0 failures across 32 pairs"; R-11, R-12].** Every text pair passes 4.5:1 and every mark and border 3:1 on the values of the palette in force (the d1 values until a palette is chosen for R-12, then the chosen board's), with 0 failures, in a contrast table that covers every pair, including every pair of chart fills that touch. Any new token is added to the table before it ships.
 - **Charts:** follow the `dataviz` skill: direct labels over legends, no chartjunk. Chart code reads colours from CSS variables, never copied hex.
+
+## 15. v0.4 visual and flow revision
+
+Your twelve asks of 2026-10-22, one requirement each (R-1 to R-12). They are the requirements side only. Each has a design slot that waits for your pick from the designer's boards in mock/docs/design-v0.4/, named by ask number and option letter (for example 5B). When you pick, the slot's board id is filled in and the chosen design becomes part of this spec. You set the order: images first, iterate on the design, freeze the spec, then implement. Nothing in this section is built before the freeze.
+
+How to read it:
+
+- Each requirement is written as **Ask / Requirement / Why / Data and compute / Selected design / Acceptance**. Every acceptance item is a test or a measured render: a script that reads the rendered page's computed styles, bounding boxes or text, or the chart option objects.
+- "The three test widths" means 375, 768 and 1280px, as in 4.3 acceptance (3).
+- "Grey" stays the name of a Today option slot (1 to 4) everywhere in this spec, whatever colour R-11 and R-12 give it.
+- Where an ask reverses something you decided earlier, the clause is edited in place and tagged, and its v0.3 wording is in Appendix A.7. Your answers of 2026-10-22 settle the reversals of asks 2, 9, 10, 11 and 12; 12.5 records them.
+- Where you were silent, my default is tagged **[ASSUMPTION]** and repeated in 12.5. Anything not known yet is **[OPEN]**.
+
+### 15.1 R-1: an icon on "I sell AI compute"
+
+- **Ask.** "On the first page, the "I sell AI compute" has no icon"
+- **Requirement [REQUIREMENT].** On step 1 the row "I sell AI compute (cloud or GPU provider)" carries one icon, drawn in the same set as the five company icons: the same rendered size (28 by 28px in the build now), the same stroke width and colour token, in the same column position. The row stays the last one, stays a link to contact, and keeps the quieter treatment of BD-18 unless the chosen design changes it **[ASSUMPTION]**. The icon is decorative: it is hidden from assistive technology and the row's accessible name does not change. The icon's shape is the design choice.
+- **Why.** It is the only row on step 1 without an icon, so it reads as unfinished.
+- **Data and compute.** None.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 1. Board id: 1? (fill in the letter you pick, for example 1B).
+- **Acceptance.** (1) At the three test widths, the row holds exactly one icon whose rendered width and height equal those of the company icons, and whose computed stroke width and stroke colour equal theirs. (2) The icon's left edge equals the company icons' left edge (a layout test reads their bounding boxes). (3) The icon is `aria-hidden="true"`, and the row's accessible name is "I sell AI compute (cloud or GPU provider)". (4) The row is the last item of step 1 and links to the contact address.
+
+### 15.2 R-2: "Step n" with no total, and a rule partly filled on step 1
+
+- **Ask.** "There is step 1, not step X of 5 -- the second slide has it but this does not"
+- **Your answer (2026-10-22).** "just show a slightly increased bar wrt 6 steps and don't spell how many steps", then, the same day, keep "Step n".
+- **Requirement [REQUIREMENT].** Every step shows the label "Step n" ("Step 1", "Step 2" and so on), with no "of N" and no total anywhere on the intake. n is the step's position among the steps shown for the chosen type, and 1 before a type is chosen. The progress rule of 4.3 stays. On step 1 it is already partly filled, with one step's share of the longest path, 1 of N_max, so the page does not look unstarted. N_max is the largest number of steps any company type shows, computed from the step rules of 4.3 over every type in the data, never typed: 6 on the current data (a type that offers both team work and customer work shows 6 steps, the others 5). Once a type is chosen the rule fills n of that type's own N. The rule's accessible value names no total either **[ASSUMPTION]**.
+- **Why.** You saw that step 1 was the only step without "of N", and chose to drop the total on every step instead of adding it to step 1. In v0.3 step 1 read "Step 1" and the others "Step n of N" (Appendix A.7).
+- **Data and compute.** None. N comes from the existing step rules.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 2. Board id: 2? (fill in the letter you pick).
+- **Acceptance.** (1) On every step the label's text matches "Step n", with n as above, and never contains "of" or a total. (2) Before a type is chosen the progress rule's filled share equals 1 over N_max, where the test computes N_max as the largest step count over all company types in the data (6 on the current fixtures), and is greater than zero. (3) After a type is chosen, on step n the rule's filled share equals n over N, with N the number of rows of 4.3's table shown for that type. (4) No text or accessible name on the intake states the number of steps.
+
+### 15.3 R-3: a live estimate from the visitor's own answers only
+
+- **Ask.** "Why does the second page and some other pages has "your estimate, per quarter" ? They haven't given any numbers yet -- how is that even computed?"
+- **Requirement [REQUIREMENT].** Every figure the live estimate shows is computed from the visitor's own answers only, plus the defaults section 5 names (all hardware tiers, the quality floor per workload type, the model mix from the type's workloads). No figure may come from the example scenario the intake starts from.
+  - **Answers needed before any figure appears [ASSUMPTION].** The company type, the work, every head-count step the type shows, and the budget. So figures appear once team size or customers (whichever the type asks; both when it asks both) and the budget are answered.
+  - **What counts as answered [ASSUMPTION].** The visitor has left the step by Continue or by clicking a preset, including Continue on the value the control showed when the step opened.
+  - **Before the figures [ASSUMPTION].** From step 2 the panel holds no figure, only one line that names the answers still needed, for example "Your estimate appears once you have told us your team size and budget."
+  - **Speed [ASSUMPTION].** Speed is the last step, so it is not answered when the figures first appear. Until it is, the estimate prices interactive speed, the section 5 default, and says so in one line under its figures.
+  - Changing an earlier answer recomputes the estimate within one frame (4.3 acceptance (2)).
+- **Why.** In the build the estimate is computed from the example scenario the intake starts from ($100K a quarter, 50 people), not from the visitor's answers. At step 4 of the screenshots you reviewed it showed Today $103K, With InfraVana $57.6K and You save 44% before you had typed a budget. That is a defect, not a styling issue: it shows a saving for numbers the visitor never gave. Note for the default: on the v0.3 rules none of the three figures depends on the budget. The budget never changes the InfraVana plan, only tokens bought and coverage (7.2 step 4), and in the build at commit af6e563 the Today and InfraVana cost code does not read the budget either. The default still waits for the budget because the panel reads as the estimate for the visitor's budget; showing the figures after the head count alone is the alternative in 12.5.
+- **Data and compute.** No new data and no new compute function. The intake already keeps a list of answered steps; it builds the estimate's scenario from those answers and the section 5 defaults instead of from the example scenario. `compute()` is unchanged.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 3. Board id: 3? (fill in the letter you pick).
+- **Acceptance.** (1) On step 1 the panel is absent (4.3 acceptance (5)). (2) From step 2 until the needed answers are in, the panel's text contains no digit and no currency sign, and its one line names exactly the answers still missing. (3) Run the intake twice, starting once from S1 and once from hardware_heavy, with the same answers: every figure the panel shows is identical in both runs. (4) Once the needed answers are in, Today equals, to the cent, `compute()` on a scenario the test builds from those answers and the section 5 defaults alone. (5) Before speed is answered a line under the figures names the speed it assumes; once speed is answered the line is gone. (6) Going back and changing an answer changes the figures within one frame.
+
+### 15.4 R-4: preset marks that never crowd
+
+- **Ask.** ""How many customers use your AI?" -- the tab points on this page seem to crowd up. Possible to design this better?"
+- **Requirement [REQUIREMENT, scope ASSUMPTION].** On every log slider of the intake and the fine-tune panel (team size, customers, budget; you named customers, the rule covers all three **[ASSUMPTION]**), no two preset marks overlap or sit closer than 8px **[ASSUMPTION]**, for every company type's presets, at every width the intake is tested at. Each mark's clickable box stays at least 44px high (5.1), and clicking a mark still sets its exact value (5.1 acceptance (1)). Whether the marks stay at their track positions, become a row of buttons at every width, or are fewer, is the design choice. If the chosen design drops marks, the preset lists of 5.1 change with it, and 12.5 records that.
+- **Why.** On the customers step the marks 10,000, 50,000, 200,000 and 1,000,000 sit at their log positions on a 1 to 10,000,000 track. 50,000 and 200,000 are 0.671 and 0.757 of the track width along, so 8.6% of the width apart: 55px on a 640px track (computed for this spec from the log positions). In the build their buttons touch.
+- **Data and compute.** None, unless the chosen design changes the preset lists.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 4. Board id: 4? (fill in the letter you pick).
+- **Acceptance.** (1) For every company type and each of the team size, customers and budget controls, at the three test widths, a layout test reads the bounding box of every mark and finds no two overlapping and every gap between neighbours at least 8px. (2) Every mark's clickable box is at least 44px high. (3) 5.1 acceptance (1) to (4) and (6) pass. (4) 5.1 acceptance (5) passes, or is replaced by the placement rule of the chosen design when the design is written in.
+
+### 15.5 R-5: the editable sentence
+
+- **Ask.** "On the final page -- the fill in the blanks section is ugly, please make it aesthetically pleasing."
+- **Requirement [REQUIREMENT].** The sentence of 4.2 keeps its words, its blanks and its behaviour (4.2 acceptance (1) to (3)); its look is the chosen design. Whatever the design, it meets these rules: (a) every blank (company type, team size, customers, budget, work, speed) renders alike, with the same computed font family, size, weight, colour and height, whether it is a list or the work button; (b) each blank's text sits on the sentence's baseline, within 1px **[ASSUMPTION]**; (c) every blank shows that it can be changed without hover or focus, by a visible mark (underline, border or caret, as designed) at 3:1 or more against its ground; (d) no blank's value is split across two lines, and no blank runs outside the sentence's box.
+- **Why.** v0.3 set only "large serif with blanks underlined in accent-strong" (14.3, A.7). The build draws the blanks as native lists styled as underlined text, plus one button for the work, so they do not match. The rules above are the parts of "pleasing" a test can hold; the rest is your pick of board.
+- **Data and compute.** None.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 5. Board id: 5? (fill in the letter you pick).
+- **Acceptance.** (1) At the three test widths, every blank's computed font family, size, weight, colour and box height are equal. (2) Every blank's text baseline is within 1px of the baseline of the sentence text beside it. (3) Every blank's change mark has 3:1 or more contrast against its ground, with no hover or focus. (4) At the three test widths, no blank has two line boxes and no blank's bounding box lies outside the sentence's. (5) 4.2 acceptance (1) to (3) pass.
+
+### 15.6 R-6: goal tabs that stand out, all four shown
+
+- **Ask.** "Final page : The tab group "less money for same AI", "More AI for same money" etc. Make it visually stand out please. It feels like background text. Moreover, "More people for same money" is greyed out. This is a mock, you can put place holder number and show the design."
+- **Requirement [REQUIREMENT].**
+  - **All four tabs are always shown**, in the order of 6.2, in one row at 768px and wider **[ASSUMPTION]**.
+  - **They stand out.** The tab group is the most prominent control between the sentence and the stage. Floors a test can hold **[ASSUMPTION]**: each tab is at least 44px high; each label is at least the body text size and has 4.5:1 or more against its own background in every state; the selected tab has a fill and at least one cue that is not colour (weight, rule or border), with its label at 4.5:1 or more; an unselected tab has a visible boundary at 3:1 or more against the page. The rest is the chosen design.
+  - **In the mock every tab can be chosen.** When the mix has no employee work, G3 still opens, with its hero and drawer, and shows a placeholder figure with a label beside it, for example "Placeholder: your answers include no team work, so this number is invented to show the design" **[ASSUMPTION]**. The figure's value is **[OPEN]**, set with the chosen design. It lives in one labelled constant, is marked as invented placeholder data like every mock figure, and no `compute()` path reads it. While the placeholder shows, C5 and the benefit boxes show the G1 figures **[ASSUMPTION]**.
+  - **What a tab that cannot be chosen looks like.** Wherever a later build cannot offer a tab, the tab stays in its place at the same size; its label keeps 4.5:1 contrast, so it is not greyed out; it carries a visible mark that it is unavailable, as the chosen design draws it; it stays focusable with `aria-disabled="true"`, so keyboard and screen-reader users reach it; its one-line reason is its accessible description and shows on hover and on focus. Choosing it does not change the active tab. In the mock no tab is in this state.
+- **Why.** "It feels like background text", and "More people for same money" is greyed out. In the build a tab that cannot be chosen is a disabled button (out of the keyboard order, drawn faint), with its reason printed under the tabs. G3 is disabled when the mix has no employee work (6.2, 10); this ask reverses that for the mock, so 12.5 asks you to confirm.
+- **Data and compute.** One labelled placeholder constant in the mock **[ASSUMPTION]**. No compute change: the tab-state rule no longer disables G3 in the mock.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 6. Board id: 6? (fill in the letter you pick).
+- **Acceptance.** (1) At 768 and 1280px the four tabs render in one row (their bounding boxes share a top) in the order G1, G2, G3, G4. (2) Every tab is at least 44px high; every label is at least the body text size and has 4.5:1 or more against its background in every state; the selected tab's computed fill differs from the unselected tabs' and its computed font weight or border differs too. (3) Every unselected tab's boundary has 3:1 or more against the page. (4) In the mock, with AI-first startup (customer work only), clicking G3 selects it, the URL holds `goal=G3`, and the hero shows a figure with the placeholder label beside it. (5) A code search finds the placeholder value in one constant only, and no `compute()` path reads it. (6) A tab forced into the cannot-be-chosen state in a test keeps its position and size, has `aria-disabled="true"`, is reachable by keyboard, has its reason as its accessible description, keeps 4.5:1 label contrast, and clicking it leaves the active tab unchanged.
+
+### 15.7 R-7: what "Compared with" does, said on the page
+
+- **Ask.** "What is the "Compared with" dropdown doing here -- please explain"
+- **What it does, in plain words.** Every saving on the page is the difference between two prices for the same work: what it costs bought one way today, and what it costs with InfraVana. "Compared with" picks which way of buying today. It starts on the way most companies at your stage buy, marked "typical for you" (in the screenshots you reviewed, Pay-as-you-go API). If you pick another, such as one vendor bought end to end or the cheapest single offer that meets your quality floors, that option becomes the baseline: the headline, the benefit boxes and every chart are measured against it, and it is the Today bar that C1 draws in detail. InfraVana's own figure can change too, because InfraVana keeps the model mix of the option it is compared with (BD-8): on S1 placeholder data InfraVana costs 70,440.09 against the typical buyer and 14,613.02 against vendor 1 end to end (6.1). It never changes your answers.
+- **Requirement [REQUIREMENT].** The control stays: you asked what it does, not to remove it. The page explains it where it sits: one line beside or under the control, visible without hover, that says what it does. Default wording **[ASSUMPTION]**: "Your savings are measured against this way of buying today. Pick another to compare with it." Its label, its place and how it groups with the hero are the chosen design. The behaviour of 6.1 does not change.
+- **Why.** The label alone did not say what the control does.
+- **Data and compute.** None.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 7. Board id: 7? (fill in the letter you pick).
+- **Acceptance.** (1) The control's accessible description (`aria-describedby`) is the explanation line, and the line is visible at the three test widths with no hover or focus. (2) The line has 4.5:1 or more against its ground. (3) 6.1 acceptance (3), (4) and (7) pass.
+
+### 15.8 R-8: a chart index that never wraps
+
+- **Ask.** "The figures tab is wrapping over. This is not a good design, please move to a better design of tab overflow"
+- **Requirement [REQUIREMENT].** The chart index of 4.1 never wraps to a second line, at any width. At 600px and wider it holds every chart the registry will hold: C1 to C10, ten entries, not only the four built now (C1, C5, C3, C10). Below 600px the phone form of 4.1 applies and also takes one line. Every chart stays reachable from the index by pointer and by keyboard, the active item is always fully in view, and the page never scrolls sideways. The overflow mechanism (a scrolling strip, a "More" list, fewer titles in view, or another) is the design choice.
+- **Why.** You saw it wrap, and six more charts (C2, C4, C6 to C9) will join it.
+- **Data and compute.** None.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 8. Board id: 8? (fill in the letter you pick).
+- **Acceptance.** (1) With ten entries (the built charts' titles, and the registry names of section 6 standing in for the unbuilt ones **[ASSUMPTION]**), at 600, 768, 1024, 1280 and 1920px **[ASSUMPTION]**, every index item in view shares one top coordinate. (2) Each of the ten charts can be reached from the index by pointer, and by keyboard alone. (3) After every change of chart, the active item's bounding box lies inside the index's visible box. (4) At each of those widths and at 375px the page's scroll width equals the viewport width. (5) At 375px the phone form renders on one line. (6) The active item carries `aria-current` (4.1).
+
+### 15.9 R-9: no ordinal numbers on charts
+
+- **Ask.** "No need to add Figure1, Figure 2, .. just the text is fine"
+- **Your answer (2026-10-22).** The numbers on the chart index go too. Numbers belong to sequenced or ranked things; the charts are independent and of equal priority, so no ordinal numbers anywhere: not in the figure titles, not on the index, not in the grid view.
+- **Requirement [REQUIREMENT].** No chart title, index item, grid view thumbnail, announcement or other copy gives a chart an ordinal or a position number. Each chart shows its title text alone. In particular: no "Figure n." label; no number before an index item; no number on a grid view thumbnail; no "2 / 4" count in the phone index of 4.1, which shows the focused chart's title instead; and the live region of 4.1, which announces "Figure n of N: title" in the build, announces the title alone. Copy that refers to a chart by number names it by its title instead, for example the G1 drawer, which says "the two "Saved" parts of Figure 1" in the build. The registry ids (C1 to C10) stay internal and never show on the page.
+- **Why.** Your words and your answer. This reverses the "Figure n." titles of the Research Note theme you chose (14.3) and the numbered index of your answer "Both" for the chart picker (12.2 row 14); your answer of 2026-10-22 settles both (12.5).
+- **Data and compute.** None. Chart titles do not change.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 9. Board id: 9? (fill in the letter you pick).
+- **Acceptance.** (1) In every tab and on every chart, at the three test widths, a test of the rendered page finds no visible text and no accessible name that matches "Figure" followed by a number, case-insensitive. (2) No index item, phone index button or grid view thumbnail has visible text or an accessible name that contains a digit or matches "n / N", given chart titles that contain no digit. (3) Each chart's heading text equals its registry title, and each index item's and each thumbnail's text equals its chart's title. (4) The live region's text changes on every change of chart (4.1 acceptance (6)) and equals the new chart's title. (5) No visible text contains a registry id (C1 to C10). (6) Every chart still ends with the source-and-note line of 14.3.
+
+### 15.10 R-10: provenance in a collapsed Sources table
+
+- **Ask.** "What is the purpose of boxes like these, "VENDOR-REPORTED · TODAY: BEST SINGLE OPTION: AWS EC2" ? They look ugly. If they serve no purpose, then lets remove them."
+- **What the boxes were for.** They are the provenance badges of 14.4. Each says whether a series' prices are vendor-reported (dotted outline) or modelled (dashed outline), so that nothing that was not measured can read as measured (section 9). You asked for them in v0.3 ("Restore the full spec rules").
+- **Your answer (2026-10-22).** The boxes are the source of truth of the data, so the information stays, hidden the way "Fine-tune the assumptions" is hidden; the boxes and the dashed and dotted outlines go.
+- **Requirement [REQUIREMENT].**
+  - **Gone.** Every badge box and every dashed and dotted provenance outline, in every chart.
+  - **A collapsed "Sources" disclosure** under each chart that has at least one non-measured series, built the same way as "Fine-tune the assumptions" (a disclosure that is closed on load and opens in place). The label "Sources" is my wording **[ASSUMPTION]**.
+  - **Its table.** One row for each thing that is a box today: each series or group the boxes cover, one row per provenance and group. Columns: what the row covers (the series or group and its parts); its provenance, "Vendor-reported" or "Modelled"; and its source. The source cell is a hyperlink to the source address held in the data for that row's data rows. Where the rows behind it hold several distinct addresses, the cell lists each **[ASSUMPTION]**.
+  - **No invented addresses.** Every address in the current fixtures is the invented placeholder address `https://example.invalid/placeholder-invented-data/...` (BD-11), or empty, or the text "INVENTED PLACEHOLDER" in `hardware.csv`. A source cell with no real address, including one that holds only the placeholder address, reads "placeholder, no source yet" and is not a link. No address is typed in code.
+  - **Measured series** get no row, as they had no box **[ASSUMPTION]**. A chart whose series are all measured has no Sources disclosure.
+  - Where invented rows are drawn (BD-11), the table lists them as modelled, and the visible "Source: invented placeholder data" line stays.
+- **Why.** You find the boxes ugly; you also said the information they carry is the data's source of truth, so it moves out of sight instead of being deleted. This reverses your v0.3 choice for badges and outlines and changes guardrail (4) of BD-11; your answer of 2026-10-22 settles it (12.5).
+- **Data and compute.** The data contract gains an optional `source_url` column on `hardware.csv` and `seat_plans.csv`, the two files that feed a chart series and hold no address today (7.3). `model_offers.csv`, `buying_patterns.csv` and `quality.csv` keep their `source_url`, and `throughput_curves.csv` its `run_url`. The `provenance` columns stay in the CSVs and in `Results` (7.3, 7.4). No compute change; the table is a view over the rows each chart already uses.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 10. Board id: 10? (fill in the letter you pick).
+- **Acceptance.** (1) In every chart, in every tab and in both C10 views, no element has a dashed or dotted computed border style, and no chart series option sets a dashed or dotted border or line type for provenance. (2) Outside the Sources disclosure and the "How is this worked out?" drawer, no element of a chart contains the words "vendor-reported" or "modelled" (any case). (3) On load every Sources disclosure is closed, and opening it shows its table without a page reload. (4) The table has one row per provenance and group of the chart's non-measured series, and each row's provenance cell reads "Vendor-reported" or "Modelled" as the data says. (5) Every source link's address is read from a data row, and a code search finds no source address literal in chart code. (6) On the current fixtures no source cell is a link, and every source cell reads "placeholder, no source yet". (7) Giving one fixture row a real `source_url` turns that row's source cell into a link to it, with no code change; changing one series' `provenance` from measured to modelled adds a row, with no code change. (8) A chart whose series are all measured has no Sources disclosure. (9) With BD-11 rows loaded, the G4 view and the C10 speed view list the invented rows as modelled and show "Source: invented placeholder data". (10) The loader accepts `hardware.csv` and `seat_plans.csv` with and without `source_url`.
+
+### 15.11 R-11: solid colour fills, no patterns
+
+- **Ask.** "The bars are hideous with the pattern fill. Can we not do a different color fill, which goes with the design language."
+- **Your answer (2026-10-22).** Today options may take distinct hues; the charts should look colourful, and the designer proposes the colours for you to choose from.
+- **Requirement [REQUIREMENT].** No bar or bar segment in any chart has a pattern fill (hatch, dots, cross-hatch or any other decal). Bars are solid fills from the palette chosen for R-12, told apart by hue and lightness, and every bar and segment keeps its direct label (6, 14.5). In particular:
+  - each Today option slot (1 to 4) has its own hue and keeps it on every chart, in every tab and after a reload;
+  - InfraVana keeps the accent family, and no Today fill uses the accent hue;
+  - saved money keeps a role of its own (the green of 14.1, or the chosen palette's equivalent);
+  - neighbouring segments of a stacked bar are separated by a rule or a gap;
+  - every pair of fills drawn in the same chart differs by at least 10 in CIEDE2000 colour difference **[ASSUMPTION]**;
+  - every fill has 3:1 or more against the chart ground, and every label drawn on a fill 4.5:1 or more;
+  - the markers of C3 and C10 keep their shapes per option and take their slot's fill.
+  The largest number of distinct fills any one chart needs (C1, with the comparator's channel segments, the InfraVana segments, the saved parts and up to three option bars) is **[OPEN]**. It is counted on the fixtures before the palette is chosen, and the chosen palette must cover it.
+- **Why.** The patterns existed only because the v0.3 palette had two distinct greys, 1.41:1 apart, for four Today slots (14.1). Distinct hues remove the need. This reverses the patterns of your v0.3 "Restore the full spec rules" and the greys for Today of 14; your answer of 2026-10-22 settles both (12.5).
+- **Data and compute.** None.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 11. Board id: 11? (fill in the letter you pick; the boards for asks 11 and 12 may be one choice).
+- **Acceptance.** (1) In every tab and in both C10 views, a test of every chart's option object finds no decal on any series or data item, no pattern or image fill, and the chart library's automatic decal off. (2) A test computes the CIEDE2000 difference between every pair of fill tokens one chart uses and finds every pair at 10 or more. (3) Every fill has 3:1 or more against the chart ground, and every label on a fill 4.5:1 or more. (4) In a render of each chart, the number of direct labels equals the number of bars and segments drawn. (5) Each Today option's fill token is the same on C1, C3, C5 and C10, after switching tab and after a reload. (6) The four Today slot tokens have four distinct hues, none within 30 degrees of the accent's hue **[ASSUMPTION]**. (7) Every stacked bar shows a rule or gap of at least 1px between neighbouring segments.
+
+### 15.12 R-12: calm chrome, vivid and hopeful chart marks
+
+- **Ask.** "Extending 11. The whole site, feels mono-chromatic today .. Its mostly pastel and dull. I do appreciate properly used muted color. The idea of using pastel colors is to look classy, not dead. Please work on the visual design wrt this and make the webpage attractive yet classy."
+- **Your answer (2026-10-22).** The charts are the selling data for InfraVana. Today they look muted and mushed into the background. For the visitor they should be visually attractive, impress them, make them think InfraVana knows what it is doing, and evoke positive, hopeful emotions. The designer decides which colours to propose; you choose among the options.
+- **Requirement [REQUIREMENT].** The whole page takes a revised palette, which you choose from the designer's boards for ask 12. The page chrome (paper, type, rules, controls) stays calm and classy; the chart marks carry the most chroma on the page and are clearly its most vivid elements, in a warm and hopeful register. Muted means refined, not dull. In checkable terms:
+  - **Marks most vivid.** The CIE LCh chroma of every chart series fill is higher than the chroma of every chrome token (surfaces, text, rules, borders, buttons, selected states); the notice amber of BD-6 is left out because it appears only in banners **[ASSUMPTION]**.
+  - **More than one hue.** At least two hues beyond the accent, each with a named role in the palette table, and each role listing the page elements it applies to; the notice amber does not count **[ASSUMPTION]**.
+  - **Contrast.** Every text pair at 4.5:1 or more and every mark and border at 3:1 or more, in a contrast table for the chosen values with 0 failures (14.5).
+  - **Brand.** The logo unedited; InfraVana keeps the accent hue; the accent's value changes only with the brand owner's answer (12.4 item 28) **[ASSUMPTION]**.
+  - **Tokens.** Chart code and styles read every colour from tokens (14.5).
+  - **The table.** Once you choose, the chosen board's token table replaces the 14.1 table, and the v0.3 table moves to Appendix A.7.
+  "Warm and hopeful" and "attractive yet classy" are your choice of board, not a number this spec sets.
+- **Why.** Your words and your answer. The v0.3 page is warm paper, ink, one steel-blue accent `#466577` and one green (14.1), with greys for Today, and the theme's own named risk was that it is calm rather than "leading edge" (14).
+- **Data and compute.** None.
+- Selected design: pending, options in mock/docs/design-v0.4/ board for ask 12. Board id: 12? (fill in the letter you pick).
+- **Acceptance.** (1) 14.3 acceptance (1) passes on the new 14.1 table: every token read from the page's computed styles equals its table value. (2) A test computes the CIE LCh chroma of every token and finds the lowest chroma among chart series fills above the highest among chrome tokens, the notice amber left out. (3) A test counts the hue roles in the palette table and finds at least two whose hue differs from the accent's by at least 30 degrees **[ASSUMPTION]**, neither of them the notice amber. (4) For each hue role, every page element the table lists for it computes to that role's token. (5) The contrast table covers every token pair the page draws and has 0 failures. (6) A code search of `mock/src` finds no colour literal outside the token files.
 
 ## Appendix A. Parked for a later version
 
-The language-model layer, moved here intact from v0.2 by your decision ("the llm layer comes in a later version"). The text below is unchanged. References inside it to sections and to "the album" are v0.2 references.
+The language-model layer, moved here intact from v0.2 by your decision ("the llm layer comes in a later version"). The text below is unchanged. References inside it to sections and to "the album" are v0.2 references. A.7 is different: it holds the v0.3 wording that the v0.4 draft replaced.
 
 ### A.1 v0.2 section 1: What we're building, in one paragraph
 
@@ -736,3 +948,228 @@ Your read is right: a classifier is cheap, so forgiving rejected prompts is affo
 | ID | Topic | MVP default | Why it's safe to defer | Revisit when |
 |---|---|---|---|---|
 | BD-1 | Identity and enforcement of the 5-screen and 1-extract caps | Accepted as recommended in section 8: an anonymous first-party token carries the counters, with a generous per-IP ceiling (about 30 screens and 10 extract calls a day) as a backstop. **MVP adds a global daily spend ceiling on the edge function as a kill switch**, since there is no real backend to catch abuse. | Only the edge function changes. The UI contract (`429` with a `reason`) stays the same. | Backend lands, and before go-live. Decide on login or email capture then. |
+
+### A.7 v0.3 wording superseded by the v0.4 draft
+
+Moved here verbatim from v0.3, so that any v0.4 ask you decline can be restored word for word. Each item names the clause and the requirement that replaced it. Section and item numbers inside the quotes are v0.3 references.
+
+**A.7.1 Section 4 page sketch, the index and figure title lines (R-8, R-9).**
+
+```text
+| 1 Where the money goes | 2 What the budget buys | 3 ... |  [Grid view]|
+| <  Figure 1. Where the money goes                                   > |
+```
+
+**A.7.2 4.1 Requirement (R-8, R-9).**
+
+```text
+- **Requirement.** One chart is in focus at a time. The visitor picks it from a **numbered, titled index** (default) or from a **grid of live thumbnails** behind a "Grid view" button. Arrows, keyboard and swipe move between charts with a smooth transition.
+```
+
+**A.7.3 4.1 table, the index row (R-8, R-9).**
+
+```text
+| Filmstrip of live thumbnails under the stage | A one-line numbered index ("1 Where the money goes", "2 ..."), active item marked with `aria-current`. Numbers match the "Figure n." titles (14.3). | Changed |
+```
+
+**A.7.4 4.1 table, the mobile row (R-9).**
+
+```text
+Below 600px: full-width stage with swipe; the index collapses to "2 / 4 What the budget buys" that opens the full list;
+```
+
+**A.7.5 4.1 Acceptance (5) (R-8).**
+
+```text
+(5) At 375px the index fits one line and the page does not scroll sideways.
+```
+
+**A.7.6 4.3 Requirement (R-2, R-3).**
+
+```text
+- **Requirement [REQUIREMENT].** The intake is the first thing a visitor sees. It asks the steps below one at a time, shows "Step n of N" with a progress rule (N counts the steps shown for the chosen company type, and before step 1 the label reads "Step 1"), lets the visitor go back or click an earlier answer to change it, and shows a live estimate beside the questions.
+```
+
+**A.7.7 4.3 Data and compute (R-3).**
+
+```text
+The estimate is one `compute()` call after each answer.
+```
+
+**A.7.8 4.3 table, the company type row with the compute-seller row (R-1).**
+
+```text
+| Company type | What kind of company are you? | Always | 5 options: AI-first startup, Software or internet company, Traditional enterprise, Telecom or national cloud, Chip or hardware design company. A quieter final row "I sell AI compute (cloud or GPU provider)" goes to contact (BD-18). |
+```
+
+**A.7.9 4.3 Live estimate (R-3).**
+
+```text
+- **Live estimate.** A margin note (14.3) with Today, With InfraVana and "You save", per quarter, measured against the typical buyer for the stage (6.1). It is hidden on step 1 and appears from step 2 (BD-18).
+```
+
+**A.7.10 4.3 Acceptance (2) (R-3).**
+
+```text
+(2) Every answer changes the estimate within one frame of the click.
+```
+
+**A.7.11 4.3 Acceptance (5) and (6) (R-2, R-3).**
+
+```text
+(5) On step 1 the estimate panel is absent from the page; from step 2 it is present. (6) The step label reads "Step 1" before a type is chosen and "Step n of N" after, with N equal to the number of rows of the table shown for that type.
+```
+
+**A.7.12 Section 6 selection rules, the dataviz bullet (R-11).**
+
+```text
+- Visual rules follow the `dataviz` skill: Infravana is one consistent accent colour, "today" providers are neutral greys, and every chart carries direct labels.
+```
+
+**A.7.13 6.1 the "Compared with" selector placement (R-7).**
+
+```text
+  - **A page-wide "Compared with" selector [PROPOSED].** It sits above the stage, defaults to the typical buyer, and changing it recomputes InfraVana against the new comparator on every chart and tab.
+```
+
+**A.7.14 6.1 How each chart draws them, the C1 row (R-11).**
+
+```text
+| C1 | Two bars, each segmented by channel, as now | An unsegmented total bar with a pattern, a direct label and its quality score. Each option bar takes one pattern reserved for its option rank, never one used by the comparator's channel segments **[PROPOSED]**; the designer sets the patterns (14.4) |
+```
+
+**A.7.15 6.1 the four-grey limit and patterns (R-11).**
+
+```text
+  Four greys is a hard limit. In Research Note the four grey slots have only two distinct values (14.1), so slots 3 and 4 need the restored patterns (14.4).
+```
+
+**A.7.16 6.1 Acceptance (6) (R-11).**
+
+```text
+(6) C1 shows one unsegmented, patterned, labelled bar per grey option other than the comparator, and no pattern appears both on a comparator channel segment and on an option bar;
+```
+
+**A.7.17 6.2 Requirement, the tab group (R-6).**
+
+```text
+- **Requirement.** Four tabs above the hero choose how the result is framed.
+```
+
+**A.7.18 6.2 table, G3 acceptance cell (R-6).**
+
+```text
+Disabled, with a one-line reason, when the mix has no employee work (10) **[ASSUMPTION]**.
+```
+
+**A.7.19 6.3 Acceptance (4) (R-10).**
+
+```text
+(4) The speed view carries the provenance badge and the invented-data source line (BD-11).
+```
+
+**A.7.20 7.3 Provenance paragraph (R-10).**
+
+```text
+Provenance: every series whose provenance is not `measured` is badged "modelled" or "vendor-reported", as section 9 says (BD-9). v0.2 said "no badge means measured"; that still holds, but a badge is never skipped for a non-measured series.
+```
+
+**A.7.21 Section 9, the provenance badges bullet (R-10).**
+
+```text
+- **Provenance badges** on every series: *measured* (a run with a link), *modelled*, or *vendor-reported*. Mixed charts show both with different line styles.
+```
+
+**A.7.22 Section 9, the "Restored in full" bullet (R-10, R-11).**
+
+```text
+- **Restored in full [REQUIREMENT].** You chose "Restore the full spec rules": badges, dashed (modelled) and dotted (vendor-reported) outlines, and series patterns, all of which commit 8e00537 removed. The designer specifies them on the Research Note values during the build (14.4).
+```
+
+**A.7.23 Section 9 Acceptance (2) and (4) (R-10).**
+
+```text
+(2) With BD-11 rows loaded, the G4 view and the C10 speed view each show "Source: invented placeholder data" and the provenance badge; the G1 view does not. (3) The footer text contains "invented" whenever BD-11 rows are loaded. (4) A modelled series shows its badge and dashed outline (14.4).
+```
+
+**A.7.24 Section 10, the G3 state row (R-6).**
+
+```text
+| G3 with no employee work | The tab is shown disabled with "Your answers include no team work" **[ASSUMPTION]**. |
+```
+
+**A.7.25 Section 10 Acceptance (3) (R-6).**
+
+```text
+(3) With no employee work, G3 is disabled and shows its reason.
+```
+
+**A.7.26 BD-9 row (R-10).**
+
+```text
+| BD-9 | Badging | Every non-measured series is badged, following section 9 over 7.3. | Display only. | Your sign-off. |
+```
+
+**A.7.27 BD-11 guardrail (4) (R-10).**
+
+```text
+(4) any chart that uses them shows the provenance badge and a "Source: invented placeholder data" line, and the footer says so;
+```
+
+**A.7.28 Section 14 intro, "numbered and sourced figures" (R-9).**
+
+```text
+warm paper, serif figure titles, numbered and sourced figures, structure drawn by rules
+```
+
+**A.7.29 Section 14 "What it keeps", greys for Today (R-11, R-12).**
+
+```text
+What it keeps from v0.2: the steel-blue logo, unedited; greys for Today and the accent for InfraVana;
+```
+
+**A.7.30 14.1 table, the Today greys row (R-11).**
+
+```text
+| Today greys, slots 1 to 4 | `--color-today-1` to `-4` | `#2a2a28`, `#43413d`, `#43413d`, `#2a2a28` | Marks 13.08:1 and 9.26:1; labels on them 13.77:1 and 9.75:1 |
+```
+
+**A.7.31 14.1 bullets on the greys (R-11).**
+
+```text
+- Greys differ from the accent in lightness: 2.32:1 (today-1) and 1.64:1 (today-2) [d1 table]. Every InfraVana series still carries a direct label.
+- Only two distinct greys exist, and they are close to each other: 1.41:1 (computed for this spec with the same WCAG formula, not in the d1 table). Neighbouring Today parts therefore need separators and patterns (14.4).
+```
+
+**A.7.32 14.3 Sentence (R-5).**
+
+```text
+- **Sentence:** large serif with blanks underlined in accent-strong.
+```
+
+**A.7.33 14.3 Figures (R-9, R-10).**
+
+```text
+- **Figures:** each chart is "Figure n." (italic, secondary) plus its title, with a 1px ink rule above. Each ends with a source-and-note line: "Source: InfraVana cost model on illustrative price tables. Note: all figures are invented placeholders, not quotes." The figure number matches the index number (4.1).
+```
+
+**A.7.34 14.3 Acceptance (2) and (5) (R-9, R-12).**
+
+```text
+(2) Each figure title's number equals its index number in 4.1. (3) The hero's top border computes to `3px double`. (4) No element on the page has a non-`none` box shadow. (5) Every corner radius computes to 2px or 0.
+```
+
+**A.7.35 14.4 in full, as written in v0.3 (R-10, R-11).**
+
+```text
+- **Requirement.** During the build the designer specifies, on the Research Note values, the provenance and series rules you restored: provenance badges; a dashed outline for modelled and a dotted outline for vendor-reported parts; series patterns (hatch, dots, cross-hatch) for Today slots and InfraVana segments; and solid lines only between Today series in line charts, since dash style means provenance. In C1 the designer also sets which patterns are reserved for option bars, one per option rank, kept apart from those of the comparator's channel segments (6.1).
+- **Starting point.** The rules removed in commit 8e00537, in `mock/docs/design-tokens.md` as it stood before that commit (sections 3 to 3e: Today slots and patterns, InfraVana segments, perforated provenance borders, label chips, label list). Their colours and ratios were cut for the old palette, so every ratio must be re-measured on the d1 values.
+- **Why it is needed here.** With two distinct greys at 1.41:1, slots 3 and 4 of 6.1 cannot be told apart by colour, so patterns are the cue, behind direct labels.
+- **Acceptance.** (1) A d1 contrast table covers every new pair (pattern on fill, dashed border on fill and on page). (2) A modelled series in any chart shows its dashed outline and badge. (3) Four Today bars are distinguishable in greyscale print.
+```
+
+**A.7.36 14.5 Contrast, the d1 contrast acceptance (R-12).**
+
+```text
+- **Contrast:** every text pair passes 4.5:1 and every mark and border 3:1 on the d1 values, 0 failures across 32 pairs. Any new token is added to the table before it ships.
+```
