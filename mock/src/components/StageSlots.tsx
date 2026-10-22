@@ -7,22 +7,24 @@
  *   ComparatorSlot  under the hero            the "Compared with" selector (6.1)
  *   BenefitsSlot    under each figure title   the benefit boxes (6.4)
  *
- * The comparator slot holds the "Compared with" selector. Until the other two
- * are built the goal-tabs slot draws nothing and the boxes slot shows the
- * one-sentence takeaway the page has always shown. `data-slot` names each one for tests and for the step that
+ * The comparator slot holds the "Compared with" selector and the boxes slot
+ * holds the benefit boxes. Until the goal tabs are built that slot draws
+ * nothing. `data-slot` names each one for tests and for the step that
  * replaces it. The view state and its setters arrive in `ctx`.
  */
 import type { ChartDef, Results } from "../contract";
+import { benefitContext } from "../store/benefitContext";
 import { choiceFor, selectedComparator } from "../store/comparator";
 import type { StageSlotContext } from "../store/stage";
+import { BenefitBoxes } from "./BenefitBoxes";
 import { ComparatorSelect } from "./ComparatorSelect";
 
-/** Text of a chart function that may throw while an input is mid-change. */
-function attempt(fn: () => string): string {
+/** The result of a chart function that may throw while an input is mid-change, else `fallback`. */
+function attempt<T>(fn: () => T, fallback: T): T {
   try {
     return fn();
   } catch {
-    return "";
+    return fallback;
   }
 }
 
@@ -54,16 +56,17 @@ export function ComparatorSlot({ ctx }: { ctx: StageSlotContext }) {
 }
 
 // ---------------------------------------------------------------------------
-// Slot 3: benefit boxes, under the figure title. Replace the body of BenefitsSlot.
-// Until the boxes exist it shows the chart's one-sentence takeaway, which
-// stays as the chart's accessible name once they do (spec 6.4).
+// Slot 3: benefit boxes, under the figure title (spec 6.4). The chart's
+// one-sentence takeaway stays as the boxes' accessible name.
 // ---------------------------------------------------------------------------
 
 export function BenefitsSlot({ def, results, ctx }: { def: ChartDef; results: Results; ctx: StageSlotContext }) {
-  void ctx;
+  // The goal tabs and C10 do not yet hand their solve and frontier results to the stage.
+  const context = benefitContext(ctx.scenario, ctx.tables, null, null);
+  const boxes = attempt(() => def.benefits(results, context), []);
   return (
     <div data-slot="benefit-boxes">
-      <p className="chart-card__caption">{attempt(() => def.caption(results))}</p>
+      <BenefitBoxes boxes={boxes} caption={attempt(() => def.caption(results), "")} saved={def.id === "C1"} />
     </div>
   );
 }
