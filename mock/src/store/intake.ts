@@ -1,3 +1,4 @@
+import { BUDGET_USD_PER_QUARTER_RANGE, clampToRange, CUSTOMERS_RANGE, USERS_RANGE } from "../data/ranges";
 import type { LatencyClass, ModelMix, Scenario, Stage, Tables, WorkloadBasis } from "../contract";
 
 /**
@@ -96,7 +97,10 @@ export function companyOf(id: CompanyType): Company {
   return COMPANIES.find((c) => c.id === id) ?? COMPANIES[0];
 }
 
+/** The budget choices of the sentence blank. */
 export const BUDGETS = [50_000, 100_000, 200_000, 500_000];
+/** The budget slider's marks, one per decade: the four above would sit about 6% apart on a $1K to $100M track (spec 5.1). */
+export const BUDGET_MARKS = [10_000, 100_000, 1_000_000, 10_000_000];
 export const SPEEDS: LatencyClass[] = ["interactive", "standard", "batch"];
 
 export type StepId = "company" | "work" | "users" | "customers" | "budget" | "speed";
@@ -131,15 +135,15 @@ export function withCurrent(values: number[], current: number): number[] {
 }
 
 export function setUsers(s: Scenario, users: number): Scenario {
-  return { ...s, baseline: { ...s.baseline, users } };
+  return { ...s, baseline: { ...s.baseline, users: clampToRange(Math.round(users), USERS_RANGE) } };
 }
 
 export function setCustomers(s: Scenario, customers: number): Scenario {
-  return { ...s, baseline: { ...s.baseline, customers } };
+  return { ...s, baseline: { ...s.baseline, customers: clampToRange(Math.round(customers), CUSTOMERS_RANGE) } };
 }
 
 export function setBudget(s: Scenario, budget: number): Scenario {
-  return { ...s, baseline: { ...s.baseline, budget_usd_per_quarter: budget } };
+  return { ...s, baseline: { ...s.baseline, budget_usd_per_quarter: clampToRange(budget, BUDGET_USD_PER_QUARTER_RANGE) } };
 }
 
 export function setSpeed(s: Scenario, latency_class: LatencyClass): Scenario {
