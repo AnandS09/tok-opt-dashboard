@@ -1,7 +1,9 @@
 /**
  * Development check, not part of the app (the app never imports it): mounts
- * the real app in a DOM, opens the first example and confirms that C1, C5 and
- * C3 each draw a non-empty canvas with a non-zero size.
+ * the real app in a DOM, opens the first example and, driving the stage
+ * carousel slide by slide, confirms that C1, C5 and C3 each draw a non-empty
+ * canvas with a non-zero size; then picks another comparator in the
+ * "Compared with" select and confirms the figures change and every chart still draws.
  *
  * Why it exists: `renderCheck.ts` renders to a string on the server, so it
  * never runs an effect, never runs React StrictMode (which `npm run dev` uses
@@ -153,7 +155,7 @@ async function child(bundle) {
       const v = args.split(",").map((a) => (a.trim().endsWith("vh") ? (parseFloat(a) / 100) * VIEWPORT.h : parseFloat(a)));
       return `${Math.min(Math.max(v[1], v[0]), v[2])}px`;
     });
-  for (const f of ["tokens.css", "app.css", "compare.css"]) {
+  for (const f of ["tokens.css", "app.css", "intake.css", "stage.css", "compare.css"]) {
     const style = doc.createElement("style");
     style.textContent = evalClamp(resolveVars(strip(fs.readFileSync(path.join(root, "src/styles", f), "utf8"))));
     doc.head.appendChild(style);
@@ -325,18 +327,75 @@ async function child(bundle) {
   await sleep(400);
   await settle("after example");
 
-  const cards = [...doc.querySelectorAll(".chart-card")];
-  const stage = Object.fromEntries(cards.map((card, i) => [IDS[i] ?? `#${i}`, chartState(card)]));
-  const drawn = (s) => !!s && !s.alert && s.canvases.length > 0 && s.canvases.every((c) => c.w > 0 && c.h > 0 && c.draws > 0);
+  // The page shows one chart at a time (spec 4.1): drive each slide with the Next arrow, in registry order.
+  const click = (el) => el.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+  const slideId = () => /(?:^|[#&])slide=([^&]+)/.exec(window.location.hash)?.[1] ?? null;
   let failed = 0;
-  if (cards.length !== IDS.length) {
-    failed++;
-    console.log(`FAIL expected ${IDS.length} chart cards, found ${cards.length}`);
+  const stage = {};
+  const drawn = (s) => !!s && !s.alert && s.canvases.length > 0 && s.canvases.every((c) => c.w > 0 && c.h > 0 && c.draws > 0);
+  /** Reads the one chart on the stage: exactly one card, and its state. */
+  const readSlide = (id) => {
+    const cards = [...doc.querySelectorAll(".chart-card")];
+    if (cards.length !== 1) {
+      failed++;
+      console.log(`FAIL ${id}: expected one chart card on the stage, found ${cards.length}`);
+    }
+    if (slideId() !== id) {
+      failed++;
+      console.log(`FAIL ${id}: the address names slide ${slideId()}`);
+    }
+    return cards[0] ? chartState(cards[0]) : null;
+  };
+  for (let i = 0; i < IDS.length; i++) {
+    if (i > 0) {
+      const next = doc.querySelector('button[aria-label="Next chart"]');
+      if (!next) {
+        failed++;
+        console.log("FAIL no Next chart button");
+        break;
+      }
+      click(next);
+      await settle(`next to ${IDS[i]}`);
+      await sleep(300);
+      await settle(`after next to ${IDS[i]}`);
+    }
+    stage[IDS[i]] = readSlide(IDS[i]);
   }
   for (const id of IDS) {
     const pass = drawn(stage[id]);
     if (!pass) failed++;
     console.log(`${pass ? "PASS" : "FAIL"} ${id}: ${JSON.stringify(stage[id])}`);
+  }
+
+  // The "Compared with" selector sits in the comparator slot, and picking another comparator changes the figures (spec 4.1, 6.1).
+  const select = doc.querySelector('[data-slot="comparator"] select');
+  if (!select) {
+    failed++;
+    console.log("FAIL no Compared with select in the comparator slot");
+  } else {
+    const before = doc.querySelector(".chart-card__caption")?.textContent ?? "";
+    const other = [...select.options].find((o) => o.value !== select.value);
+    select.value = other.value;
+    select.dispatchEvent(new window.Event("change", { bubbles: true }));
+    await settle("comparator change");
+    await sleep(400);
+    await settle("after comparator change");
+    const after = doc.querySelector(".chart-card__caption")?.textContent ?? "";
+    const hashed = decodeURIComponent(window.location.hash).includes(`cmp=${other.value}`);
+    const ok = after !== before && hashed;
+    if (!ok) failed++;
+    console.log(`${ok ? "PASS" : "FAIL"} comparator: ${select.value} chosen; caption changed: ${after !== before}; address has cmp: ${hashed}`);
+    // Every chart still draws under the new comparator. The stage is on the last chart, so Next wraps to the first.
+    for (let i = 0; i < IDS.length; i++) {
+      click(doc.querySelector('button[aria-label="Next chart"]'));
+      await settle(`next to ${IDS[i]} under the new comparator`);
+      await sleep(300);
+      await settle(`after next to ${IDS[i]} under the new comparator`);
+      const state = readSlide(IDS[i]);
+      const pass = drawn(state);
+      if (!pass) failed++;
+      console.log(`${pass ? "PASS" : "FAIL"} ${IDS[i]} under the new comparator`);
+    }
   }
   const messages = logs.filter((l) => !/Not implemented/.test(l));
   console.log(`console errors and warnings: ${messages.length}`);
