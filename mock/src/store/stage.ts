@@ -9,6 +9,7 @@
  * and the one hook that keeps the address and the state in step.
  */
 import { useEffect, useReducer, type Dispatch } from "react";
+import { compute } from "../compute";
 import type { ChartDef, ChartId, GoalId, GoalView, PatternId, Results, Scenario, Tables } from "../contract";
 import {
   hasStageFields,
@@ -95,6 +96,27 @@ export function withView(
   if (known && view.comparator !== null) next.comparator = view.comparator;
   if (view.goal === "G4") next.tradeoff = { quality_step: view.qualityStep, speed_step: view.speedStep };
   return next;
+}
+
+/**
+ * `compute()` for the page: if the scenario names a comparator that is not an
+ * option the engine can offer for the mix and floors in effect (the best single
+ * option once no proprietary offer meets every floor, or a pattern with no rows
+ * for a workload), the page falls back to the default comparator, the typical
+ * buyer, instead of failing. The stored choice stays in the view state, so it
+ * applies again if the visitor changes the inputs back. `compute()`'s own
+ * signature and results are unchanged; a failure that has nothing to do with the
+ * comparator is thrown again by the second call.
+ */
+export function computeForView(scenario: Scenario, tables: Tables): Results {
+  try {
+    return compute(scenario, tables);
+  } catch (error) {
+    if (scenario.comparator === undefined) throw error;
+    const { comparator, ...withoutChoice } = scenario;
+    void comparator;
+    return compute(withoutChoice, tables);
+  }
 }
 
 /**

@@ -11,7 +11,6 @@ import { openShareOf, ResultNotices } from "./components/ResultNotices";
 import { Skeleton } from "./components/Skeleton";
 import { Stage } from "./components/Stage";
 import { ComparatorSlot, GoalTabsSlot } from "./components/StageSlots";
-import { compute } from "./compute";
 import type { GoalId, PatternId, Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
@@ -20,6 +19,7 @@ import { goalTabStates, useGoalSolve } from "./store/goal";
 import type { CompanyType } from "./store/intake";
 import {
   activeIndex,
+  computeForView,
   useStageHash,
   useStageState,
   withView,
@@ -120,7 +120,7 @@ export default function App() {
     dispatch({ type: "answer_edited", update });
   }, []);
 
-  // Every knob change recomputes locally through compute(), throttled while a slider is dragged.
+  // Every knob change recomputes locally through compute() (computeForView), throttled while a slider is dragged.
   // The goal, comparator and G4 steps join the scenario here; the chart in focus does not, so changing chart never recomputes.
   const { goal, comparator, qualityStep, speedStep } = view;
   const viewedScenario = useMemo(
@@ -140,7 +140,7 @@ export default function App() {
   const computed = useMemo<{ results: Results | null; error: string | null }>(() => {
     if (!tables || !liveScenario || response?.verdict !== "ok") return { results: null, error: null };
     try {
-      return { results: compute(liveScenario, tables), error: null };
+      return { results: computeForView(liveScenario, tables), error: null };
     } catch (error) {
       return { results: null, error: messageOf(error) };
     }
