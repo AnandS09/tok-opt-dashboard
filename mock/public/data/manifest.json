@@ -1,5 +1,5 @@
 {
-  "data_version": "0.3.0-placeholder",
+  "data_version": "0.3.1-placeholder",
   "generated_at": "2026-10-21T14:00:00Z",
   "placeholder": true,
   "notice": "INVENTED PLACEHOLDER DATA. Nothing in this folder is measured, quoted or taken from a vendor, benchmark or price page. Every throughput row is provenance=modelled. Do not present any of it as real.",
@@ -41,10 +41,11 @@
       "placeholder": true
     },
     "model_offers.csv": {
-      "version": "0.1.0-placeholder",
-      "row_count": 22,
-      "checksum": "sha256:5aefb30fb27013f04b0aae815b3f039370969f1dc1dd2bcd790f0b43f25955ae",
-      "placeholder": true
+      "version": "0.3.1-placeholder",
+      "row_count": 32,
+      "checksum": "sha256:433a391dceb0d34aebf40ba31de55c1b1569e9922e1aa57233761b97f227ad89",
+      "placeholder": true,
+      "note": "Rows with a speed value or a batch or flex price are invented (BD-11); README.md lists them."
     },
     "seat_plans.csv": {
       "version": "0.1.0-placeholder",

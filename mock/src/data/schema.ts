@@ -14,6 +14,8 @@ import type {
   GoalId,
   OfferChannel,
   PatternKind,
+  PriceTier,
+  Provenance,
   PricingRule,
   Stage,
   Verdict,
@@ -40,6 +42,8 @@ export const CHANNELS = [
   "neocloud",
   "self-host",
 ] as const satisfies readonly OfferChannel[];
+export const PRICE_TIERS = ["standard", "batch", "flex"] as const satisfies readonly PriceTier[];
+export const OFFER_PROVENANCES = ["measured", "vendor_reported", "modelled"] as const satisfies readonly Provenance[];
 export const CURVE_PROVENANCES = ["measured", "modelled"] as const satisfies readonly CurveProvenance[];
 export const LATENCY_CLASSES = ["interactive", "standard", "batch"] as const satisfies readonly LatencyClass[];
 export const VERDICTS = ["ok", "off_topic", "unsafe", "unclear"] as const satisfies readonly Verdict[];
@@ -117,8 +121,12 @@ export const MODEL_OFFERS: TableSpec = {
     provisioned_usd_per_hr: "number?",
     source_url: "string",
     as_of: "string",
+    price_tier: "string",
+    provenance: "string",
+    tok_s_per_user: "number?",
+    p95_ttft_ms: "number?",
   },
-  enums: { channel: CHANNELS },
+  enums: { channel: CHANNELS, price_tier: PRICE_TIERS, provenance: OFFER_PROVENANCES },
 };
 
 export const SEAT_PLANS: TableSpec = {

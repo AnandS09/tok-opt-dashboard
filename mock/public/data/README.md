@@ -11,7 +11,7 @@ Files follow the column contracts of spec section 7.3. Empty cells mean "no valu
 | `hardware.csv` | 9 | `hw_id, vendor, class, usd_per_hr, hr_price_source, power_kw` |
 | `throughput_curves.csv` | 216 | `model_id, hw_id, precision, concurrency, tok_s_per_user, tok_s_per_gpu, p95_ttft_ms, p95_tok_latency_ms, provenance, run_url` |
 | `models.csv` | 7 | `model_id, family, tier, license, vendor` |
-| `model_offers.csv` | 22 | `offer_id, model_id, channel, region, usd_per_mtok_in, usd_per_mtok_out, commit_discount_pct, min_commit_usd, provisioned_usd_per_hr, source_url, as_of` |
+| `model_offers.csv` | 32 | `offer_id, model_id, channel, region, usd_per_mtok_in, usd_per_mtok_out, commit_discount_pct, min_commit_usd, provisioned_usd_per_hr, source_url, as_of, price_tier, provenance, tok_s_per_user, p95_ttft_ms` |
 | `seat_plans.csv` | 2 | `plan_id, vendor, usd_per_user_month, included_usage_note, overage_model_id` |
 | `quality.csv` | 77 | `model_id, benchmark, score, source_url` |
 | `workloads.csv` | 8 | `workload_id, label, tok_in_per_user_day, tok_out_per_user_day, quality_floor, default_model_mix, basis` |
@@ -52,6 +52,9 @@ Spec 7.3 lists `offer_id or plan_id` as one column of `baseline_providers.csv`. 
 | Self-host pricing | Rows with `channel = self-host` and `region = any` have empty token prices. Their cost is derived from `hardware.usd_per_hr` and `throughput_curves.tok_s_per_gpu`. |
 | `min_commit_usd` | Dollars per quarter. Empty means no minimum. |
 | `provisioned_usd_per_hr` | Left empty everywhere. The schema has no capacity column to pair it with, so it cannot be used yet. |
+| `price_tier` | `standard`, `batch` or `flex` (spec 7.4). `standard` is the list price every default view buys at: Today, the best single option, InfraVana's arbitrage and routing. A `batch` or `flex` row is the same model at a cheaper, slower price and is read only by the G4 speed step and the C10 speed view (BD-11), so no default number moves. No `baseline_providers.csv` row may name one. Self-host rows are `standard`. |
+| `tok_s_per_user`, `p95_ttft_ms` on `model_offers.csv` | Speed one user sees through the offer (spec 7.4), both filled or both empty. Filled for the 22 proprietary offers listed under "Invented speed and batch rows (BD-11)" and empty everywhere else (open-weight offers take their speed from `throughput_curves.csv`). An empty speed never gates an offer, except that a `batch` or `flex` row without speed data can never be used. A row meets a latency class (`manifest.json`) when both limits hold. |
+| `provenance` on `model_offers.csv` | The weakest provenance of any value on the row: `modelled` for the 22 rows that carry invented speed values or a batch or flex price, `vendor_reported` for the other ten (the price page the real column would come from). The engine reads it only where it reads the speed columns (G4 speed step, C10 speed view), so a view built from `standard` prices alone keeps its `vendor_reported` badge. |
 | `concurrency` | Concurrent requests per GPU replica. `tok_s_per_user` is `tok_s_per_gpu / concurrency`. |
 | `quality.csv` rows | Readers must filter on the `composite:` prefix: a row is a composite if and only if `benchmark` starts with `composite:`, and every other row is a raw benchmark score. Averaging or plotting all rows of a model together would count the composites twice. Raw rows (`bench_code`, `bench_reasoning`, `bench_domain`) plus one row per model and workload named `composite:<workload_id>`, the precomputed weighted mean of the three raw rows. Weights over (code, reasoning, domain): software_design .6/.3/.1, hardware_design .2/.4/.4, support .1/.3/.6, research .1/.6/.3, customer_service .1/.3/.6, product_ai .4/.4/.2, documents .1/.4/.5, ops_agents .5/.3/.2. `workloads.quality_floor` is on the composite scale. |
 | Seat plans | `included_usage_note` starts with `[placeholder] cap_mtok_per_user_month=N;`. Per user, tokens (in plus out) above N million a month are billed at the direct list price of `overage_model_id`, in the workload's own in/out proportion. |
@@ -62,7 +65,7 @@ Spec 7.3 lists `offer_id or plan_id` as one column of `baseline_providers.csv`. 
 | Workloads outside a scenario's mix | Present in `workloads.csv` and `baseline_providers.csv` so the Workload mix knob and the guided questions can use them. S1 only uses software and hardware design. The four workloads added for the guided questions (customer_service, product_ai, documents, ops_agents) are in no scenario file. |
 | Scenario fields | `named_models` in `s2.json` is `["opus", "fable"]`, the free-text names the prompt used, lower case, as the contract says. They are not ids in `models.csv`, they map to no row, and the engine ignores `named_models` for pricing (the model mix drives it). `s1` and `hardware_heavy` have no `target`; `s2` has one. S1 `stage_today` is `api` and S2 is `platform`, the values the guided intake sets for each company type (spec 4.3, 5). Both leave `tiers_allowed` as `"all"`. |
 | What the scenarios infer or assume | S1: the prompt gives users, budget and the two workload types only. `workload_mix` (60/40), `model_mix`, `stage_today`, `tiers_allowed` and `latency_class` are assumed and all listed in `missing`. S1 `model_mix` is the `software_design` default from `workloads.csv`, the workload with the larger share, not a blend. A 60/40 blend of the two workloads' defaults would be 0.64 / 0.30 / 0.06 / 0.16. `hardware_heavy`: same company, budget and assumptions as S1, but the prompt states the workload split, so `workload_mix` (hardware_design 0.8, software_design 0.2) is not in `missing`; its other fields and its `missing` list (`model_mix`, `stage_today`, `tiers_allowed`, `latency_class`) follow S1. Its `model_mix` is the `hardware_design` default from `workloads.csv` (0.7 / 0.3 / 0 / 0.1), the larger-share workload, by the same rule as S1. S2: the prompt gives the two states and says "Opus and Fable heavy" and "a mixture of open weight and proprietary". Frontier-heavy is inferred from that. The exact shares (0.7 frontier, 0.3 mid, 0 small, 0.4 open-weight share) are assumed, and `model_mix` is listed in `missing` for that reason. S2 `workload_mix`, `stage_today`, `tiers_allowed` and `latency_class` are assumed too. |
-| Provenance | Every throughput row is `provenance = modelled` and its `run_url` is empty, because no run exists. Text columns that can carry a source (`hr_price_source`, `source_url`, `vendor`, the seat-plan note, the case-study description) say "placeholder" or point at `example.invalid`, a reserved domain that never resolves. `throughput_curves.csv`, `baseline_providers.csv` and `workloads.csv` have no text column that can carry the label, so they are covered by `manifest.json` (`placeholder: true`, per file and overall) and this file. |
+| Provenance | Every throughput row and every `model_offers.csv` row that carries invented speed or a batch or flex price is `provenance = modelled` (see "Invented speed and batch rows (BD-11)"). Every throughput row's `run_url` is empty, because no run exists. Text columns that can carry a source (`hr_price_source`, `source_url`, `vendor`, the seat-plan note, the case-study description) say "placeholder" or point at `example.invalid`, a reserved domain that never resolves. `throughput_curves.csv`, `baseline_providers.csv` and `workloads.csv` have no text column that can carry the label, so they are covered by `manifest.json` (`placeholder: true`, per file and overall) and this file. |
 
 ## Where each invented number's range comes from
 
@@ -89,7 +92,7 @@ Nothing below was measured. Each range was picked to look plausible and to keep 
 
 ## Invented in the v0.3 foundation step
 
-Everything below is invented placeholder data, like the rest of the folder. The pattern rows carry the placeholder source address `https://example.invalid/placeholder-invented-data/patterns/<pattern_id>` and the `as_of` date 2026-10-21. `manifest.json` `data_version` is `0.3.0-placeholder`; `buying_patterns.csv` and `pattern_popularity.csv` carry that version, `baseline_providers.csv` carries `0.2.0-placeholder`, every other file keeps `0.1.0-placeholder`.
+Everything below is invented placeholder data, like the rest of the folder. The pattern rows carry the placeholder source address `https://example.invalid/placeholder-invented-data/patterns/<pattern_id>` and the `as_of` date 2026-10-21. `manifest.json` `data_version` is `0.3.1-placeholder` (`0.3.0-placeholder` until the speed and batch rows below were added); `buying_patterns.csv` and `pattern_popularity.csv` carry `0.3.0-placeholder`, `model_offers.csv` carries `0.3.1-placeholder`, `baseline_providers.csv` carries `0.2.0-placeholder`, every other file keeps `0.1.0-placeholder`.
 
 **`buying_patterns.csv`, all seven rows.** The labels are invented and no row describes a real vendor or market share.
 
@@ -114,6 +117,44 @@ Everything below is invented placeholder data, like the rest of the folder. The 
 **`baseline_providers.csv`, 48 rows.** The first 24 rows are the v0.2 rows with `stage` renamed to `pattern_id` (`seats`, `api`, `platform`, eight workloads each). The last 24 rows are invented: three vendor patterns (`vendor1_direct`, `vendor2_direct`, `vendor2_bedrock`) by eight workloads, `share_default` 1.0. Each row names the offer of the vendor's cheapest model, ranked by list price at that channel, whose composite score meets the workload's `quality_floor`. That gives `mid_a_direct_global` for `vendor1_direct`, `frontier_b_direct_global` for `vendor2_direct` and `frontier_b_bedrock_useast` for `vendor2_bedrock`, on every workload.
 
 On scenario S1 (the three v0.2 Today totals are unchanged) the new patterns come to 20,002.50 (`vendor1_direct`), 60,007.50 (`vendor2_direct`), 58,287.28 (`vendor2_bedrock`) and 16,562.07 for the derived best single option (Mid-tier model A on EC2, US East, with its commit discount), as a check on the rows, not values the UI may hard-code.
+
+## Invented speed and batch rows (BD-11)
+
+Everything below is invented, like the rest of the folder. These are exactly the rows of `model_offers.csv` that carry a speed value or a `batch` or `flex` price, and `mock/scripts/check-invented.mjs` fails if this list and the file disagree, or if any of them lacks the placeholder source address `https://example.invalid/placeholder-invented-data/...` or `provenance = modelled` (spec 12 BD-11, guardrails 1 and 2). They act only on the G4 speed step and the speed view of C10 (guardrail 3); a chart that uses them shows the provenance badge and "Source: invented placeholder data" (guardrail 4); the same columns are the inputs the real backend must supply (spec 7.4, guardrail 5).
+
+**Speed of the twelve existing proprietary rows (`price_tier = standard`, prices unchanged).** Every one meets the `interactive` class (at least 50 tok/s per user, p95 TTFT at most 600 ms), so the default view is consistent with the speeds it never reads. The cheaper channels are the slower ones. Invented, not a measurement.
+
+| `offer_id` | `price_tier` | `tok_s_per_user` | `p95_ttft_ms` |
+|---|---|---|---|
+| `frontier_a_direct_global` | standard | 85 | 320 |
+| `frontier_a_bedrock_useast` | standard | 80 | 360 |
+| `frontier_a_bedrock_euwest` | standard | 72 | 420 |
+| `frontier_a_ec2_useast` | standard | 64 | 480 |
+| `frontier_a_ec2_euwest` | standard | 58 | 540 |
+| `frontier_b_direct_global` | standard | 110 | 250 |
+| `frontier_b_bedrock_useast` | standard | 104 | 280 |
+| `frontier_b_ec2_useast` | standard | 88 | 340 |
+| `frontier_b_ec2_euwest` | standard | 76 | 400 |
+| `mid_a_direct_global` | standard | 150 | 180 |
+| `mid_a_bedrock_useast` | standard | 140 | 210 |
+| `mid_a_ec2_useast` | standard | 120 | 260 |
+
+**Ten new rows.** Each copies its base offer's model, channel and region, with the price, discount, speed and `as_of` (2026-10-21) invented. A flex row is 65 to 70 percent of its base price and meets the `standard` class (at least 20 tok/s, TTFT at most 1,500 ms) but not `interactive`. A batch row is 50 percent of its base price and meets the `batch` class only (about 5 to 14 tok/s, TTFT 20 to 50 seconds). Batch rows on Bedrock and EC2 carry their base offer's commit discount and minimum.
+
+| `offer_id` | `price_tier` | Base offer | USD per Mtok in / out | `tok_s_per_user` | `p95_ttft_ms` |
+|---|---|---|---|---|---|
+| `frontier_a_direct_global_flex` | flex | `frontier_a_direct_global` | 6.5 / 32.5 | 34 | 1100 |
+| `frontier_a_direct_global_batch` | batch | `frontier_a_direct_global` | 5 / 25 | 7 | 40000 |
+| `frontier_a_bedrock_useast_batch` | batch | `frontier_a_bedrock_useast` | 5.2 / 26 | 6 | 45000 |
+| `frontier_a_ec2_useast_batch` | batch | `frontier_a_ec2_useast` | 4.6 / 23 | 5 | 50000 |
+| `frontier_b_direct_global_flex` | flex | `frontier_b_direct_global` | 4.2 / 21 | 42 | 900 |
+| `frontier_b_direct_global_batch` | batch | `frontier_b_direct_global` | 3 / 15 | 9 | 30000 |
+| `frontier_b_ec2_useast_batch` | batch | `frontier_b_ec2_useast` | 2.8 / 14 | 6 | 40000 |
+| `mid_a_direct_global_flex` | flex | `mid_a_direct_global` | 1.4 / 7 | 60 | 700 |
+| `mid_a_direct_global_batch` | batch | `mid_a_direct_global` | 1 / 5 | 14 | 20000 |
+| `mid_a_ec2_useast_batch` | batch | `mid_a_ec2_useast` | 0.9 / 4.5 | 10 | 25000 |
+
+Why these numbers: a speed give-up needs something cheaper to give speed up for, so the discounts are round invented values (30 to 50 percent below the base price), and the speeds are chosen only so the three latency classes each admit a different set of rows. No price or speed was tuned to reach a particular saving; the saving a speed step shows is whatever these rows give. The engine assumes unlimited capacity, so a faster tier is never limited by supply (spec 6.3 "Data it needs to be credible").
 
 ## Reference check for scenario S1
 

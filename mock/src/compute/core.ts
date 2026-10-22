@@ -22,7 +22,7 @@ import { deriveDemand, type WorkloadDemand } from "./demand";
 import { planInfravana } from "./infravana";
 import { compositeScores, typicalPattern } from "./patterns";
 import { PERCENT, TOKENS_PER_MTOK, worstProvenance } from "./pricing";
-import { tradedInputs } from "./tradeoff";
+import { tradedInputs, type EngineOptions } from "./tradeoff";
 import {
   addToClass,
   computeToday,
@@ -53,14 +53,14 @@ function worstOf(values: Provenance[]): Provenance {
   return worstProvenance(...values);
 }
 
-export function runEngine(scenario: Scenario, tables: Tables): EngineRun {
+export function runEngine(scenario: Scenario, tables: Tables, options?: EngineOptions): EngineRun {
   const demand = deriveDemand(scenario, tables);
   const comparatorId = scenario.comparator ?? typicalPattern(tables, scenario.stage_today).pattern_id;
   const today = computeToday(demand, scenario, tables, comparatorId);
   // A G4 trade-off acts on the InfraVana plan only; Today and the floors
   // shown against it never change (spec 6.2).
-  const traded = tradedInputs(scenario, demand, tables);
-  const plan = planInfravana(traded.demand, today, traded.scenario, tables);
+  const traded = tradedInputs(scenario, demand, tables, options);
+  const plan = planInfravana(traded.demand, today, traded.scenario, tables, traded.speed);
 
   const totalUsd = today.total_usd;
   const budgetUsd = scenario.baseline.budget_usd_per_quarter;
@@ -81,7 +81,8 @@ export function runEngine(scenario: Scenario, tables: Tables): EngineRun {
     kind: "savings",
     usd: arbitrageUsd,
     savings_source: "arbitrage",
-    provenance: "vendor_reported",
+    // A batch or flex move (G4 speed step, speed view) is priced from modelled rows.
+    provenance: found ? plan.proprietary_provenance : "vendor_reported",
   };
   const routing: SavingsSegment = {
     label: ROUTING_LABEL,
@@ -198,7 +199,8 @@ export function runEngine(scenario: Scenario, tables: Tables): EngineRun {
  * The engine without the Today options: everything `compute()` returns
  * except `today_alternatives`. It is the call the solver and the frontier
  * make many times (spec 6.2, 6.3), so it skips pricing every Today option.
+ * `options` is for the frontier's speed axis; `compute()` never passes it.
  */
-export function computeCore(scenario: Scenario, tables: Tables): CoreResults {
-  return runEngine(scenario, tables).results;
+export function computeCore(scenario: Scenario, tables: Tables, options?: EngineOptions): CoreResults {
+  return runEngine(scenario, tables, options).results;
 }

@@ -30,8 +30,12 @@
  *     what one GPU-hour buys at its best eligible throughput point, with no
  *     idle time, GPU count or provisioning. Spec 7.2's capacity-constrained
  *     LP is not needed under this assumption.
- *   - Proprietary models carry no throughput data, so the latency class does
- *     not gate them. A hosted open-weight offer is gated on the model having
+ *   - Proprietary offers are bought at the standard price tier only, and the
+ *     latency class does not gate them. Only a speed requirement (G4's speed
+ *     step, or the speed axis of the frontier: see `SpeedRequirement`) lets a
+ *     proprietary model move to its own batch or flex tier and gates offers
+ *     by the speed columns of `model_offers.csv` (spec 7.2 step 3, 6.2, 6.3).
+ *     A hosted open-weight offer is gated on the model having
  *     a qualifying throughput row on any hardware, because the host chooses
  *     the hardware; the Hardware knob (`tiers_allowed`) limits self-hosting
  *     only.
@@ -42,6 +46,7 @@
  */
 
 import type {
+  ModelOfferRow,
   ModelRow,
   ModelTier,
   Provenance,
@@ -58,10 +63,12 @@ import {
   TOKENS_PER_MTOK,
   cheapestOffer,
   committedCostUsd,
+  isStandardTier,
   isTokenPriced,
   worstProvenance,
   type TokenPricedOffer,
 } from "./pricing";
+import type { SpeedRequirement } from "./tradeoff";
 import {
   addToClass,
   emptyClassTotals,
@@ -74,6 +81,20 @@ const COMPOSITE_PREFIX = "composite:";
 /** Price pages feed both the channel prices and the hourly hardware prices. */
 const PRICE_PROVENANCE: Provenance = "vendor_reported";
 
+/**
+ * Thrown under a strict speed requirement (the frontier's speed axis) when a
+ * model the visitor buys today has no offer at that speed, so no plan exists.
+ */
+export class SpeedInfeasibleError extends Error {
+  constructor(
+    readonly modelId: string,
+    readonly minTokSPerUser: number,
+  ) {
+    super(`no offer of model "${modelId}" delivers ${minTokSPerUser} tokens per second per user`);
+    this.name = "SpeedInfeasibleError";
+  }
+}
+
 export interface InfravanaPlan {
   /** Total Infravana spend, USD per quarter. */
   spend_usd: number;
@@ -83,6 +104,11 @@ export interface InfravanaPlan {
   segments: SpendSegment[];
   /** Worst provenance of the routed options (`vendor_reported` when nothing is routed). */
   routing_provenance: Provenance;
+  /**
+   * Worst provenance of the offers the proprietary traffic is bought through:
+   * `vendor_reported` unless a speed requirement buys through modelled rows.
+   */
+  proprietary_provenance: Provenance;
   by_class: ClassTotals;
   /** Tokens (in plus out) moved to open-weight models. */
   routed_tokens: number;
@@ -113,6 +139,7 @@ export function planInfravana(
   today: TodayResult,
   scenario: Scenario,
   tables: Tables,
+  speed?: SpeedRequirement,
 ): InfravanaPlan {
   const modelById = new Map<string, ModelRow>(tables.models.map((m) => [m.model_id, m]));
   const tierOf = (modelId: string): ModelTier => {
@@ -121,7 +148,10 @@ export function planInfravana(
     return model.tier;
   };
 
-  const threshold = tables.manifest.parameters.latency_classes[scenario.latency_class];
+  const threshold =
+    speed === undefined
+      ? tables.manifest.parameters.latency_classes[scenario.latency_class]
+      : { min_tok_s_per_user: speed.min_tok_s_per_user, max_p95_ttft_ms: speed.max_p95_ttft_ms };
   const meetsLatency = (row: ThroughputCurveRow): boolean =>
     row.tok_s_per_user >= threshold.min_tok_s_per_user &&
     (threshold.max_p95_ttft_ms === null || row.p95_ttft_ms <= threshold.max_p95_ttft_ms);
@@ -140,9 +170,28 @@ export function planInfravana(
     }
   }
 
+  // Without a speed requirement only the standard tier is bought. Under one,
+  // an offer qualifies by its speed columns; a row with no speed data is
+  // ungated only at the standard tier, so a batch or flex row never qualifies
+  // without data. `keep_standard` (G4) keeps every standard offer available, so
+  // a step down can only add options.
+  const offerAllowed = (offer: ModelOfferRow): boolean => {
+    if (speed === undefined) return isStandardTier(offer);
+    if (speed.keep_standard && isStandardTier(offer)) return true;
+    if (offer.tok_s_per_user === null || offer.p95_ttft_ms === null) return isStandardTier(offer);
+    return (
+      offer.tok_s_per_user >= speed.min_tok_s_per_user &&
+      (speed.max_p95_ttft_ms === null || offer.p95_ttft_ms <= speed.max_p95_ttft_ms)
+    );
+  };
+  // A row's own provenance counts only where its speed columns are used.
+  const priceProvenance = (offer: ModelOfferRow): Provenance =>
+    speed === undefined ? PRICE_PROVENANCE : offer.provenance;
+
   const offersByModel = new Map<string, TokenPricedOffer[]>();
   const selfHostable = new Set<string>();
   for (const offer of [...tables.model_offers].sort((a, b) => a.offer_id.localeCompare(b.offer_id))) {
+    if (!offerAllowed(offer)) continue;
     if (offer.channel === "self-host") {
       selfHostable.add(offer.model_id);
     } else if (isTokenPriced(offer)) {
@@ -204,6 +253,9 @@ export function planInfravana(
     const offers = offersByModel.get(modelId) ?? [];
     const best = cheapestOffer(offers, v.tokensIn, v.tokensOut);
     if (best === null) {
+      if (speed !== undefined && !speed.keep_standard) {
+        throw new SpeedInfeasibleError(modelId, speed.min_tok_s_per_user);
+      }
       throw new Error(`model_offers.csv: model "${modelId}" has no token-priced offer to buy it through`);
     }
     return best;
@@ -298,7 +350,7 @@ export function planInfravana(
               tokens: tokensIn + tokensOut,
               label: offer.channel,
               kind: "provider",
-              provenance: PRICE_PROVENANCE,
+              provenance: priceProvenance(offer),
             });
           }
         }
@@ -356,6 +408,7 @@ export function planInfravana(
   const book = new SpendBook();
   const byClass = emptyClassTotals();
   let spend = keptSeatUsd;
+  let proprietaryProvenance: Provenance = PRICE_PROVENANCE;
 
   for (const kept of keptSeats) {
     for (const part of kept.parts) book.add(part.label, "provider", part.usd, PRICE_PROVENANCE);
@@ -370,8 +423,10 @@ export function planInfravana(
   for (const [modelId, v] of proprietaryVolume) {
     if (v.tokensIn + v.tokensOut <= 0) continue;
     const { offer, usd } = channelFor(modelId, v);
-    book.add(offer.channel, "provider", usd, PRICE_PROVENANCE);
-    addToClass(byClass, tierOf(modelId), usd, v.tokensIn + v.tokensOut, PRICE_PROVENANCE);
+    const provenance = priceProvenance(offer);
+    book.add(offer.channel, "provider", usd, provenance);
+    addToClass(byClass, tierOf(modelId), usd, v.tokensIn + v.tokensOut, provenance);
+    proprietaryProvenance = worstProvenance(proprietaryProvenance, provenance);
     spend += usd;
   }
   let routingProvenance: Provenance = PRICE_PROVENANCE;
@@ -389,6 +444,7 @@ export function planInfravana(
     proprietary_only_usd: proprietaryOnly,
     segments: book.segments(),
     routing_provenance: routingProvenance,
+    proprietary_provenance: proprietaryProvenance,
     by_class: byClass,
     routed_tokens: routedTokens,
   };
