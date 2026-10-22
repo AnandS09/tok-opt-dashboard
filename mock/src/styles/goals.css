@@ -126,6 +126,162 @@
   text-wrap: balance;
 }
 
+/* ---- G4: the two stepped controls and the hero's second figure (spec 6.2) ---- */
+
+.tradeoff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-5);
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.steps {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.steps__legend {
+  padding: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.steps__track {
+  display: flex;
+  margin-top: var(--space-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.steps__option {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 48px;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-tight);
+  text-align: center;
+  cursor: pointer;
+}
+
+.steps__option + .steps__option {
+  border-left: 1px solid var(--color-border-strong);
+}
+
+.steps__option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.steps__own {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.steps__option:has(input:checked) {
+  background: var(--color-accent-strong);
+  color: var(--color-surface);
+}
+
+.steps__option:has(input:checked) .steps__own {
+  color: var(--color-surface);
+}
+
+.steps__option:has(input:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-offset) * -1);
+}
+
+.steps__option:has(input:checked:focus-visible) {
+  outline-color: var(--color-surface);
+  outline-offset: calc(var(--focus-ring-offset) * -2);
+}
+
+.steps:disabled .steps__track {
+  border-color: var(--color-border);
+}
+
+.steps:disabled .steps__option {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.steps:disabled .steps__option input {
+  cursor: not-allowed;
+}
+
+.steps:disabled .steps__option:has(input:checked) {
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.steps__note {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* The extra saving the give-up buys, under the saving at the visitor's own floors. */
+.hero__extra {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-tight);
+}
+
+.hero__extra strong {
+  color: var(--color-positive);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Both sides' floors and speeds, side by side (spec 6.2 G4, spec 9 exception). */
+.hero__sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-5);
+  width: 100%;
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.hero__side dt {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: none;
+}
+
+.hero__side dd {
+  margin: 0;
+}
+
+.hero__side--infravana dt {
+  color: var(--color-accent-strong);
+  font-weight: var(--font-weight-medium);
+}
+
+@media (max-width: 599px) {
+  .tradeoff,
+  .hero__sides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* The benefit boxes keep their place and dim while the solve they depend on is on its way (spec 6.2, 6.4). */
 [data-slot="benefit-boxes"] {
   transition: opacity var(--duration-fade) var(--ease-standard);

@@ -307,7 +307,7 @@ export function costPerMtokParts(results: Results): ProvenancePart[] {
   return parts;
 }
 
-export function CostPerMtokChart({ results, size }: ChartProps) {
+export function CostPerMtokChart({ results, size, goalView }: ChartProps) {
   const build = useCallback(
     (tokens: Tokens, dims: Dims) => buildCostPerMtokOption(results, size, tokens, dims),
     [results, size],
@@ -330,6 +330,7 @@ export function CostPerMtokChart({ results, size }: ChartProps) {
       size={size}
       header={size === "stage" ? <C3Key results={results} /> : undefined}
       parts={costPerMtokParts(results)}
+      invented={goalView?.tradeoff?.invented}
       ariaLabel={costPerMtokCaption(results)}
       build={build}
       subtitle={`With answers needed ${speed}`}

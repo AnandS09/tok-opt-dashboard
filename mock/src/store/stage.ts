@@ -94,8 +94,7 @@ export function withView(
   const next: Scenario = { ...scenario };
   if (view.goal !== "G1") next.goal = view.goal;
   if (known && view.comparator !== null) next.comparator = view.comparator;
-  // ponytail: no G4 tab or two-sided headline yet (spec 6.2), so a G4 link must not relax the floors
-  // behind a hero that promises them; apply `tradeoff` here once the G4 tab ships.
+  if (view.goal === "G4") next.tradeoff = { quality_step: view.qualityStep, speed_step: view.speedStep };
   return next;
 }
 
