@@ -1,7 +1,7 @@
 /**
  * Node entry of the chart render check, not part of the app. `runCheck.mjs`
  * bundles this file with Vite, then runs it. It builds the design tokens from
- * the two stylesheets, loads the fixture tables from `public/data` and runs
+ * the stylesheet, loads the fixture tables from `public/data` and runs
  * `runChartChecks` on the sample results and on every shipped scenario, and
  * `runBudgetChecks` over the budget range. Exit code 0 only if nothing is
  * reported.
@@ -22,10 +22,10 @@ import { sampleResults, sampleResultsEdge } from "./sampleResults";
 const mockRoot = process.env.MOCK_ROOT ?? process.cwd();
 const dataDir = path.join(mockRoot, "public/data");
 
-/** Every `--name: value;` of the stylesheets, with `var()` resolved. */
+/** Every `--name: value;` of the token stylesheet, with `var()` resolved. */
 function readTokens(): Tokens {
   const vars: Record<string, string> = {};
-  for (const file of ["tokens.css", "compare.css"]) {
+  for (const file of ["tokens.css"]) {
     const css = fs.readFileSync(path.join(mockRoot, "src/styles", file), "utf8");
     for (const m of css.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)) vars[m[1]] = m[2].replace(/\/\*.*?\*\//g, "").trim();
   }

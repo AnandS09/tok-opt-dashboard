@@ -140,12 +140,9 @@ async function child(bundle) {
   // evaluated here, with the viewport below, before the text becomes a <style>.
   const strip = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "");
   const tokensText = strip(fs.readFileSync(path.join(root, "src/styles/tokens.css"), "utf8"));
-  const compareText = strip(fs.readFileSync(path.join(root, "src/styles/compare.css"), "utf8"));
+  const rootBlock = /:root\s*\{([\s\S]*?)\n\}/.exec(tokensText)[1];
   const tokenMap = {};
-  for (const text of [tokensText, compareText]) {
-    const block = /:root\s*\{([\s\S]*?)\n\}/.exec(text)[1];
-    for (const m of block.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) tokenMap[m[1]] = m[2].trim();
-  }
+  for (const m of rootBlock.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) tokenMap[m[1]] = m[2].trim();
   const resolveVars = (t) => {
     let out = t;
     for (let i = 0; i < 8 && /var\(/.test(out); i++) out = out.replace(/var\((--[\w-]+)\)/g, (_, n) => tokenMap[n] ?? "");
@@ -196,6 +193,7 @@ async function child(bundle) {
   const layout = makeLayout(window);
   const HE = window.HTMLElement.prototype;
   const dims = (el) => {
+    resolveInlineVars();
     layout.run();
     return layout.sizeOf(el);
   };
@@ -258,7 +256,7 @@ async function child(bundle) {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   // The layout model reads computed styles, where jsdom leaves var() unresolved: resolve the inline ones, as a browser does.
   function resolveInlineVars() {
-    for (const el of doc.querySelectorAll('[style*="var("]')) {
+    for (const el of [...doc.querySelectorAll("[style]")].filter((e) => e.getAttribute("style").includes("var("))) {
       const custom = (name) => {
         for (let n = el; n && n.style; n = n.parentElement) {
           const v = n.style.getPropertyValue(name);
@@ -267,7 +265,8 @@ async function child(bundle) {
         return tokenMap[name];
       };
       const resolve = (text) => text.replace(/var\((--[\w-]+)\)/g, (_, n) => resolve(custom(n) ?? ""));
-      const h = el.style.height;
+      // jsdom's style object drops a var() height, so read it from the attribute.
+      const h = /(?:^|;)\s*height:\s*([^;]+)/.exec(el.getAttribute("style") ?? "")?.[1]?.trim();
       if (h && h.includes("var(")) el.style.height = resolve(h);
     }
     // compare.css: .chart-figure { --chart-stage-height: var(--figure-height) } for the chart inside it.

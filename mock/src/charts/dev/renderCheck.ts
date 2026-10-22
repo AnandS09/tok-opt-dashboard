@@ -30,13 +30,16 @@ import { ComparatorSelect } from "../../components/ComparatorSelect";
 import { compute } from "../../compute";
 import { getComparator, selectedComparator, setComparator } from "../../store/comparator";
 import { allocationCsv, buildAllocationOption, comparatorBar, planBar } from "../c1Allocation";
+import { C3Key } from "../C3Key";
 import { buildCostPerMtokOption, costPerMtokParts } from "../c3CostPerMtok";
 import { ESTIMATED_LABEL, c5Figures } from "../c5Figures";
 import { buildTokensBoughtOption } from "../c5TokensBought";
 import { comparisonOf } from "../comparison";
-import { fmtMultiple, fmtPct, fmtUsdSig } from "../../shared/format";
+import { fmtMultiple, fmtPct, fmtTokensSig, fmtUsdSig } from "../../shared/format";
+import { fmtUsdPerMtok } from "../format";
 import { INFRAVANA_LABEL } from "../labels";
-import { CHANNEL_PATTERNS, INFRAVANA_PATTERNS, SAVINGS_PATTERNS, decalOf, optionStyle } from "../patterns";
+import { textWidth } from "../measure";
+import { CHANNEL_PATTERNS, INFRAVANA_PATTERNS, OPTION_STYLES, SAVINGS_PATTERNS, decalOf, optionStyle } from "../patterns";
 import { ProvenanceNotes } from "../ProvenanceNotes";
 import type { ProvenancePart } from "../ProvenanceNotes";
 import { chartRegistry } from "../registry";
@@ -173,6 +176,10 @@ function coloursOf(svg: string): { drawn: Set<string>; hoverOnly: Set<string> } 
   return { drawn, hoverOnly };
 }
 
+/** The texts of an svg read as running text: a label that wraps over several lines reads as one phrase. */
+const joinedText = (svg: string): string => textsOf(svg).join(" ");
+const countOf = (text: string, phrase: string): number => text.split(phrase).length - 1;
+
 /** Texts drawn into an svg. */
 function textsOf(svg: string): string[] {
   return [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
@@ -257,6 +264,14 @@ export function structureProblemsC1(results: Results, option: EChartsCoreOption,
     if (channelDecals.has(d)) problems.push(`${where}: an option bar shares its pattern with a channel segment`);
   }
   if (new Set(optionDecals).size !== optionDecals.length) problems.push(`${where}: two option bars share a pattern`);
+  // An option's label stays to the right of its own bar (design-tokens 3.2), never above it between two rows.
+  expected.forEach((e, i) => {
+    if (e.kind !== "option") return;
+    const label = (series[i]?.label ?? {}) as Obj;
+    if (label.show !== false && label.position !== "right") {
+      problems.push(`${where}: option label of series ${i} is placed "${String(label.position)}", not to the right of its bar`);
+    }
+  });
   // Each option's pattern comes from its rank, so it keeps one identity across charts.
   cmp.options.forEach((o, i) => {
     const want = JSON.stringify(decalOf(optionStyle(o.rank).pattern, t.patternOnFill));
@@ -293,7 +308,13 @@ export function structureProblemsC1(results: Results, option: EChartsCoreOption,
 }
 
 /** C3's structure: grouped bars for the comparator and InfraVana, and a marker only where an option has a price. */
-export function structureProblemsC3(results: Results, option: EChartsCoreOption, t: Tokens, where: string): string[] {
+export function structureProblemsC3(
+  results: Results,
+  option: EChartsCoreOption,
+  t: Tokens,
+  where: string,
+  svg?: string,
+): string[] {
   const problems: string[] = [];
   const cmp = comparisonOf(results);
   const series = seriesOf(option);
@@ -320,6 +341,31 @@ export function structureProblemsC3(results: Results, option: EChartsCoreOption,
       else if (price !== v) problems.push(`${where}: marker for ${o.alt.label} in ${classes[k]} at ${v}, its price is ${price}`);
     }
   });
+  // Marker shapes are pairwise distinct as configured and as drawn (one option, one identity), whatever the table says.
+  const symbols = series.slice(2).map((s) => String(s.symbol));
+  if (new Set(symbols).size !== symbols.length) problems.push(`${where}: two option markers share a shape [${symbols.join(", ")}]`);
+  if (svg) {
+    const shapes = drawnMarkerShapes(svg);
+    const ids = [...shapes.keys()];
+    for (let a = 0; a < ids.length; a++) {
+      for (let b = a + 1; b < ids.length; b++) {
+        if ([...shapes.get(ids[a])!].some((d) => shapes.get(ids[b])!.has(d))) {
+          problems.push(`${where}: option markers of series ${ids[a]} and ${ids[b]} are drawn with the same shape`);
+        }
+      }
+    }
+    // A marker that carries a price label draws it: one label per marker.
+    series.slice(2).forEach((s, i) => {
+      const label = (s.label ?? {}) as Obj;
+      if (label.show === true) {
+        const text = textsOf(svg);
+        const prices = ((s.data as number[][]) ?? []).map((p) => fmtUsdPerMtok(p[1]));
+        for (const price of prices) {
+          if (!text.includes(price)) problems.push(`${where}: option ${cmp.options[i]?.alt.label} has no price label ${price} beside its marker`);
+        }
+      }
+    });
+  }
   // The compared bars take the same colour in every chart: grey 1 and the accent.
   const compared: [Obj | undefined, string, string][] = [
     [today, t.today1, "comparator"],
@@ -329,6 +375,18 @@ export function structureProblemsC3(results: Results, option: EChartsCoreOption,
     if (styleOf(s ?? null).color !== colour) problems.push(`${where}: the ${name} bars are not in their token colour`);
   }
   return problems;
+}
+
+/** The path of each drawn option marker (chart series 2 and up), by series index. Bars are series 0 and 1. */
+export function drawnMarkerShapes(svg: string): Map<number, Set<string>> {
+  const out = new Map<number, Set<string>>();
+  for (const m of svg.matchAll(/<path d="([^"]*)"[^>]*ecmeta_series_index="(\d+)"[^>]*ecmeta_ssr_type="chart"/g)) {
+    const series = Number(m[2]);
+    if (series < 2) continue;
+    if (!out.has(series)) out.set(series, new Set());
+    out.get(series)!.add(m[1]);
+  }
+  return out;
 }
 
 /** C5's structure: one bar for the comparator, one for InfraVana and one per option, and the label of the basis. */
@@ -349,9 +407,16 @@ export function structureProblemsC5(
     if (v !== o.alt.tokens_at_budget) problems.push(`${where}: bar ${o.alt.label} is ${String(v)}, its tokens at budget are ${o.alt.tokens_at_budget}`);
   });
   if (size === "stage") {
-    const count = textsOf(svg).filter((x) => x.includes(ESTIMATED_LABEL)).length;
+    // Read as running text, so the label counts when a narrow column wraps it over several lines.
+    const text = joinedText(svg);
+    const count = countOf(text, ESTIMATED_LABEL);
     const wanted = estimate ? cmp.options.length : 0;
     if (count !== wanted) problems.push(`${where}: "${ESTIMATED_LABEL}" drawn ${count} times, expected ${wanted}`);
+    // One figure, one form: a bar is labelled with the three-significant-digit figure of the caption and the table.
+    for (const b of bars) {
+      const v = Number((b as Obj | null)?.value);
+      if (Number.isFinite(v) && !text.includes(fmtTokensSig(v))) problems.push(`${where}: no label "${fmtTokensSig(v)}" for a bar of ${v}`);
+    }
   }
   return problems;
 }
@@ -527,6 +592,14 @@ function checkMarkup(def: ChartDef, results: Results, problems: string[], label:
   if (!thumb.includes("pointer-events:none")) problems.push(`${where} thumb: not marked non-interactive`);
   // Badges and the source line (spec 9, design-tokens 3.4 and 3.5): every series says where it comes from.
   problems.push(...badgeProblems(stage, thumb, expectedProvenances(def.id, results), where));
+  if (def.id === "C3") problems.push(...keyProblems(results, stage, where));
+  if (def.id === "C3") {
+    // A bar's badge names the model class it belongs to (design-tokens 3.4).
+    for (const part of costPerMtokParts(results)) {
+      if (part.group !== "Other Today options" && part.part === "") problems.push(`${where}: a ${part.provenance} badge for ${part.group} names no model class`);
+      if (part.part !== "" && !stage.includes(part.part)) problems.push(`${where}: no badge names "${part.part}"`);
+    }
+  }
 }
 
 /** Badges and the source line in a chart's markup: one per provenance drawn, none on a thumbnail, no invented badge without invented rows. */
@@ -566,6 +639,7 @@ export function runChartChecks(label: string, results: Results, tokens: Tokens):
   const problems: string[] = [];
   const notes: string[] = [];
 
+  problems.push(...designTableProblems());
   const ids = chartRegistry.map((c) => c.id).join(",");
   if (ids !== "C1,C5,C3") problems.push(`registry order is ${ids}, expected C1,C5,C3`);
 
@@ -603,7 +677,8 @@ export function runChartChecks(label: string, results: Results, tokens: Tokens):
       }
       if (def.id === "C1") checkAllocation(results, size, svg, problems, `${label} ${dims.width}`);
       if (def.id === "C1") problems.push(...structureProblemsC1(results, option, tokens, where));
-      if (def.id === "C3") problems.push(...structureProblemsC3(results, option, tokens, where));
+      if (def.id === "C3") problems.push(...structureProblemsC3(results, option, tokens, where, svg));
+      if (def.id === "C1" && size === "stage") problems.push(...budgetLabelProblems(svg, dims, tokens, where));
       if (def.id === "C5") problems.push(...structureProblemsC5(results, option, svg, size, false, where));
       if (size === "stage" && (def.id === "C1" || def.id === "C5")) checkComparisonTexts(results, svg, problems, where);
       const patterns = (svg.match(/<pattern/g) ?? []).length;
@@ -640,10 +715,11 @@ function sampleSolve(results: Results): SolveResult {
  */
 function checkC5Bases(results: Results, tokens: Tokens, label: string): string[] {
   const problems: string[] = [];
-  const dims: Dims = { width: 760, height: 380 };
   const solve = sampleSolve(results);
+  // The narrow layouts too: a phone is where the label moves under the bar's name.
+  for (const dims of STAGE_SIZES) {
   for (const goal of ["G1", "G2", "G3", "G4"] as const) {
-    const where = `${label} C5 ${goal}`;
+    const where = `${label} C5 ${goal} ${dims.width}`;
     const figures = c5Figures(results, goal, goal === "G2" || goal === "G3" ? solve : null);
     const option = buildTokensBoughtOption(results, "stage", tokens, dims, figures);
     const svg = renderSvg(option, dims);
@@ -653,9 +729,10 @@ function checkC5Bases(results: Results, tokens: Tokens, label: string): string[]
     if (estimate && (bars[1] as Obj | undefined)?.value !== solve.infravana_tokens) {
       problems.push(`${where}: InfraVana bar is not the solved volume`);
     }
-    const tradeoff = textsOf(svg).some((x) => x.includes("at the trade-off you chose"));
+    const tradeoff = joinedText(svg).includes("at the trade-off you chose");
     if (goal === "G4" && !tradeoff) problems.push(`${where}: no trade-off label`);
     if (goal !== "G4" && tradeoff) problems.push(`${where}: a trade-off label outside G4`);
+  }
   }
   return problems;
 }
@@ -718,6 +795,12 @@ export function runComparatorChecks(name: string, scenario: Scenario, tables: Ta
   notes.push(`${name}: option sets by stage seats, api, platform: ${sets.join(" | ")}`);
   if (new Set(sets).size < 2) problems.push(`${name}: the option set is the same at every stage: ${sets.join(" | ")}`);
   return { problems, notes };
+}
+
+/** The next round number (1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8 x 10^n) at or above x, as the C1 axis ends on. */
+function niceStep(x: number): number {
+  const p = 10 ** Math.floor(Math.log10(x));
+  return ([1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find((m) => m * p >= x) ?? 10) * p;
 }
 
 /** A copy of an option whose series list is replaced, for the self-tests. */
@@ -835,6 +918,58 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
   const g1 = buildTokensBoughtOption(results, "stage", tokens, dims, c5Figures(results, "G1"));
   expect("C5 label drawn in G1", structureProblemsC5(results, g1, `${renderSvg(g1, dims)}<text>${ESTIMATED_LABEL}</text>`, "stage", false, "c5"));
 
+  // The budget label, the narrow C5 label, marker shapes and the design table
+  {
+    const edge = niceStep(Math.max(results.allocation.total_usd, ...cmp.options.map((o) => o.alt.total_usd)) * 1.5);
+    const atEdge: Results = { ...results, allocation: { ...results.allocation, budget_usd: edge } };
+    // On a phone the margin right of the plot is 24px, less than half the label: the label must end at the line.
+    const phone: Dims = { width: 340, height: 400 };
+    const svgEdge = renderSvg(buildAllocationOption(atEdge, "stage", tokens, phone), phone);
+    const clean = budgetLabelProblems(svgEdge, phone, tokens, "budget");
+    if (clean.length > 0) problems.push(`self-test budget label: clipped when the line is at the plot edge: ${clean[0]}`);
+    expect("budget label centred on a line at the edge", budgetLabelProblems(svgEdge.replace(/(text-anchor=")end("[^>]*>Budget )/, "$1middle$2"), phone, tokens, "budget"), clean);
+  }
+  {
+    const narrow: Dims = { width: 340, height: 300 };
+    const figures = c5Figures(results, "G2", sampleSolve(results));
+    const g2narrow = buildTokensBoughtOption(results, "stage", tokens, narrow, figures);
+    const svgNarrow = renderSvg(g2narrow, narrow);
+    const clean = structureProblemsC5(results, g2narrow, svgNarrow, "stage", true, "c5 narrow");
+    expect("C5 narrow drops the Estimated label", structureProblemsC5(results, g2narrow, svgNarrow.replace(/Estimated at its|average price/g, "x"), "stage", true, "c5 narrow"), clean);
+    expect("C5 bar label in two significant digits", structureProblemsC5(results, g2narrow, svgNarrow.replace(/(\d+\.\d\d)(B|M|T)/g, (_m, n: string, u: string) => `${Number(n).toFixed(1)}${u}`), "stage", true, "c5 narrow"));
+  }
+  {
+    const c3b = buildCostPerMtokOption(results, "stage", tokens, dims);
+    const ser = seriesOf(c3b);
+    expect("two C3 option markers share a shape", structureProblemsC3(results, withSeries(c3b, ser.map((x, i) => (i === 3 ? { ...x, symbol: ser[2].symbol } : x))), tokens, "c3"));
+    const svgC3 = renderSvg(c3b, dims);
+    const shapes = drawnMarkerShapes(svgC3);
+    const [first, second] = [...shapes.keys()];
+    const firstD = [...(shapes.get(first) ?? [])][0];
+    const secondD = [...(shapes.get(second) ?? [])][0];
+    if (firstD && secondD) {
+      expect("two C3 option markers drawn with one shape", structureProblemsC3(results, c3b, tokens, "c3", svgC3.split(secondD).join(firstD)));
+    }
+    const key = renderToStaticMarkup(createElement(C3Key, { results }));
+    const keyClean = keyProblems(results, key, "key");
+    expect("C3 key draws the comparator as a marker shape", keyProblems(results, key.replace("chart-key__swatch--bar", "chart-key__swatch--rect"), "key"), keyClean);
+    expect("C3 key draws an option as a bar", keyProblems(results, key.replace(/chart-key__swatch--(circle|rect|triangle|diamond)/, "chart-key__swatch--bar"), "key"));
+    expect("C3 key shows two options with one shape", keyProblems(results, key.replace(/(chart-key__swatch--)(triangle|diamond)/, "$1circle"), "key"));
+  }
+  expect("option label above its bar", structureProblemsC1(results, withSeries(c1, c1Series.map((x, i) => (i === firstOption ? { ...x, label: { ...(x.label as Obj), position: "top" } } : x))), tokens, "c1"));
+  {
+    const saved = OPTION_STYLES[3].marker;
+    OPTION_STYLES[3].marker = "circle";
+    const found = designTableProblems();
+    OPTION_STYLES[3].marker = saved;
+    expect("rank 4 marker edited to a circle", found);
+    const savedP = OPTION_STYLES[0].pattern;
+    OPTION_STYLES[0].pattern = "P7";
+    const foundP = designTableProblems();
+    OPTION_STYLES[0].pattern = savedP;
+    expect("ranks 1 and 2 patterns swapped", foundP);
+  }
+
   // The selector
   expect(
     "selector missing an alternative",
@@ -902,6 +1037,72 @@ export function selectorProblems(name: string, results: Results): string[] {
     if (selectedComparator(results, getComparator()) !== results.comparator) problems.push(`${where}: a choice that is not offered did not fall back`);
     setComparator(null);
     if (getComparator() !== null) problems.push(`${where}: setComparator(null) did not clear the choice`);
+  }
+  return problems;
+}
+
+/**
+ * The identity table of design-tokens 3.1 and 3.2, written out here on purpose:
+ * the code's own table is what the drawings are built from, so a check against
+ * it alone cannot see a wrong edit of it. Ranks 1 to 4: fill, pattern, marker.
+ */
+const DESIGN_OPTIONS = [
+  { fill: "today2", pattern: "P6", marker: "circle" },
+  { fill: "today1", pattern: "P7", marker: "rect" },
+  { fill: "today2", pattern: "P8", marker: "triangle" },
+  { fill: "today1", pattern: "P9", marker: "diamond" },
+];
+
+/** The pattern and marker tables against design-tokens 3.2. */
+export function designTableProblems(): string[] {
+  const problems: string[] = [];
+  DESIGN_OPTIONS.forEach((want, i) => {
+    const got = OPTION_STYLES[i];
+    if (!got || got.fill !== want.fill || got.pattern !== want.pattern || got.marker !== want.marker) {
+      problems.push(`option rank ${i + 1} is ${JSON.stringify(got)}, design-tokens 3.2 says ${JSON.stringify(want)}`);
+    }
+  });
+  if (OPTION_STYLES.length !== DESIGN_OPTIONS.length) problems.push(`${OPTION_STYLES.length} option ranks, design-tokens 3.2 has ${DESIGN_OPTIONS.length}`);
+  if (CHANNEL_PATTERNS.join() !== "P1,P1,P2,P3,P4") problems.push(`channel patterns are ${CHANNEL_PATTERNS.join()}, design-tokens 3.2 says P1,P1,P2,P3,P4`);
+  if (INFRAVANA_PATTERNS.join() !== "P1,P2,P3,P4") problems.push(`InfraVana patterns are ${INFRAVANA_PATTERNS.join()}, design-tokens 3.2 says P1,P2,P3,P4`);
+  if (SAVINGS_PATTERNS.arbitrage !== "P2" || SAVINGS_PATTERNS.routing !== "P3") problems.push("savings patterns are not P2 (better price) and P3 (cheaper models)");
+  return problems;
+}
+
+/** The budget label stays inside the chart: whichever side of the line it sits on, none of its text is cut. */
+export function budgetLabelProblems(svg: string, dims: Dims, t: Tokens, where: string): string[] {
+  const m = /<text[^>]*text-anchor="(\w+)"[^>]*transform="translate\(([\d.-]+) [\d.-]+\)"[^>]*>(Budget [^<]*)<\/text>/.exec(svg);
+  if (!m) return [`${where}: no budget label`];
+  const [, anchor, xText, text] = m;
+  const x = Number(xText);
+  const w = textWidth(text, t.fontXs, t.weightRegular, t.fontSans);
+  const left = anchor === "middle" ? x - w / 2 : anchor === "end" ? x - w : x;
+  const right = left + w;
+  return left < 0 || right > dims.width
+    ? [`${where}: the budget label "${text}" runs from ${left.toFixed(0)} to ${right.toFixed(0)} px in a chart ${dims.width} px wide`]
+    : [];
+}
+
+/**
+ * The key of C3 (stage markup): the comparator and InfraVana are wide bar
+ * swatches, each option is a swatch in its own marker's shape, and no two
+ * swatches share a shape, so an option can never read as the comparator.
+ */
+export function keyProblems(results: Results, markup: string, where: string): string[] {
+  const problems: string[] = [];
+  const cmp = comparisonOf(results);
+  const shapes = [...markup.matchAll(/chart-key__swatch chart-key__swatch--(\w+)/g)].map((m) => m[1]);
+  const bars = shapes.slice(0, 2);
+  const markers = shapes.slice(2);
+  if (bars.join() !== "bar,bar") problems.push(`${where} key: the comparator and InfraVana swatches are [${bars.join(", ")}], not bars`);
+  if (markers.length !== cmp.options.length) problems.push(`${where} key: ${markers.length} marker swatches for ${cmp.options.length} options`);
+  if (markers.includes("bar")) problems.push(`${where} key: a marker is drawn as a bar swatch`);
+  if (new Set(markers).size !== markers.length) problems.push(`${where} key: two option swatches share a shape [${markers.join(", ")}]`);
+  cmp.options.forEach((o, i) => {
+    if (markers[i] !== optionStyle(o.rank).marker) problems.push(`${where} key: option ${o.alt.label} swatch is ${markers[i]}, its marker is ${optionStyle(o.rank).marker}`);
+  });
+  for (const name of [`Today: ${cmp.label}`, INFRAVANA_LABEL, ...cmp.options.map((o) => o.alt.label)]) {
+    if (!markup.includes(name.replace(/&/g, "&amp;"))) problems.push(`${where} key: no entry for "${name}"`);
   }
   return problems;
 }
