@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { benefitHeadcount, compute, solveAtBudget } from "../compute";
+import { benefitHeadcount, compute, frontier, frontierThresholds, solveAtBudget } from "../compute";
 import { g1Headline, solvedHeadline } from "../compute/goals";
 import type { BenefitBox, BenefitContext, GoalId, Results, Scenario, SolveResult, Tables } from "../contract";
 import { loadScenario, loadTables } from "../data/load";
@@ -46,7 +46,14 @@ async function load(): Promise<{ tables: Tables; scenarios: Record<string, Scena
 }
 
 function contextFor(scenario: Scenario, tables: Tables, goal: GoalId, solve: SolveResult | null): BenefitContext {
-  return { scenario: { ...scenario, goal }, goal, solve, frontier: null, headcount: benefitHeadcount(scenario, tables) };
+  // C10 is in the registry, so every case carries the quality frontier the page hands it.
+  return {
+    scenario: { ...scenario, goal },
+    goal,
+    solve,
+    frontier: frontier(scenario, tables, "quality", frontierThresholds(scenario, tables, "quality")),
+    headcount: benefitHeadcount(scenario, tables),
+  };
 }
 
 /** G2 and G3 with the real solver; G1 and G4 need none. */

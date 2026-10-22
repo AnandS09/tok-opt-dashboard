@@ -1,0 +1,33 @@
+/*
+ * C10, the iso-cost frontier (spec 6.3): the switch between its two views and
+ * the notes around the chart. Every colour is
+ * an alias of a token in tokens.css; this file holds no hex.
+ */
+
+.c10-switch {
+  max-width: 28rem;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+}
+
+.segmented__option--disabled {
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+}
+
+.segmented__option--disabled input {
+  cursor: not-allowed;
+}
+
+.c10-switch__reason {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.c10-error {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}

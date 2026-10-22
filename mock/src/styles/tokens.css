@@ -60,6 +60,8 @@
   --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
   --chart-budget-line-width: 1.5px;
   --chart-provenance-width: 2px;          /* modelled and vendor-reported perimeters */
+  --chart-today-line-width: 1.5px;        /* C10 Today reference lines */
+  --chart-frontier-line-width: 2px;       /* C10 InfraVana step line */
   --chart-dash-modelled: 6 3;             /* dash array: modelled */
   --chart-dash-vendor: 2 3;               /* dash array: vendor-reported */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */

@@ -36,7 +36,8 @@
     "C3",
     "C5",
     "C7",
-    "C4"
+    "C4",
+    "C10"
   ],
   "missing": [
     "workload_mix",

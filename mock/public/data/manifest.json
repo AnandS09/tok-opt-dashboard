@@ -92,21 +92,21 @@
     "scenarios/s1.json": {
       "version": "0.1.0-placeholder",
       "row_count": 1,
-      "checksum": "sha256:ac674f0b2273157ad1cd2942fd6919a8113d5c26bb4b99b6ba753c64bb684e38",
+      "checksum": "sha256:ff2bc42794d82118cfcc84108b858020cbc27e0f6729caffe97882f7223127fd",
       "placeholder": true,
       "note": "JSON document; row_count counts it as one record"
     },
     "scenarios/s2.json": {
       "version": "0.1.0-placeholder",
       "row_count": 1,
-      "checksum": "sha256:3e0743fb55a1bdd32657fcd37c60553e4d35be23fb7bfb24a897335439d3ba44",
+      "checksum": "sha256:51eaf8e8d53ff8c15324e3297414b56154fce2ca8d2109846425dfd9dab6fe7f",
       "placeholder": true,
       "note": "JSON document; row_count counts it as one record"
     },
     "scenarios/hardware_heavy.json": {
       "version": "0.1.0-placeholder",
       "row_count": 1,
-      "checksum": "sha256:f391ae5f860464cbdbbd81545a9d1f970b2c4068c578a5a43168eb4f703eba4a",
+      "checksum": "sha256:8de01803f78fe1da8569b4c0fcae2563d84166c707abc83043aa570faafea080",
       "placeholder": true,
       "note": "JSON document; row_count counts it as one record"
     }

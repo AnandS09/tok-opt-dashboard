@@ -13,6 +13,7 @@
  * view state and its setters arrive in `ctx`.
  */
 import { useMemo } from "react";
+import { effectiveView, frontierForView } from "../charts/c10Data";
 import type { ChartDef, Results } from "../contract";
 import { benefitContext } from "../store/benefitContext";
 import { choiceFor, selectedComparator } from "../store/comparator";
@@ -69,9 +70,14 @@ export function ComparatorSlot({ ctx }: { ctx: StageSlotContext }) {
 
 export function BenefitsSlot({ def, results, ctx }: { def: ChartDef; results: Results; ctx: StageSlotContext }) {
   // The goal tabs hand over the active tab's solve result (null in G1, and in G2 and G3 until it arrives);
-  // C10 does not yet hand over a frontier. While a solve is on its way the boxes stay and dim.
+  // C10 hands over the frontier of the view it shows (the chart and the boxes share one sweep).
+  // While a solve is on its way the boxes stay and dim.
   const { solve, stale } = ctx.goalView;
-  const context = benefitContext(ctx.scenario, ctx.tables, solve, null);
+  const frontier =
+    def.id === "C10"
+      ? attempt(() => frontierForView(ctx.scenario, ctx.tables, effectiveView(ctx.view.c10, ctx.tables)), null)
+      : null;
+  const context = benefitContext(ctx.scenario, ctx.tables, solve, frontier);
   const boxes = attempt(() => def.benefits(results, context), []);
   const waiting = stale || ((ctx.goalView.goal === "G2" || ctx.goalView.goal === "G3") && solve === null);
   return (

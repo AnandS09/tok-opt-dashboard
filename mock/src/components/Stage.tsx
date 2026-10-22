@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type TouchEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type TouchEvent } from "react";
 import type { ChartDef, Results } from "../contract";
+import { C10Context } from "../charts/c10Context";
 import { wrapIndex, type StageDirection, type StageSlotContext } from "../store/stage";
 import "../styles/stage.css";
 import { ChartBoundary } from "./ChartBoundary";
@@ -77,6 +78,11 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
   const titleId = useId();
   const count = slides.length;
   const def = slides[active];
+  // C10 draws its frontier from the scenario and the tables, and reads and sets its view in the address.
+  const c10 = useMemo(
+    () => ({ scenario: ctx.scenario, tables: ctx.tables, view: ctx.view.c10, setView: ctx.setC10 }),
+    [ctx.scenario, ctx.tables, ctx.view.c10, ctx.setC10],
+  );
   // The chart whose body is on screen, so a body that comes back (the grid closed) does not replay the slide.
   const shown = useRef<string | null>(null);
   useEffect(() => {
@@ -147,6 +153,7 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
   const style = { "--figure-number": `"${figure}"` } as CSSProperties;
 
   return (
+    <C10Context.Provider value={c10}>
     <section className="stage" aria-label="Charts">
       <div className="stage__bar">
         <ChartIndex slides={slides} active={active} onPick={pick} />
@@ -220,5 +227,6 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
         </Drawer>
       ) : null}
     </section>
+    </C10Context.Provider>
   );
 }

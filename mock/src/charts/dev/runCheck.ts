@@ -17,6 +17,7 @@ import { chartRegistry } from "../registry";
 import { tokensFrom } from "../tokens";
 import type { Tokens } from "../tokens";
 import { runBudgetChecks, runChartChecks, runComparatorChecks, runSelfTests, selectorProblems } from "./renderCheck";
+import { runC10Checks, runC10SelfTests } from "./c10Check";
 import { benefitMarkupProblems, benefitSelfTests, benefitStyleProblems } from "./benefitCheck";
 import { sampleResults, sampleResultsEdge } from "./sampleResults";
 
@@ -81,6 +82,22 @@ for (const [label, results] of cases) {
 }
 for (const id of scenarios) {
   const resp = await loadScenario("http://x/data", id);
+  const base = compute(resp.scenario, tables);
+  show(`${id}-c10`, runC10Checks(id, resp.scenario, tables, base, tokens));
+  for (const stage of ["seats", "api", "platform"] as const) {
+    const sc = { ...resp.scenario, stage_today: stage };
+    show(`${id}-${stage}-c10`, runC10Checks(`${id}-${stage}`, sc, tables, compute(sc, tables), tokens));
+  }
+  // Every comparator, so the Today lines follow the choice; and the G4 tab, whose trade-off the frontier ignores.
+  for (const alt of base.today_alternatives) {
+    const sc = { ...resp.scenario, comparator: alt.pattern_id };
+    show(`${id}-${alt.pattern_id}-c10`, runC10Checks(`${id}-${alt.pattern_id}`, sc, tables, compute(sc, tables), tokens));
+  }
+  const g4 = { ...resp.scenario, goal: "G4" as const, tradeoff: { quality_step: 2, speed_step: 1 } };
+  show(`${id}-g4-c10`, runC10Checks(`${id}-g4`, g4, tables, compute(g4, tables), tokens));
+}
+for (const id of scenarios) {
+  const resp = await loadScenario("http://x/data", id);
   show(`${id}-comparators`, runComparatorChecks(`${id}`, resp.scenario, tables, tokens));
 }
 const s1 = await loadScenario("http://x/data", "s1");
@@ -88,6 +105,7 @@ for (const id of scenarios) {
   const resp = await loadScenario("http://x/data", id);
   show(`${id}-selector`, { problems: selectorProblems(id, compute(resp.scenario, tables)), notes: [] });
 }
+show("c10-self-tests", runC10SelfTests({ ...s1.scenario, stage_today: "seats" }, tables, compute({ ...s1.scenario, stage_today: "seats" }, tables), tokens));
 // Benefit boxes: the markup of every chart's boxes on every shipped scenario and stage, and the stylesheet.
 const benefitCss = fs.readFileSync(path.join(mockRoot, "src/styles/benefits.css"), "utf8");
 show("benefit-style", { problems: benefitStyleProblems(benefitCss), notes: [] });

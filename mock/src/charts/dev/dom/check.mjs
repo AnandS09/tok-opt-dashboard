@@ -44,7 +44,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../../..");
-const IDS = ["C1", "C5", "C3"];
+const IDS = ["C1", "C5", "C3", "C10"];
 // The page lists the charts in registry order.
 
 // ---------------------------------------------------------------------------
@@ -161,11 +161,20 @@ async function parent() {
       });
       outcomes[name] = run;
       console.log(`--- ${name} (exit ${run.status})\n${run.stdout}${run.stderr && !run.stdout ? run.stderr : ""}`);
+      if (!fault) {
+        // The same build opened on the address of C10's speed view (spec 6.3, acceptance 5: a reload honours it).
+        const reload = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--child", out, "--reload"], {
+          env: { ...process.env, DOM_CHECK_JSDOM: jsdom, DOM_CHECK_HASH: "#slide=C10&goal=G1&c10=speed" },
+          encoding: "utf8",
+        });
+        outcomes.reload = reload;
+        console.log(`--- reload on #slide=C10&c10=speed (exit ${reload.status})\n${reload.stdout}${reload.stderr && !reload.stdout ? reload.stderr : ""}`);
+      }
     }
-    const good = outcomes["as-is"].status === 0;
+    const good = outcomes["as-is"].status === 0 && outcomes.reload.status === 0;
     const red = FAULTS.map((f) => [f.name, outcomes[f.name].status === 1]);
     const controlsRed = red.every(([, r]) => r);
-    console.log(`as-is passes: ${good ? "yes" : "NO"}; negative controls that fail: ${red.map(([n, r]) => `${n} ${r ? "yes" : "NO"}`).join(", ")}`);
+    console.log(`as-is and reload pass: ${good ? "yes" : "NO"}; negative controls that fail: ${red.map(([n, r]) => `${n} ${r ? "yes" : "NO"}`).join(", ")}`);
     console.log(good && controlsRed ? "ALL OK" : "FAILED");
     process.exit(good && controlsRed ? 0 : 1);
   } finally {
@@ -181,8 +190,10 @@ async function child(bundle) {
   const { makeLayout, VIEWPORT } = await import("./layout.mjs");
   const { JSDOM } = createRequire(import.meta.url)(process.env.DOM_CHECK_JSDOM);
 
+  // `--reload` opens the page on the address of C10's speed view, as a reload of it would.
+  const startHash = process.env.DOM_CHECK_HASH ?? "";
   const dom = new JSDOM('<!doctype html><html lang="en"><head><title>t</title></head><body><div id="root"></div></body></html>', {
-    url: "http://localhost:5173/",
+    url: `http://localhost:5173/${startHash}`,
     pretendToBeVisual: true,
   });
   const { window } = dom;
@@ -205,7 +216,7 @@ async function child(bundle) {
       const v = args.split(",").map((a) => (a.trim().endsWith("vh") ? (parseFloat(a) / 100) * VIEWPORT.h : parseFloat(a)));
       return `${Math.min(Math.max(v[1], v[0]), v[2])}px`;
     });
-  for (const f of ["tokens.css", "app.css", "intake.css", "stage.css", "compare.css"]) {
+  for (const f of ["tokens.css", "app.css", "intake.css", "stage.css", "compare.css", "c10.css"]) {
     const style = doc.createElement("style");
     style.textContent = evalClamp(resolveVars(strip(fs.readFileSync(path.join(root, "src/styles", f), "utf8"))));
     doc.head.appendChild(style);
@@ -379,6 +390,27 @@ async function child(bundle) {
 
   // The page shows one chart at a time (spec 4.1): drive each slide with the Next arrow, in registry order.
   const click = (el) => el.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+  if (process.argv.includes("--reload")) {
+    // Opened on the speed view's address: C10 is in focus, the speed option is the checked one, the invented-data line is shown.
+    let bad = 0;
+    const check = (ok, what) => {
+      if (!ok) bad++;
+      console.log(`${ok ? "PASS" : "FAIL"} ${what}`);
+    };
+    const checked = [...doc.querySelectorAll('.c10-switch input[type="radio"]')].find((r) => r.checked);
+    check(/(?:^|[#&])slide=C10(?:&|$)/.test(window.location.hash), `the address still names C10: ${window.location.hash}`);
+    check(checked?.value === "speed", `the checked switch option is "${checked?.value}", expected "speed"`);
+    check(/(?:^|&)c10=speed/.test(window.location.hash), "the address keeps c10=speed");
+    check(doc.querySelector(".prov-badge--invented") !== null, "the invented-placeholder badge is shown");
+    check((doc.querySelector(".chart-source")?.textContent ?? "").includes("invented placeholder data"), "the source line says invented placeholder data");
+    const state = chartState(doc.querySelector(".chart-card"));
+    check(state.canvases.length > 0 && state.canvases.every((c) => c.w > 0 && c.h > 0 && c.draws > 0) && !state.alert, `the chart is drawn: ${JSON.stringify(state)}`);
+    const errs = logs.filter((l) => !/Not implemented/.test(l) && (l.startsWith("error:") || l.startsWith("window error:")));
+    check(errs.length === 0, `no console errors (${errs.length})`);
+    console.log(bad === 0 ? "ALL OK" : `FAILED: ${bad}`);
+    window.close();
+    process.exit(bad === 0 ? 0 : 1);
+  }
   const slideId = () => /(?:^|[#&])slide=([^&]+)/.exec(window.location.hash)?.[1] ?? null;
   let failed = 0;
   const stage = {};
@@ -449,6 +481,36 @@ async function child(bundle) {
     const pass = drawn(stage[id]);
     if (!pass) failed++;
     console.log(`${pass ? "PASS" : "FAIL"} ${id}: ${JSON.stringify(stage[id])}`);
+  }
+
+  // C10 (the last slide here): the switch changes the view, the address follows, and the speed view carries its provenance notes (spec 6.3).
+  {
+    const radios = [...doc.querySelectorAll('.c10-switch input[type="radio"]')];
+    const quality = radios.find((r) => r.value === "quality");
+    const speed = radios.find((r) => r.value === "speed");
+    const ok = (cond, what) => {
+      if (!cond) failed++;
+      console.log(`${cond ? "PASS" : "FAIL"} C10 ${what}`);
+    };
+    ok(radios.length === 2 && quality?.checked && speed && !speed.disabled, "opens on quality, with the speed option enabled");
+    ok(!/c10=/.test(window.location.hash), `the default view is not in the address (${window.location.hash})`);
+    ok(doc.querySelector(".prov-badge--invented") === null, "the quality view shows no invented badge");
+    if (speed) {
+      click(speed);
+      await settle("c10 speed");
+      await sleep(300);
+      await settle("after c10 speed");
+      ok(/(?:^|&)c10=speed/.test(window.location.hash), `the address has c10=speed (${window.location.hash})`);
+      ok(doc.querySelector(".prov-badge--invented") !== null, "the speed view shows the invented badge");
+      ok((doc.querySelector(".chart-source")?.textContent ?? "").includes("invented placeholder data"), "the speed view's source line says invented placeholder data");
+      ok(drawn(chartState(doc.querySelector(".chart-card"))), "the speed view draws a canvas");
+      click(doc.querySelector('.c10-switch input[value="quality"]'));
+      await settle("c10 quality");
+      await sleep(300);
+      await settle("after c10 quality");
+      ok(!/c10=/.test(window.location.hash), `switching back clears c10 (${window.location.hash})`);
+      ok(drawn(chartState(doc.querySelector(".chart-card"))), "the quality view draws a canvas again");
+    }
   }
 
   // The "Compared with" selector sits in the comparator slot, and picking another comparator changes the figures (spec 4.1, 6.1).
