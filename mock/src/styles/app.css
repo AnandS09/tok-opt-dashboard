@@ -687,11 +687,60 @@ a {
   color: var(--color-positive);
 }
 
+/* A sentence or a placeholder stands in for the figure: quieter, so it never reads as a result. */
+.hero__figure--quiet {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xl);
+}
+
+/* Room for two lines of the full-size figure on every tab, so a figure that arrives (or a sentence that replaces it) does not move what is below it. */
+.hero .hero__figure {
+  min-height: calc(2 * var(--line-height-tight) * var(--font-size-hero));
+}
+
+/* "than <the Today it is measured against>", in the same line as the saving. */
+.hero__than {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xl);
+  letter-spacing: 0;
+}
+
+.hero__note {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+}
+
 .hero__stats {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-5);
+  min-height: calc(var(--font-size-lg) * var(--line-height-body));
   font-size: var(--font-size-lg);
+}
+
+/* While a new value is on its way the previous one stays, dimmed at once (spec 6.2); the new one fades back in. */
+.hero__figure,
+.hero__stats {
+  transition: opacity var(--duration-fade) var(--ease-standard);
+}
+
+.hero[data-stale="true"] .hero__figure,
+.hero[data-stale="true"] .hero__stats,
+.hero[data-pending="true"] .hero__stats {
+  opacity: 0.45;
+  transition: none;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+}
+
+.drawer code {
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
 }
 
 .hero__basis {
