@@ -1,8 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Scenario, Tables } from "../contract";
-import { compute } from "../compute";
+import { compute, frontier, frontierThresholds, solveAtBudget } from "../compute";
 import { loadFixtureScenario, loadFixtureTables, restoreFetch } from "../test/fixtures";
-import { computeForView, withView } from "./stage";
+import { computeForView, withEffectiveComparator, withView } from "./stage";
+import { computeTradeoff } from "./tradeoff";
 
 let tables: Tables;
 let s1: Scenario;
@@ -83,5 +84,36 @@ describe("a G4 link, now that the G4 tab exists", () => {
       expect(scenario.tradeoff).toBeUndefined();
       expect(computeForView(scenario, tables).headline).toEqual(compute(s1, tables).headline);
     }
+  });
+});
+
+describe("the effective comparator reaches the solver, the G4 calls and the frontier", () => {
+  const floor93 = () => withView({ ...s1, quality_floor: 93 }, view("best_single"), tables);
+
+  it("the solve throws on the stored best single option at floor 93 (the old path)", () => {
+    expect(() => solveAtBudget(floor93(), tables, "intensity")).toThrow(/best_single/);
+    expect(() => solveAtBudget(floor93(), tables, "users")).toThrow(/best_single/);
+  });
+
+  it("solves, runs G4's two calls and builds the frontier against the default Today", () => {
+    const stored = floor93();
+    const effective = withEffectiveComparator(stored, tables);
+    expect(effective.comparator).toBeUndefined();
+    const plain = { ...s1, quality_floor: 93 };
+    for (const axis of ["intensity", "users"] as const) {
+      expect(solveAtBudget(effective, tables, axis)).toEqual(solveAtBudget(plain, tables, axis));
+    }
+    const g4 = withEffectiveComparator(withView({ ...s1, quality_floor: 93 }, { ...view("best_single"), goal: "G4", qualityStep: 1, speedStep: 1 }, tables), tables);
+    expect(() => computeTradeoff(g4, tables)).not.toThrow();
+    for (const axis of ["quality", "speed"] as const) {
+      const thresholds = frontierThresholds(effective, tables, axis);
+      expect(frontier(effective, tables, axis, thresholds)).toEqual(frontier(plain, tables, axis, thresholds));
+    }
+  });
+
+  it("keeps the comparator while it is offered, and drops it only when it is not", () => {
+    const offered = withView({ ...s1, quality_floor: 80 }, view("best_single"), tables);
+    expect(withEffectiveComparator(offered, tables).comparator).toBe("best_single");
+    expect(withEffectiveComparator(s1, tables)).toBe(s1);
   });
 });

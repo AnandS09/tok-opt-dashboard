@@ -21,6 +21,7 @@ import type { CompanyType } from "./store/intake";
 import {
   activeIndex,
   computeForView,
+  withEffectiveComparator,
   useStageHash,
   useStageState,
   withView,
@@ -147,7 +148,10 @@ export default function App() {
     [tradeoffPositions, qualityStep, speedStep],
   );
   const viewedScenario = useMemo(
-    () => (scenario && tables && answered ? withView(scenario, { goal, comparator, ...steps }, tables) : scenario),
+    () =>
+      scenario && tables && answered
+        ? withEffectiveComparator(withView(scenario, { goal, comparator, ...steps }, tables), tables)
+        : scenario,
     [scenario, tables, answered, goal, comparator, steps],
   );
   const liveScenario = useThrottledValue(viewedScenario, RECOMPUTE_MS);

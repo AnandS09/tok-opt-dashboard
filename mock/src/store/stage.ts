@@ -120,6 +120,30 @@ export function computeForView(scenario: Scenario, tables: Tables): Results {
 }
 
 /**
+ * The scenario with its comparator resolved once, for everything that reads it:
+ * the compute call, the G2 and G3 solve, the G4 calls and the C10 frontier. A
+ * comparator the engine cannot offer for the mix and floors in effect (see
+ * `computeForView`) is dropped, so every figure on the page is worked out
+ * against the same Today, the default one, and no part of the page meets the
+ * engine's error. The test is a plain `compute()` of the scenario without its
+ * trade-off (a trade-off changes only InfraVana's side); the stored choice
+ * stays in the view state, so it applies again when the inputs change back.
+ */
+export function withEffectiveComparator(scenario: Scenario, tables: Tables): Scenario {
+  if (scenario.comparator === undefined) return scenario;
+  const { tradeoff, ...base } = scenario;
+  void tradeoff;
+  try {
+    compute(base, tables);
+    return scenario;
+  } catch {
+    const { comparator, ...withoutChoice } = scenario;
+    void comparator;
+    return withoutChoice;
+  }
+}
+
+/**
  * What a later unit's control needs to read and change the view. The stage
  * slots (`components/StageSlots.tsx`) receive it, so a control needs nothing
  * else from `App.tsx`.
