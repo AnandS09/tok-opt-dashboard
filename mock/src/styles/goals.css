@@ -1,0 +1,127 @@
+/*
+ * Goal tabs (spec 6.2) and the solve states of chart C5, in the Research Note
+ * language (spec 14.3): serif labels on an ink rule, the accent only on the
+ * active tab, 2px corners, no shadows. Every value comes from tokens.css.
+ *
+ * The hero's own rules (the lead, figure, stats) are in app.css beside the
+ * rules they extend.
+ */
+
+/* ---- The tab list ---- */
+
+.goal-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.goal-tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+  margin: 0;
+  padding: 0;
+}
+
+.goal-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-1) 0;
+  background: none;
+  border: 0;
+  /* The active tab's accent line is the only coloured rule on the row. */
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
+  text-align: left;
+  cursor: pointer;
+}
+
+.goal-tabs__tab:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.goal-tabs__tab[aria-selected="true"] {
+  border-bottom-color: var(--color-accent-strong);
+  color: var(--color-accent-strong);
+  font-weight: var(--font-weight-medium);
+}
+
+.goal-tabs__tab:disabled {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+/* ---- Why a tab cannot be chosen: one line each, printed under the list ---- */
+
+.goal-tabs__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.goal-tabs__reason-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Phones: two tabs to a row, each a full-width touch target. */
+@media (max-width: 600px) {
+  .goal-tabs__list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 var(--space-4);
+  }
+
+  .goal-tabs__tab {
+    font-size: var(--font-size-md);
+  }
+}
+
+/* ---- Chart C5 while a solve is on its way, or when a sentence replaces it ---- */
+
+.chart-solve {
+  position: relative;
+}
+
+/* The previous value stays on screen, dimmed, until the new one arrives. */
+.chart-solve > .chart-figure {
+  transition: opacity var(--duration-fade) var(--ease-standard);
+}
+
+.chart-solve[data-stale="true"] > .chart-figure {
+  opacity: 0.45;
+  transition: none;
+}
+
+/* The chart keeps its box and its place; the sentence is drawn over the canvas area only. */
+.chart-solve[data-covered="true"] > .chart-figure {
+  visibility: hidden;
+}
+
+.chart-solve__notice {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  height: var(--chart-stage-height);
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--color-text-secondary);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
+  text-align: center;
+  text-wrap: balance;
+}

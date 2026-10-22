@@ -1,17 +1,19 @@
-import { useCallback } from "react";
+import { useCallback, useMemo, type CSSProperties } from "react";
 import { BarChart } from "echarts/charts";
 import type { BarSeriesOption } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
-import type { ChartDef, ChartProps, Provenance, Results } from "../contract";
+import type { ChartDef, ChartProps, GoalView, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
-import { c5Figures } from "../compute/goals";
+import { c5Figures, COVERAGE_MESSAGE_ABOVE } from "../compute/goals";
 import type { C5Figures } from "../compute/goals";
 import { ChartFigure } from "./ChartFigure";
 import { BELOW_FLOOR, barRowsHeight, comparisonOf, qualityText } from "./comparison";
 import type { Comparison, OptionBar } from "./comparison";
 import { fmtMultiple, fmtTokens, fmtTokensSig, fmtUsd } from "../shared/format";
+import { solvedNotice } from "../shared/goalNotice";
+import "../styles/goals.css";
 import { esc, fmtBudget, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import { textWidth } from "./measure";
@@ -26,6 +28,14 @@ use([BarChart, GridComponent, TooltipComponent]);
 
 /** The label of a grey bar that is not solved (spec 6.2, acceptance 7). */
 export const ESTIMATED_LABEL = "Estimated at its average price";
+
+/** What the chart says while a solve for the tab has not produced a value yet. */
+const PENDING_TEXT = "Working out the volumes your budget buys";
+
+/** A multiple as C5 states it: above ten times it is not given as a figure (spec 5.2). */
+function multipleText(multiple: number): string {
+  return multiple > COVERAGE_MESSAGE_ABOVE ? `more than ${COVERAGE_MESSAGE_ABOVE}x` : fmtMultiple(multiple);
+}
 
 /** The note under the compared bars in G4, whose figures are at the relaxed plan. */
 const TRADEOFF_NOTE = "at the trade-off you chose";
@@ -104,7 +114,7 @@ export function buildTokensBoughtOption(
   /** The quality line of a grey bar and the multiple line of InfraVana's: beside the bar when there is room, under its name when not. */
   const detailLines = (bar: Bar): string[] => {
     if (bar.kind === "infravana") {
-      const multiple = `${fmtMultiple(figures.multiple)} as many${narrow ? "" : ` as ${cmp.label}`}`;
+      const multiple = `${multipleText(figures.multiple)} as many${narrow ? "" : ` as ${cmp.label}`}`;
       return figures.at_tradeoff ? [multiple, TRADEOFF_NOTE] : [multiple];
     }
     const alt = bar.kind === "comparator" ? cmp.comparator : (bar.option?.alt ?? null);
@@ -238,26 +248,77 @@ export function buildTokensBoughtOption(
 }
 
 /**
- * One sentence from Results. The multiple is the headline's, so the caption
- * and the headline strip always say the same thing, and it names the Today it
- * is measured against.
+ * What chart C5 draws for a tab (spec 6.2, "C5 follows the tab"): the figures
+ * of the tab, a sentence that replaces them (the spec 5.2 messages, a solve
+ * still on its way, a solve that failed) and whether the figures are the
+ * previous value awaiting a new one.
  */
-export function tokensBoughtCaption(results: Results): string {
+export interface C5State {
+  /** The figures to draw; null in G2 and G3 until the solve has produced a value. */
+  figures: C5Figures | null;
+  /** A sentence shown in place of the chart, or null when the chart is shown. */
+  notice: string | null;
+  /** True in G2 and G3 while no solve has produced a value yet (and none has failed). */
+  pending: boolean;
+  stale: boolean;
+}
+
+export function c5StateOf(results: Results, view: GoalView | undefined): C5State {
+  const goal = view?.goal ?? "G1";
+  if (goal !== "G2" && goal !== "G3") {
+    return { figures: c5Figures(goal, results, null), notice: null, pending: false, stale: false };
+  }
+  if (!view || view.solve === null) {
+    const failed = view?.error ?? null;
+    const text = failed ? `These volumes could not be worked out: ${failed}` : PENDING_TEXT;
+    return { figures: null, notice: text, pending: failed === null, stale: false };
+  }
+  const notice = solvedNotice(view.solve, comparisonOf(results).label);
+  // The coverage message replaces the headline multiple, not the bars: they are still true.
+  const replaces = notice !== null && notice.kind !== "coverage";
+  return {
+    figures: c5Figures(goal, results, view.solve),
+    notice: replaces ? notice.text : null,
+    pending: false,
+    stale: view.stale,
+  };
+}
+
+/**
+ * One sentence from Results. The multiple is the tab's own (spec 6.2): the
+ * linear one in G1, so the caption and the headline strip say the same
+ * thing, the solved one in G2 and G3. It names the Today it is measured against.
+ */
+export function tokensBoughtCaption(results: Results, goalView?: GoalView): string {
   const b = results.tokens_bought;
   const cmp = comparisonOf(results);
-  const multiple = results.headline.tokens_multiple;
+  const state = c5StateOf(results, goalView);
+  if (state.notice !== null && !state.pending) return `${state.notice}.`;
   const budget = fmtBudget(b.budget_usd);
+  const buyer = cmp.comparator ? `with ${cmp.label}` : "today";
+  const basis =
+    goalView?.goal === "G3"
+      ? ", counting the most people each budget covers"
+      : goalView?.goal === "G2"
+        ? ", counting the most AI work each budget covers"
+        : "";
+  const sentence = (todayTokens: string, infravanaTokens: string, ratio: string) =>
+    `The same ${budget} budget buys ${todayTokens} tokens a quarter ${buyer} and ${infravanaTokens} with ${BRAND}, ${ratio}${basis}.`;
+  // While the volumes are being worked out the sentence keeps its shape, with the figures left blank, so the page below it does not move.
+  if (state.figures === null) return sentence("\u2026", "\u2026", "\u2026 times as many");
+  const figures = state.figures;
+  const multiple = figures.multiple;
   // Dollar figures and token counts all carry three significant digits.
-  const tokens = fmtTokensSig;
-  const shown = fmtMultiple(multiple);
+  const shown = multipleText(multiple);
   const ratio =
     shown === "1.0x"
       ? "about the same number"
-      : multiple > 1
-        ? `${shown} as many`
-        : `${shown.slice(0, -1)} times the tokens`;
-  const buyer = cmp.comparator ? `with ${cmp.label}` : "today";
-  return `The same ${budget} budget buys ${tokens(b.today_tokens)} tokens a quarter ${buyer} and ${tokens(b.infravana_tokens)} with ${BRAND}, ${ratio}.`;
+      : multiple > COVERAGE_MESSAGE_ABOVE
+        ? `${shown.slice(0, -1)} times as many`
+        : multiple > 1
+          ? `${shown} as many`
+          : `${shown.slice(0, -1)} times the tokens`;
+  return sentence(fmtTokensSig(figures.today_tokens), fmtTokensSig(figures.infravana_tokens), ratio);
 }
 
 const TOKENS_HOW_COMPUTED =
@@ -266,6 +327,7 @@ const TOKENS_HOW_COMPUTED =
   `With ${BRAND}, it buys the same models at a better price, and moves some work to cheaper open models ` +
   "that meet your minimum quality and response speed. " +
   "Each grey bar below is another way companies buy today, drawn at that way's average price, with a quality score beside it, because a cheaper way may buy weaker models. " +
+  "On the tabs for more AI or more people, the first two bars are volumes worked out for each budget: the most AI work, or the most people, each side's budget can pay for. " +
   "All prices here are illustrative.";
 
 /** Header first, then the compared bars, the delta label and each option bar. */
@@ -298,32 +360,56 @@ export function tokensBoughtParts(results: Results): ProvenancePart[] {
   ];
 }
 
-export function TokensBoughtChart({ results, size }: ChartProps) {
+export function TokensBoughtChart({ results, size, goalView }: ChartProps) {
+  const state = useMemo(() => c5StateOf(results, goalView), [results, goalView]);
+  // Until a solve has produced a value the chart is built from the linear figures and hidden behind its notice.
+  const figures = useMemo(() => state.figures ?? c5Figures("G1", results, null), [state.figures, results]);
   const build = useCallback(
-    (tokens: Tokens, dims: Dims) => buildTokensBoughtOption(results, size, tokens, dims),
-    [results, size],
+    (tokens: Tokens, dims: Dims) => buildTokensBoughtOption(results, size, tokens, dims, figures),
+    [results, size, figures],
   );
   const b = results.tokens_bought;
   const cmp = comparisonOf(results);
-  const figures = c5Figures("G1", results, null);
   const bars = barsOf(results, cmp, figures);
+  const height = barRowsHeight(results);
+  // The "Estimated at its average price" line wraps to two more lines under a row name on a phone: give those rows room.
+  // Counted from the goal, not the figures, so the box is the same before the solve answers.
+  const estimatedRows = goalView?.goal === "G2" || goalView?.goal === "G3" ? figures.options.length : 0;
+  const phoneHeight = barRowsHeight(results, true) + estimatedRows * 44;
+  const covered = state.notice !== null;
   return (
-    <ChartFigure
-      size={size}
-      height={barRowsHeight(results)}
-      phoneHeight={barRowsHeight(results, true)}
-      parts={tokensBoughtParts(results)}
-      ariaLabel={tokensBoughtCaption(results)}
-      build={build}
-      table={{
-        caption: `Tokens bought a quarter for a ${fmtUsd(b.budget_usd)} budget.`,
-        headers: ["Series", "Tokens a quarter"],
-        rows: bars.map((bar) => [
-          bar.name,
-          `${fmtTokensSig(bar.tokens)}${isEstimated(figures, bar) ? ` (${ESTIMATED_LABEL.toLowerCase()})` : ""}`,
-        ]),
-      }}
-    />
+    // The same box in every state, so a solve in progress never moves the page: the notice sits over the chart's own area.
+    <div
+      className="chart-solve chart-figure"
+      style={{ "--figure-height": `${height}px`, "--figure-height-phone": `${phoneHeight}px` } as CSSProperties}
+      data-covered={covered ? "true" : undefined}
+      data-stale={state.stale ? "true" : undefined}
+      aria-busy={state.stale || state.figures === null ? true : undefined}
+    >
+      <ChartFigure
+        size={size}
+        height={height}
+        phoneHeight={phoneHeight}
+        parts={tokensBoughtParts(results)}
+        ariaLabel={tokensBoughtCaption(results, goalView)}
+        build={build}
+        table={{
+          caption: `Tokens bought a quarter for a ${fmtUsd(b.budget_usd)} budget.`,
+          headers: ["Series", "Tokens a quarter"],
+          rows: covered
+            ? [[state.notice ?? "", ""]]
+            : bars.map((bar) => [
+                bar.name,
+                `${fmtTokensSig(bar.tokens)}${isEstimated(figures, bar) ? ` (${ESTIMATED_LABEL.toLowerCase()})` : ""}`,
+              ]),
+        }}
+      />
+      {covered && size === "stage" ? (
+        <p className="chart-solve__notice" role="status">
+          {state.notice}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
