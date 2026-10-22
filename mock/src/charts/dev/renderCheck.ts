@@ -329,6 +329,11 @@ export function structureProblemsC3(
       return;
     }
     if (s.symbol !== optionStyle(o.rank).marker) problems.push(`${where}: option rank ${o.rank} marker is ${String(s.symbol)}`);
+    // The marker's fill is the rank's fill from design-tokens 3.2 (T2, T1, T2, T1), the same identity as its bar.
+    const wantFill = DESIGN_OPTIONS[o.rank - 1]?.fill as "today1" | "today2" | undefined;
+    if (wantFill && styleOf(s).color !== t[wantFill]) {
+      problems.push(`${where}: option rank ${o.rank} marker is filled ${String(styleOf(s).color)}, design-tokens 3.2 says ${t[wantFill]} (${wantFill})`);
+    }
     const points = (s.data as number[][]) ?? [];
     type Cls = "frontier" | "mid" | "small";
     const expected = classes.filter((c) => o.alt.usd_per_mtok_by_class[c as Cls] !== null);
@@ -941,6 +946,7 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
   {
     const c3b = buildCostPerMtokOption(results, "stage", tokens, dims);
     const ser = seriesOf(c3b);
+    expect("C3 option markers all drawn in one grey", structureProblemsC3(results, withSeries(c3b, ser.map((x, i) => (i >= 2 ? { ...x, itemStyle: { ...((x.itemStyle as Obj | undefined) ?? {}), color: tokens.today2 } } : x))), tokens, "c3"));
     expect("two C3 option markers share a shape", structureProblemsC3(results, withSeries(c3b, ser.map((x, i) => (i === 3 ? { ...x, symbol: ser[2].symbol } : x))), tokens, "c3"));
     const svgC3 = renderSvg(c3b, dims);
     const shapes = drawnMarkerShapes(svgC3);
