@@ -121,6 +121,11 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
       if (pts[i][1] > pts[i - 1][1]) problems.push(`${where}: (2) the height rises from ${pts[i - 1][1]} to ${pts[i][1]} as the threshold tightens to ${pts[i][0]}`);
     }
   }
+  // Only points no stricter point beats are drawn (spec 6.3): a point as high as the next, stricter one is beaten.
+  for (let i = 1; i < dots.length; i++) {
+    if (dots[i][1] >= dots[i - 1][1] && dots[i][1] <= dots[i - 1][1] * (1 + 1e-9))
+      problems.push(`${where}: (2) the point at ${dots[i - 1][0]} is beaten by the stricter one at ${dots[i][0]} at the same height ${dots[i][1]}, and is drawn`);
+  }
   if (linePts.length !== dots.length + 1 || dots.some((d, i) => !near(d[0], linePts[i + 1]?.[0]) || !near(d[1], linePts[i + 1]?.[1])))
     problems.push(`${where}: the step line does not run through the points`);
   if (!line || (line as Obj).step !== "start") problems.push(`${where}: the InfraVana line is not a step line`);
@@ -227,6 +232,8 @@ export function c10SvgProblems(c: C10Case, svg: string, size: "stage" | "thumb",
     for (const text of new Set(wanted)) {
       if (!placed.some((p) => p.text === text)) problems.push(`${where}: end label text "${text}" is not drawn`);
     }
+    if (placed.length > 0 && Math.max(...placed.map((p) => p.x)) - Math.min(...placed.map((p) => p.x)) > 2)
+      problems.push(`${where}: the end labels are not in one column (x from ${Math.min(...placed.map((p) => p.x))} to ${Math.max(...placed.map((p) => p.x))})`);
     const sorted = [...placed].sort((a, b) => a.y - b.y);
     for (let i = 1; i < sorted.length; i++) {
       if (Math.abs(sorted[i].x - sorted[i - 1].x) < 2 && sorted[i].y - sorted[i - 1].y < t.lineXs - 1)
@@ -262,7 +269,9 @@ export function c10MarkupProblems(markup: string, view: C10View, hasSpeed: boole
   // (6) No speed data: the speed option is disabled and the reason is on the page.
   if (!hasSpeed) {
     if (!/\sdisabled/.test(speed)) problems.push(`${where}: (6) the speed option is not disabled although no offer has speed data`);
-    if (reason === null || !markup.includes(reason)) problems.push(`${where}: (6) the reason the speed view is off is not shown`);
+    // The words on the page, not only the tooltip attribute.
+    const at = markup.indexOf('class="c10-switch__reason">');
+    if (reason === null || at < 0 || !markup.startsWith(reason, at + 'class="c10-switch__reason">'.length)) problems.push(`${where}: (6) the reason the speed view is off is not shown`);
   } else {
     if (/\sdisabled/.test(speed)) problems.push(`${where}: the speed option is disabled although speed data exists`);
     if (reason !== null) problems.push(`${where}: a reason is shown although speed data exists`);
