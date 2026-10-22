@@ -937,6 +937,8 @@ th {
   .intake {
     display: flex;
     flex-direction: column;
+    /* Full width: the grid's align-items: start would shrink the questions to their content. */
+    align-items: stretch;
   }
 
   .estimate {
