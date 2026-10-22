@@ -1,0 +1,66 @@
+/*
+ * C10, the iso-cost frontier (spec 6.3): the switch between its two views, the
+ * plain row of benefit figures and the notes around the chart. Every colour is
+ * an alias of a token in tokens.css; this file holds no hex.
+ */
+
+.c10-switch {
+  max-width: 28rem;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+}
+
+.segmented__option--disabled {
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+  background: var(--color-surface-muted);
+}
+
+.segmented__option--disabled input {
+  cursor: not-allowed;
+}
+
+.c10-switch__reason {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.c10-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  list-style: none;
+}
+
+.c10-boxes__box {
+  display: flex;
+  flex-direction: column;
+  min-width: 9rem;
+}
+
+.c10-boxes__value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  font-variant-numeric: var(--font-numeric);
+}
+
+.c10-boxes__label {
+  font-size: var(--font-size-sm);
+}
+
+.c10-boxes__comparator {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.c10-error {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
