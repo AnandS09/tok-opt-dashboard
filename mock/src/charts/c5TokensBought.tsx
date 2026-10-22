@@ -6,8 +6,8 @@ import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
-import { c5Figures, ESTIMATED_LABEL } from "./c5Figures";
-import type { C5Figures } from "./c5Figures";
+import { c5Figures } from "../compute/goals";
+import type { C5Figures } from "../compute/goals";
 import { ChartFigure } from "./ChartFigure";
 import { BELOW_FLOOR, barRowsHeight, comparisonOf, qualityText } from "./comparison";
 import type { Comparison, OptionBar } from "./comparison";
@@ -23,6 +23,17 @@ import type { Dims } from "./useEChart";
 import { wrapText } from "./wrap";
 
 use([BarChart, GridComponent, TooltipComponent]);
+
+/** The label of a grey bar that is not solved (spec 6.2, acceptance 7). */
+export const ESTIMATED_LABEL = "Estimated at its average price";
+
+/** The note under the compared bars in G4, whose figures are at the relaxed plan. */
+const TRADEOFF_NOTE = "at the trade-off you chose";
+
+/** True when `bar` is a grey option the figures mark as estimated at its average price. */
+function isEstimated(figures: C5Figures, bar: { kind: string; key: string }): boolean {
+  return bar.kind === "option" && (figures.options.find((o) => o.pattern_id === bar.key)?.estimated_at_average_price ?? false);
+}
 
 /** The bars, top to bottom: the comparator, InfraVana, then each other grey option by rank. */
 interface Bar {
@@ -41,7 +52,7 @@ function barsOf(results: Results, cmp: Comparison, figures: C5Figures): Bar[] {
       key: "comparator",
       kind: "comparator",
       name: `${TODAY_LABEL}: ${cmp.label}`,
-      tokens: figures.comparatorTokens,
+      tokens: figures.today_tokens,
       provenance: b.provenance.today,
       option: null,
     },
@@ -49,7 +60,7 @@ function barsOf(results: Results, cmp: Comparison, figures: C5Figures): Bar[] {
       key: "infravana",
       kind: "infravana",
       name: INFRAVANA_LABEL,
-      tokens: figures.infravanaTokens,
+      tokens: figures.infravana_tokens,
       provenance: b.provenance.infravana,
       option: null,
     },
@@ -74,14 +85,14 @@ function labelColumn(width: number): number {
 /**
  * The ECharts option for C5: one bar for the comparator, one for InfraVana
  * and one for each other grey option, tokens bought for the budget. `figures`
- * is where the two compared bars take their numbers (see `c5Figures`).
+ * is where the two compared bars take their numbers (see `c5Figures` in compute/goals.ts).
  */
 export function buildTokensBoughtOption(
   results: Results,
   size: "stage" | "thumb",
   t: Tokens,
   dims: Dims,
-  figures: C5Figures = c5Figures(results),
+  figures: C5Figures = c5Figures("G1", results, null),
 ): EChartsCoreOption {
   const stage = size === "stage";
   const b = results.tokens_bought;
@@ -94,7 +105,7 @@ export function buildTokensBoughtOption(
   const detailLines = (bar: Bar): string[] => {
     if (bar.kind === "infravana") {
       const multiple = `${fmtMultiple(figures.multiple)} as many${narrow ? "" : ` as ${cmp.label}`}`;
-      return figures.note ? [multiple, figures.note] : [multiple];
+      return figures.at_tradeoff ? [multiple, TRADEOFF_NOTE] : [multiple];
     }
     const alt = bar.kind === "comparator" ? cmp.comparator : (bar.option?.alt ?? null);
     if (!alt) return [];
@@ -180,7 +191,7 @@ export function buildTokensBoughtOption(
               lines.push(esc(qualityText(alt)));
               if (!alt.meets_floors) lines.push(`Misses ${BELOW_FLOOR}`);
             }
-            if (bar.kind === "option" && figures.estimateOthers) lines.push(ESTIMATED_LABEL);
+            if (isEstimated(figures, bar)) lines.push(ESTIMATED_LABEL);
             lines.push(`Source: ${PROVENANCE_TEXT[bar.provenance].toLowerCase()}`);
             return lines.join("<br/>");
           },
@@ -212,7 +223,7 @@ export function buildTokensBoughtOption(
           const lines = wrapText(bar.name, column, t.fontSm, t.weightBold, t.fontSans).map((l) => `{${style}|${l}}`);
           const sub = [
             ...(narrow ? detailLines(bar) : []),
-            ...(bar.kind === "option" && figures.estimateOthers ? [ESTIMATED_LABEL] : []),
+            ...(isEstimated(figures, bar) ? [ESTIMATED_LABEL] : []),
           ];
           for (const text of sub) {
             lines.push(...wrapText(text, column, t.fontXs, t.weightBold, t.fontSans).map((l) => `{sub|${l}}`));
@@ -294,7 +305,7 @@ export function TokensBoughtChart({ results, size }: ChartProps) {
   );
   const b = results.tokens_bought;
   const cmp = comparisonOf(results);
-  const figures = c5Figures(results);
+  const figures = c5Figures("G1", results, null);
   const bars = barsOf(results, cmp, figures);
   return (
     <ChartFigure
@@ -309,7 +320,7 @@ export function TokensBoughtChart({ results, size }: ChartProps) {
         headers: ["Series", "Tokens a quarter"],
         rows: bars.map((bar) => [
           bar.name,
-          `${fmtTokensSig(bar.tokens)}${bar.kind === "option" && figures.estimateOthers ? ` (${ESTIMATED_LABEL.toLowerCase()})` : ""}`,
+          `${fmtTokensSig(bar.tokens)}${isEstimated(figures, bar) ? ` (${ESTIMATED_LABEL.toLowerCase()})` : ""}`,
         ]),
       }}
     />

@@ -32,7 +32,8 @@ import { choiceFor, selectedComparator } from "../../store/comparator";
 import { allocationCsv, buildAllocationOption, comparatorBar, planBar } from "../c1Allocation";
 import { C3Key } from "../C3Key";
 import { buildCostPerMtokOption, costPerMtokParts } from "../c3CostPerMtok";
-import { ESTIMATED_LABEL, c5Figures } from "../c5Figures";
+import { ESTIMATED_LABEL } from "../c5TokensBought";
+import { c5Figures } from "../../compute/goals";
 import { buildTokensBoughtOption } from "../c5TokensBought";
 import { comparisonOf } from "../comparison";
 import { fmtMultiple, fmtPct, fmtTokensSig, fmtUsdSig } from "../../shared/format";
@@ -725,7 +726,7 @@ function checkC5Bases(results: Results, tokens: Tokens, label: string): string[]
   for (const dims of STAGE_SIZES) {
   for (const goal of ["G1", "G2", "G3", "G4"] as const) {
     const where = `${label} C5 ${goal} ${dims.width}`;
-    const figures = c5Figures(results, goal, goal === "G2" || goal === "G3" ? solve : null);
+    const figures = c5Figures(goal, results, goal === "G2" || goal === "G3" ? solve : null);
     const option = buildTokensBoughtOption(results, "stage", tokens, dims, figures);
     const svg = renderSvg(option, dims);
     const estimate = goal === "G2" || goal === "G3";
@@ -917,10 +918,10 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
 
   // C5
   const solve = sampleSolve(results);
-  const g2 = buildTokensBoughtOption(results, "stage", tokens, dims, c5Figures(results, "G2", solve));
+  const g2 = buildTokensBoughtOption(results, "stage", tokens, dims, c5Figures("G2", results, solve));
   const g2svg = renderSvg(g2, dims);
   expect("C5 labels missing in G2", structureProblemsC5(results, g2, g2svg.split(ESTIMATED_LABEL).join(""), "stage", true, "c5"), structureProblemsC5(results, g2, g2svg, "stage", true, "c5"));
-  const g1 = buildTokensBoughtOption(results, "stage", tokens, dims, c5Figures(results, "G1"));
+  const g1 = buildTokensBoughtOption(results, "stage", tokens, dims, c5Figures("G1", results, null));
   expect("C5 label drawn in G1", structureProblemsC5(results, g1, `${renderSvg(g1, dims)}<text>${ESTIMATED_LABEL}</text>`, "stage", false, "c5"));
 
   // The budget label, the narrow C5 label, marker shapes and the design table
@@ -936,7 +937,7 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
   }
   {
     const narrow: Dims = { width: 340, height: 300 };
-    const figures = c5Figures(results, "G2", sampleSolve(results));
+    const figures = c5Figures("G2", results, sampleSolve(results));
     const g2narrow = buildTokensBoughtOption(results, "stage", tokens, narrow, figures);
     const svgNarrow = renderSvg(g2narrow, narrow);
     const clean = structureProblemsC5(results, g2narrow, svgNarrow, "stage", true, "c5 narrow");
