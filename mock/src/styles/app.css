@@ -953,10 +953,6 @@ th {
     box-shadow: var(--shadow-card);
   }
 
-  .estimate__title {
-    font-size: var(--font-size-sm);
-  }
-
   .estimate__figures {
     flex-direction: row;
     gap: var(--space-3);
