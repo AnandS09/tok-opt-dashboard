@@ -135,7 +135,7 @@ function boxesOf(c: C10Case): BenefitBox[] {
 }
 
 /** Spec 6.3 acceptance (1) to (3), the Today lines and the line style, read from the drawn option. */
-export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: string): string[] {
+export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: string, dims?: Dims): string[] {
   const problems: string[] = [];
   const t = c.tokens;
   const dots = pointsOf(option, `${INFRAVANA_LABEL} (points)`);
@@ -199,7 +199,9 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
   for (const g of greys) {
     const name = g.rank === null ? `Today: ${g.alt.label}` : g.alt.label;
     const wantFill = g.rank === null ? t.today1 : design[g.rank - 1].fill;
-    const wantMarker = g.rank === null ? "circle" : design[g.rank - 1].marker;
+    // The comparator is a thin vertical tick (a rect of 4 by 14), a shape no option uses.
+    const wantMarker = g.rank === null ? "rect" : design[g.rank - 1].marker;
+    const wantSize = g.rank === null ? [4, 14] : MARKER_SIZE;
     const speed = c.view === "speed" ? expectedSpeed(c, g.alt.pattern_id) : null;
     const drawnAsPoint = c.view === "speed" && speed !== null && speed !== undefined;
     const s = seriesOf(option).filter((x) => x.name === name);
@@ -213,6 +215,7 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
       else if (!near(pts[0][0], speed as number) || !near(pts[0][1], g.alt.tokens_at_budget))
         problems.push(`${where}: ${name} is at (${pts[0][0]}, ${pts[0][1]}), expected (${speed}, ${g.alt.tokens_at_budget})`);
       if (s[0].symbol !== wantMarker) problems.push(`${where}: ${name} marker is ${String(s[0].symbol)}, design says ${wantMarker}`);
+      if (JSON.stringify(s[0].symbolSize) !== JSON.stringify(wantSize)) problems.push(`${where}: ${name} marker size is ${JSON.stringify(s[0].symbolSize)}, design says ${JSON.stringify(wantSize)}`);
       if (((s[0].itemStyle ?? {}) as Obj).color !== wantFill) problems.push(`${where}: ${name} is not its rank's grey`);
       continue;
     }
@@ -227,7 +230,35 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
     if (ls.type !== "solid") problems.push(`${where}: ${name} is drawn ${JSON.stringify(ls.type)}; a dash means provenance, so Today lines are solid`);
     if (ls.color !== wantFill || ls.width !== t.todayLineWidth) problems.push(`${where}: ${name} is not ${wantFill} at ${t.todayLineWidth}px`);
     const end = dataOf(s[0])[1] as Obj | null;
-    if (!end || end.symbol !== wantMarker || end.symbolSize !== MARKER_SIZE) problems.push(`${where}: ${name} does not end in a ${wantMarker} marker of ${MARKER_SIZE}px`);
+    if (!end || end.symbol !== wantMarker || JSON.stringify(end.symbolSize) !== JSON.stringify(wantSize)) problems.push(`${where}: ${name} does not end in a ${wantMarker} marker of ${JSON.stringify(wantSize)}px`);
+  }
+
+  // Marker identity: no two Today marks share a shape and size (the comparator's thin tick is not an option's square).
+  const identities = seriesOf(option)
+    .filter((x) => x.name !== undefined && greys.some((g) => (g.rank === null ? `Today: ${g.alt.label}` : g.alt.label) === x.name))
+    .map((x) => {
+      const end = x.type === "line" ? (dataOf(x)[1] as Obj | null) : null;
+      return JSON.stringify([end ? end.symbol : x.symbol, end ? end.symbolSize : x.symbolSize]);
+    });
+  if (new Set(identities).size !== identities.length) problems.push(`${where}: two Today marks share a marker shape and size [${identities.join(" ")}]`);
+
+  // Label placement: "With InfraVana" is beside its first point, on the side where no Today line runs within its height.
+  const grid = (option as Obj).grid as Obj | undefined;
+  const ymax = (((option as Obj).yAxis as Obj | undefined)?.max as number | undefined) ?? 0;
+  const dotSeries = seriesOf(option).find((x) => x.name === `${INFRAVANA_LABEL} (points)`);
+  const position = (((dotSeries?.label ?? {}) as Obj).position as string | undefined) ?? "";
+  if (dims && grid && ymax > 0 && dotSeries && ((dotSeries.label ?? {}) as Obj).show === true && dots.length > 0) {
+    const plotHeight = dims.height - (grid.top as number) - (grid.bottom as number);
+    const px = (tokens: number) => plotHeight * (1 - tokens / ymax);
+    const labelHeight = t.lineSm + t.space1 + 2;
+    const y = px(dots[0][1]);
+    const [from, to] = position === "top" ? [y - labelHeight, y] : [y, y + labelHeight];
+    const hits = (a: number, b: number) => greys.filter((g) => px(g.alt.tokens_at_budget) >= a - 2 && px(g.alt.tokens_at_budget) <= b + 2);
+    const [otherFrom, otherTo] = position === "top" ? [y, y + labelHeight] : [y - labelHeight, y];
+    // A fault only when the chosen side has a Today line in it and the other side is clear.
+    if (c.view === "quality" && hits(from, to).length > 0 && hits(otherFrom, otherTo).length === 0) {
+      problems.push(`${where}: the InfraVana label (${position}) sits on the Today line of ${hits(from, to)[0].alt.label} while the other side is clear`);
+    }
   }
   return problems;
 }
@@ -258,6 +289,13 @@ export function c10SvgProblems(c: C10Case, svg: string, size: "stage" | "thumb",
   if (size === "thumb" && texts.length > 0) problems.push(`${where}: thumb draws ${texts.length} text nodes, expected none`);
   if (size === "stage" && texts.length === 0) problems.push(`${where}: stage draws no text`);
   if (size === "stage" && !texts.includes(INFRAVANA_LABEL)) problems.push(`${where}: the InfraVana line is not labelled`);
+
+  // The setting's name is drawn above the plot (the top margin of the stage grid is 28px), not on a data line.
+  if (size === "stage" && c10Data(c.results, c.scenario, c.tables, c.view).current_tokens !== null) {
+    const name = placedTexts(svg).filter((p) => p.text === CURRENT_LABEL);
+    if (name.length !== 1) problems.push(`${where}: "${CURRENT_LABEL}" is drawn ${name.length} times, expected 1`);
+    else if (name[0].y > 28) problems.push(`${where}: "${CURRENT_LABEL}" is at y ${name[0].y.toFixed(0)}, inside the plot (top margin 28px)`);
+  }
 
   // End labels (wide quality view): one per reference line, apart from each other, inside the canvas.
   if (size === "stage" && dims.width >= 600 && c.view === "quality") {
@@ -365,7 +403,7 @@ export function runC10Checks(label: string, scenario: Scenario, tables: Tables, 
         problems.push(`${where}: draw threw ${e instanceof Error ? e.message : String(e)}`);
         continue;
       }
-      problems.push(...c10OptionProblems(c, option, where), ...c10SvgProblems(c, svg, size, dims, where));
+      problems.push(...c10OptionProblems(c, option, where, size === "stage" ? dims : undefined), ...c10SvgProblems(c, svg, size, dims, where));
     }
     problems.push(...c10MarkupProblems(c10Markup(c, view), view, reason === null, reason, `${label} C10 ${view} markup`));
     problems.push(...c10BoxProblems(c, boxesOf(c), `${label} C10 ${view} boxes`));
@@ -424,6 +462,16 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
     expect(v("(3) the marker is at the wrong height"), c10OptionProblems(c, edit(option, CURRENT_LABEL, (s) => mapData(s, (d) => withValue(d, [valueOf(d)[0], valueOf(d)[1] * 0.97]))), view));
     expect(v("(3) there is no marker"), c10OptionProblems(c, edit(option, CURRENT_LABEL, (s) => ({ ...s, data: [] })), view));
     expect(v("the InfraVana line is solid whatever its provenance"), c10OptionProblems(c, edit(option, INFRAVANA_LABEL, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), type: "solid" } })), view));
+    const flipped = (position: string) => edit(option, dots, (s) => ({ ...s, label: { ...(s.label as Obj), position } }));
+    if (view === "quality") {
+      // The label on either side where a Today line runs within its height: caught (S1: the 13.4B line above the frontier).
+      const wrong = ["top", "bottom"].find((p) => c10OptionProblems(c, flipped(p), view, dims).length > 0);
+      if (wrong) expect(v("the InfraVana label sits on a Today line"), c10OptionProblems(c, flipped(wrong), view, dims), c10OptionProblems(c, option, view, dims));
+      else notes.push(`C10 self-test ${view}: no Today line is near the InfraVana label here; placement not exercised`);
+      // The comparator's tick swapped for an option's circle: two Today marks share a marker.
+      const cmpName = markName(data.today[0]);
+      expect(v("a Today mark takes another's marker"), c10OptionProblems(c, edit(option, cmpName, (s) => mapData(s, (d, i) => (i === 1 ? { ...(d as Obj), symbol: "circle", symbolSize: 10 } : d))), view, dims));
+    }
     expect(v("the InfraVana line is not a step"), c10OptionProblems(c, edit(option, INFRAVANA_LABEL, (s) => ({ ...s, step: undefined })), view));
     const cmp = comparisonOf(results);
     const boxes = boxesOf(c);
@@ -463,6 +511,7 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
         );
         expect(v("end labels sit on top of each other"), c10SvgProblems(c, squashed, "stage", dims, view), cleanSvg);
       }
+      expect(v("the setting's name sits inside the plot"), c10SvgProblems(c, svg.replace(/(<text[^>]*transform="translate\([\d.-]+ )[\d.-]+(\)"[^>]*>Your setting<\/text>)/, "$1200$2"), "stage", dims, view), cleanSvg);
       expect(v("a colour that is not a token"), c10SvgProblems(c, svg.replace(new RegExp(tokens.accentStrong.replace("#", "#?"), "gi"), "#123456"), "stage", dims, view));
     }
   }

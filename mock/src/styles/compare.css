@@ -50,6 +50,11 @@
   border-radius: 50%;
 }
 
+.chart-key__swatch--tick {
+  width: 4px;
+  height: 14px;
+}
+
 .chart-key__swatch--triangle {
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }

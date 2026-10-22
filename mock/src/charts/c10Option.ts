@@ -27,6 +27,8 @@ use([LineChart, ScatterChart, GridComponent, TooltipComponent]);
 
 /** Size in pixels of a Today marker, of a point on the frontier and of the ring at the visitor's setting. */
 export const MARKER_SIZE = 10;
+/** The comparator's marker: a thin vertical tick, a shape no option uses, echoing its bar in C1, C3 and C5. */
+export const TICK_SIZE: [number, number] = [4, 14];
 export const POINT_SIZE = 8;
 export const RING_SIZE = 14;
 
@@ -48,9 +50,20 @@ interface Tipped {
   [key: string]: unknown;
 }
 
-/** Marker shape of a Today mark: a circle for the comparator, the rank's shape for an option. */
+/** Marker shape of a Today mark: a thin tick (a `rect` of `TICK_SIZE`) for the comparator, the rank's shape for an option. */
 export function markerOf(mark: TodayMark): "circle" | "rect" | "triangle" | "diamond" {
-  return mark.rank === null ? "circle" : optionStyle(mark.rank).marker;
+  return mark.rank === null ? "rect" : optionStyle(mark.rank).marker;
+}
+
+/** Size of a Today mark's marker: the tick for the comparator, `MARKER_SIZE` for an option. */
+export function markerSizeOf(mark: TodayMark): number | [number, number] {
+  return mark.rank === null ? TICK_SIZE : MARKER_SIZE;
+}
+
+/** Width in pixels of a Today mark's marker. */
+function markerWidthOf(mark: TodayMark): number {
+  const size = markerSizeOf(mark);
+  return typeof size === "number" ? size : size[0];
 }
 
 /** Grey of a Today mark: the first grey for the comparator, the rank's grey for an option. */
@@ -189,7 +202,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       symbol: "none",
       z: 1,
       lineStyle: { color: t.borderStrong, width: t.separatorWidth, type: "solid" },
-      data: [[cx, 0], [cx, data.current_tokens]],
+      data: [[cx, 0], [cx, ymax]],
     } as LineSeriesOption);
   }
 
@@ -200,7 +213,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       value: [x.max, mark.tokens],
       tip: todayTip(mark, data),
       symbol: markerOf(mark),
-      symbolSize: MARKER_SIZE,
+      symbolSize: markerSizeOf(mark),
       // Lines close in height would stack their markers at the right edge, so each stands a marker's width further in.
       symbolOffset: [-i * (MARKER_SIZE + 4), 0],
       itemStyle: { color: colour, borderColor: t.surface, borderWidth: t.savingsOutlineWidth, opacity: 1 },
@@ -210,7 +223,8 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
         align: "left",
         distance: t.space2,
         // The label follows its marker, so it is moved back to the shared column.
-        offset: [i * (MARKER_SIZE + 4), offsets[i]],
+        // A narrower marker (the comparator's tick) puts the label's start closer: add the difference back.
+        offset: [i * (MARKER_SIZE + 4) + (MARKER_SIZE - markerWidthOf(mark)) / 2, offsets[i]],
         formatter: () => labelLines[i].map((l) => `{${l.style}|${l.text}}`).join("\n"),
         rich,
       },
@@ -234,7 +248,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       type: "scatter",
       name: markName(mark),
       symbol: markerOf(mark),
-      symbolSize: MARKER_SIZE,
+      symbolSize: markerSizeOf(mark),
       symbolKeepAspect: true,
       z: 4,
       itemStyle: { color: colour, borderColor: t.surface, borderWidth: t.savingsOutlineWidth, opacity: 1 },
@@ -246,6 +260,15 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
   // point, so a point is the last setting at which the line is that high.
   const points = data.frontier.points;
   const dash = dashOf(data.provenance, t);
+  // The line's name goes beside the first point, on the side where no Today line runs within the label's height:
+  // below by default, above when a reference line runs just below the point; when both sides are crowded,
+  // on the side with the larger gap to the nearest line.
+  const labelHeight = t.lineSm + t.space1 + 2;
+  const firstY = points.length > 0 ? pixelOf(points[0].infravana_tokens) : 0;
+  const linesPx = lines.map((m) => pixelOf(m.tokens));
+  const gapBelow = Math.min(plotHeight - firstY, ...linesPx.filter((y) => y >= firstY - 2).map((y) => y - firstY));
+  const gapAbove = Math.min(firstY, ...linesPx.filter((y) => y < firstY - 2).map((y) => firstY - y));
+  const infravanaLabelAbove = gapBelow < labelHeight + 2 && gapAbove > gapBelow;
   if (points.length > 0) {
     series.push({
       ...base,
@@ -267,7 +290,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       itemStyle: { color: t.accentStrong, borderColor: t.surface, borderWidth: t.separatorWidth, opacity: 1 },
       label: {
         show: stage,
-        position: "top",
+        position: infravanaLabelAbove ? "top" : "bottom",
         distance: t.space1,
         align: "left",
         color: t.accentStrong,
@@ -300,10 +323,13 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       symbolSize: RING_SIZE,
       z: 6,
       itemStyle: { color: t.surface, borderColor: t.text, borderWidth: t.provenanceWidth, opacity: 1 },
+      // The name sits at the top of the setting's rule, above the plot, not on a data line: the label is lifted
+      // from the ring by the ring's own distance from the top of the plot.
       label: {
         show: stage,
         position: "top",
-        distance: t.space2,
+        distance: t.space1,
+        offset: [0, -pixelOf(data.current_tokens)],
         color: t.text,
         fontSize: t.fontXs,
         fontWeight: t.weightBold,

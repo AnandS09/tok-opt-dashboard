@@ -167,7 +167,7 @@ function C10Key({ data }: { data: C10Data }) {
     <ul className="chart-key" aria-label="Key to the lines and markers">
       {data.today.map((m) => {
         const fill = m.rank === null ? "today1" : optionStyle(m.rank).fill;
-        return swatch(m.alt.pattern_id, markerOf(m), FILL_VAR[fill], `${markName(m)}: ${figures(m)}`);
+        return swatch(m.alt.pattern_id, m.rank === null ? "tick" : markerOf(m), FILL_VAR[fill], `${markName(m)}: ${figures(m)}`);
       })}
     </ul>
   );
