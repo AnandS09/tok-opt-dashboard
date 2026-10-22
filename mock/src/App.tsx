@@ -11,7 +11,8 @@ import { openShareOf, ResultNotices } from "./components/ResultNotices";
 import { Skeleton } from "./components/Skeleton";
 import { Stage } from "./components/Stage";
 import { ComparatorSlot, GoalTabsSlot } from "./components/StageSlots";
-import type { GoalId, PatternId, Results, Scenario, ScenarioResponse } from "./contract";
+import { speedUnavailableReason } from "./compute";
+import type { GoalId, GoalView, PatternId, Results, Scenario, ScenarioResponse, TradeoffView } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
@@ -26,6 +27,7 @@ import {
   type StageDirection,
   type StageSlotContext,
 } from "./store/stage";
+import { clampStep, computeTradeoff, tradeoffLevels, tradeoffView, type TradeoffLevels } from "./store/tradeoff";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
@@ -123,9 +125,30 @@ export default function App() {
   // Every knob change recomputes locally through compute() (computeForView), throttled while a slider is dragged.
   // The goal, comparator and G4 steps join the scenario here; the chart in focus does not, so changing chart never recomputes.
   const { goal, comparator, qualityStep, speedStep } = view;
+  // G4's controls have a fixed set of positions for these answers; a step from the address or an
+  // earlier choice that is past the last one is held to it.
+  const tradeoffPositions = useMemo<TradeoffLevels | null>(() => {
+    if (goal !== "G4" || !scenario || !tables || !answered) return null;
+    try {
+      return tradeoffLevels(scenario, tables, { comparator });
+    } catch {
+      // The page shows the engine's own error for answers it cannot work out.
+      return null;
+    }
+  }, [goal, scenario, tables, answered, comparator]);
+  const steps = useMemo(
+    () =>
+      tradeoffPositions
+        ? {
+            qualityStep: clampStep(qualityStep, tradeoffPositions.quality),
+            speedStep: clampStep(speedStep, tradeoffPositions.speed),
+          }
+        : { qualityStep, speedStep },
+    [tradeoffPositions, qualityStep, speedStep],
+  );
   const viewedScenario = useMemo(
-    () => (scenario && tables ? withView(scenario, { goal, comparator, qualityStep, speedStep }, tables) : scenario),
-    [scenario, tables, goal, comparator, qualityStep, speedStep],
+    () => (scenario && tables && answered ? withView(scenario, { goal, comparator, ...steps }, tables) : scenario),
+    [scenario, tables, answered, goal, comparator, steps],
   );
   const liveScenario = useThrottledValue(viewedScenario, RECOMPUTE_MS);
   // G2 and G3 are solved on the worker, from the scenario as it is now (the solver's own debounce
@@ -137,15 +160,33 @@ export default function App() {
     tables,
     enabled: answered && response?.verdict === "ok" && tabStates !== null && !tabStates[goal].disabled,
   });
-  const computed = useMemo<{ results: Results | null; error: string | null }>(() => {
-    if (!tables || !liveScenario || response?.verdict !== "ok") return { results: null, error: null };
+  const computed = useMemo<{ results: Results | null; error: string | null; tradeoff: TradeoffView | null }>(() => {
+    if (!tables || !liveScenario || response?.verdict !== "ok") return { results: null, error: null, tradeoff: null };
     try {
-      return { results: computeForView(liveScenario, tables), error: null };
+      if (liveScenario.goal === "G4" && liveScenario.tradeoff && tradeoffPositions) {
+        // G4 is two calls: the visitor's own floors and speed, and the trade-off (spec 6.2).
+        const calls = computeTradeoff(liveScenario, tables);
+        const shown = {
+          qualityStep: liveScenario.tradeoff.quality_step,
+          speedStep: liveScenario.tradeoff.speed_step,
+        };
+        return {
+          results: calls.traded ?? calls.untraded,
+          error: null,
+          tradeoff: tradeoffView(calls, tradeoffPositions, shown),
+        };
+      }
+      return { results: computeForView(liveScenario, tables), error: null, tradeoff: null };
     } catch (error) {
-      return { results: null, error: messageOf(error) };
+      return { results: null, error: messageOf(error), tradeoff: null };
     }
-  }, [tables, liveScenario, response?.verdict]);
+  }, [tables, liveScenario, response?.verdict, tradeoffPositions]);
   const { results } = computed;
+  // The solve of G2 and G3, or G4's two calls, as the page and its charts read the active tab.
+  const tabView = useMemo<GoalView>(
+    () => (computed.tradeoff ? { ...goalView, tradeoff: computed.tradeoff } : goalView),
+    [goalView, computed.tradeoff],
+  );
 
   // Charts in registry order, limited to the ones the scenario asked for and that exist.
   const slides = useMemo(
@@ -158,12 +199,19 @@ export default function App() {
   const active = activeIndex(slides, view.slide);
   useStageHash(view, stageShown ? slides[active].id : null, stageDispatch);
 
-  // A tab that cannot be chosen for these answers (G3 with no team work, G4 until its controls exist)
-  // cannot stay active, so a link or an edit that lands on one returns to G1.
+  // A tab that cannot be chosen for these answers (G3 with no team work) cannot stay active,
+  // so a link or an edit that lands on one returns to G1.
   const goalBlocked = tabStates?.[goal].disabled ?? false;
   useEffect(() => {
     if (stageShown && goalBlocked) stageDispatch({ type: "goal_set", goal: "G1" });
   }, [stageShown, goalBlocked, stageDispatch]);
+
+  // A step the control does not have (a link naming step 9) is rewritten to the nearest one it has.
+  useEffect(() => {
+    if (stageShown && goal === "G4" && (steps.qualityStep !== qualityStep || steps.speedStep !== speedStep)) {
+      stageDispatch({ type: "steps_set", ...steps });
+    }
+  }, [stageShown, goal, steps, qualityStep, speedStep, stageDispatch]);
 
   const slideTo = useCallback(
     (index: number, direction: StageDirection) => {
@@ -179,7 +227,7 @@ export default function App() {
           scenario: liveScenario,
           tables,
           results,
-          goalView,
+          goalView: tabView,
           setGoal: (next: GoalId) => stageDispatch({ type: "goal_set", goal: next }),
           setComparator: (next: PatternId | null) => stageDispatch({ type: "comparator_set", comparator: next }),
           setSteps: (steps) => stageDispatch({ type: "steps_set", ...steps }),
@@ -299,7 +347,14 @@ export default function App() {
         {results && slotContext ? (
           <>
             <GoalTabsSlot ctx={slotContext} />
-            <HeadlineStrip goal={goal} results={results} scenario={slotContext.scenario} goalView={goalView} contactUrl={CONTACT_URL} />
+            <HeadlineStrip
+              goal={goal}
+              results={results}
+              scenario={slotContext.scenario}
+              goalView={tabView}
+              onSteps={slotContext.setSteps}
+              contactUrl={CONTACT_URL}
+            />
             <ComparatorSlot ctx={slotContext} />
             <ResultNotices results={results} tables={tables} />
             <Stage
@@ -331,7 +386,10 @@ export default function App() {
       <main className="page" id="main-content">
         {body}
       </main>
-      <Footer onOpenAssumptions={tables && response && answered ? () => setPanelOpen(true) : undefined} />
+      <Footer
+        inventedSpeed={tables ? speedUnavailableReason(tables) === null : false}
+        onOpenAssumptions={tables && response && answered ? () => setPanelOpen(true) : undefined}
+      />
       {panelOpen && tables && response && scenario ? (
         <AssumptionsPanel
           tables={tables}
