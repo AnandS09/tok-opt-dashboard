@@ -1,0 +1,80 @@
+/*
+ * Benefit boxes (spec 6.4) in the Research Note language (spec 14.3): a ruled
+ * row of figures, serif numbers, a small comparator line. No cards, no
+ * shadows, 2px corners or none; every value comes from tokens.css.
+ */
+
+.benefit-boxes {
+  min-width: 0;
+}
+
+.benefit-boxes__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.benefit-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 1px solid var(--color-border);
+}
+
+.benefit-box:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.benefit-box__value {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-variant-numeric: var(--font-numeric);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+}
+
+/* Money saved is the one place the saving colour is used (spec 14.1). */
+.benefit-boxes--saved .benefit-box__value {
+  color: var(--color-positive);
+}
+
+.benefit-box__label {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+}
+
+.benefit-box__comparator {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-style: italic;
+}
+
+/* On a phone the figures stack, ruled apart, so no label is squeezed into a third of the width. */
+@media (max-width: 600px) {
+  .benefit-boxes__list {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-box {
+    padding: var(--space-3) 0;
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .benefit-box:first-child {
+    border-top: 0;
+  }
+
+  .benefit-box__value {
+    font-size: var(--font-size-xl);
+  }
+}

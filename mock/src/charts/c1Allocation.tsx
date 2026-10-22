@@ -14,6 +14,7 @@ import type {
 } from "../contract";
 import { fmtPct, fmtUsd, fmtUsdFull, fmtUsdSig } from "../shared/format";
 import { baseOption, tooltipChrome } from "./base";
+import { allocationBenefits } from "./benefits";
 import { isSavings, planBar } from "./c1Plan";
 import type { PlannedSegment } from "./c1Plan";
 import { ChartFigure } from "./ChartFigure";
@@ -562,7 +563,6 @@ export const allocationChart: ChartDef = {
   caption: allocationCaption,
   howComputed: ALLOCATION_HOW_COMPUTED,
   toCsv: allocationCsv,
-  // Benefit boxes (spec 6.4) are built in a later step.
-  benefits: (_results, _context) => [],
+  benefits: allocationBenefits,
   Component: AllocationChart,
 };

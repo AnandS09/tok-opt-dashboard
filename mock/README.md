@@ -24,6 +24,7 @@ Run from this directory.
 | Path | Purpose |
 |---|---|
 | `src/contract.ts` | Types only: CSV rows, `Scenario`, `Results`, `ChartDef`, `ChartProps`. It is the interface between compute, charts and the page shell, so a change affects all three. |
+| `src/charts/benefits.ts` | The benefit boxes of C1, C3 and C5 (spec 6.4): candidates in table order, the first three that are non-zero and do not repeat the tab's headline; every number derived from `Results` and the `BenefitContext`, each box naming its comparator. `components/BenefitBoxes.tsx` draws them (`styles/benefits.css`) and keeps the caption as their accessible name. |
 | `src/charts/registry.ts` | `chartRegistry`, the ordered list of `ChartDef`s |
 | `public/data/` | Fixture CSVs per spec 7.3 (invented placeholder data) |
 | `src/App.tsx` | The page: loads the tables once, holds the one `Scenario` the knobs edit, calls `compute()` (throttled while a slider is dragged) and lays out the shell |
