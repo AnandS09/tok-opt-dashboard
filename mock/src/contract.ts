@@ -755,6 +755,25 @@ export interface FrontierResult {
 export interface ChartProps {
   results: Results;
   size: "stage" | "thumb";
+  /**
+   * The goal tab the chart is drawn for (spec 6.2). Only a chart whose figures
+   * change with the tab reads it (C5); the others ignore it. Absent means G1.
+   */
+  goalView?: GoalView;
+}
+
+/**
+ * The active goal tab and, in G2 and G3, the state of its solve (spec 6.2).
+ * `solve` is the latest result for the tab's own axis, or null while none has
+ * arrived; `stale` is true while it belongs to an earlier input than the page
+ * now shows, so a chart can dim it.
+ */
+export interface GoalView {
+  goal: GoalId;
+  solve: SolveResult | null;
+  stale: boolean;
+  /** The solver's failure message, or null. */
+  error: string | null;
 }
 
 /**
@@ -768,7 +787,7 @@ export interface ChartDef {
    * One-sentence takeaway: the chart's accessible name and table caption
    * (spec 6.4). The benefit boxes replace it on the page once they are built.
    */
-  caption: (results: Results) => string;
+  caption: (results: Results, goalView?: GoalView) => string;
   /**
    * Short plain-language explanation for the "How this is computed" drawer
    * (spec 9). Static text; no jargon (spec 3).
