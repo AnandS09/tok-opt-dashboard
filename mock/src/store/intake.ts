@@ -142,6 +142,15 @@ export function setCustomers(s: Scenario, customers: number): Scenario {
   return { ...s, baseline: { ...s.baseline, customers: clampToRange(Math.round(customers), CUSTOMERS_RANGE) } };
 }
 
+/**
+ * Customer work with no customer count counts for nothing (demand reads it as
+ * 0), so customer work added after the questions (the sentence's work blank,
+ * the fine-tune sliders) starts at the usual 50,000.
+ */
+export function withCustomers(s: Scenario, tables: Tables): Scenario {
+  return s.baseline.customers === undefined && hasBasis(s, tables, "customer") ? setCustomers(s, 50_000) : s;
+}
+
 export function setBudget(s: Scenario, budget: number): Scenario {
   return { ...s, baseline: { ...s.baseline, budget_usd_per_quarter: clampToRange(budget, BUDGET_USD_PER_QUARTER_RANGE) } };
 }

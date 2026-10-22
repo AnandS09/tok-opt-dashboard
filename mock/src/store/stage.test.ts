@@ -65,3 +65,23 @@ describe("the page's compute call with a stored comparator", () => {
     expect(() => computeForView(broken, tables)).toThrow();
   });
 });
+
+describe("a G4 link, now that the G4 tab exists", () => {
+  it("applies the steps to the InfraVana plan only, so Today stays at the visitor's own floors and speed", () => {
+    const g4 = withView(s1, { goal: "G4", comparator: null, qualityStep: 1, speedStep: 1 }, tables);
+    expect(g4.tradeoff).toEqual({ quality_step: 1, speed_step: 1 });
+    const traded = computeForView(g4, tables);
+    const own = compute(s1, tables);
+    expect(traded.allocation.total_usd).toBe(own.allocation.total_usd);
+    expect(traded.today_alternatives).toEqual(own.today_alternatives);
+    expect(traded.headline.cost_savings_pct).toBeGreaterThan(own.headline.cost_savings_pct);
+  });
+
+  it("leaves the steps out of every other tab", () => {
+    for (const goal of ["G1", "G2", "G3"] as const) {
+      const scenario = withView(s1, { goal, comparator: null, qualityStep: 9, speedStep: 2 }, tables);
+      expect(scenario.tradeoff).toBeUndefined();
+      expect(computeForView(scenario, tables).headline).toEqual(compute(s1, tables).headline);
+    }
+  });
+});
