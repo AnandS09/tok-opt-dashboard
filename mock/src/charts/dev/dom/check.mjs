@@ -25,9 +25,15 @@
  *   mkdir /tmp/jsdom-for-check && cd /tmp/jsdom-for-check && npm install jsdom
  *   JSDOM_DIR=/tmp/jsdom-for-check node src/charts/dev/dom/check.mjs   (from mock/)
  *
- * It runs the app twice: once as it is (must pass), once with a fault put
- * into C3's option builder by a transform (must fail), so a pass is never vacuous.
- * Exit code 0 only when the first passes and the second fails.
+ * It also reads the benefit boxes of each chart (spec 6.4, 14.3): one to
+ * three boxes, each with a non-zero printed number, a label and a comparator
+ * line, the caption as the accessible name, no shadow or round corner; and,
+ * under another comparator, that every box names the one the selector shows.
+ *
+ * It runs the app once as it is (must pass), then once per entry of `FAULTS`
+ * with that fault put into the source by a transform (each must fail), so a
+ * pass is never vacuous. Exit code 0 only when the first passes and all the
+ * others fail.
  */
 import fs from "node:fs";
 import os from "node:os";
@@ -48,6 +54,49 @@ const IDS = ["C1", "C5", "C3"];
 /** The first statements of C3's option builder: the fault is put in front of them. */
 const FAULT_SITE = "const cmp = comparisonOf(results);\n  const sides = sidesOf(cmp);\n  const rows = shownRows(results, cmp);";
 
+/**
+ * Negative controls: each rewrites one line of the app and must make this check fail.
+ * `file` is the end of the module's path, `from` the exact text replaced.
+ */
+const FAULTS = [
+  {
+    name: "fault-in-c3",
+    file: "charts/c3CostPerMtok.tsx",
+    from: FAULT_SITE,
+    to: `throw new Error("negative control");\n  ${FAULT_SITE}`,
+  },
+  {
+    name: "no-benefit-boxes",
+    file: "components/StageSlots.tsx",
+    from: "const boxes = attempt(() => def.benefits(results, context), []);",
+    to: "const boxes = [];",
+  },
+  {
+    name: "box-without-comparator",
+    file: "charts/benefits.ts",
+    from: "return `vs ${comparisonOf(results).label}`;",
+    to: 'return "";',
+  },
+  {
+    name: "four-boxes",
+    file: "charts/benefits.ts",
+    from: "export const MAX_BOXES = 3;",
+    to: "export const MAX_BOXES = 4;",
+  },
+  {
+    name: "caption-lost",
+    file: "components/BenefitBoxes.tsx",
+    from: "aria-labelledby={captionId}",
+    to: "",
+  },
+  {
+    name: "box-shadow",
+    file: "components/BenefitBoxes.tsx",
+    from: '<ul className="benefit-boxes__list">',
+    to: '<ul className="benefit-boxes__list" style={{ boxShadow: "0 1px 3px black" }}>',
+  },
+];
+
 function findJsdom() {
   const candidates = [process.env.JSDOM_DIR, root].filter(Boolean);
   for (const dir of candidates) {
@@ -64,15 +113,15 @@ function findJsdom() {
   return null;
 }
 
-async function buildApp(outFile, withFault) {
+async function buildApp(outFile, fault) {
   const { build } = await import(pathToFileURL(path.join(root, "node_modules/vite/dist/node/index.js")).href);
   const mutation = {
-    name: "put-a-fault-in-c3",
+    name: "put-a-fault-in",
     enforce: "pre",
     transform(code, id) {
-      if (!withFault || !id.endsWith("charts/c3CostPerMtok.tsx")) return null;
-      if (!code.includes(FAULT_SITE)) throw new Error("check.mjs: C3's option builder changed; update FAULT_SITE in check.mjs");
-      return { code: code.replace(FAULT_SITE, `throw new Error("negative control");\n  ${FAULT_SITE}`), map: null };
+      if (!fault || !id.endsWith(fault.file)) return null;
+      if (!code.includes(fault.from)) throw new Error(`check.mjs: ${fault.file} changed; update the "${fault.name}" fault in check.mjs`);
+      return { code: code.replace(fault.from, fault.to), map: null };
     },
   };
   await build({
@@ -103,9 +152,9 @@ async function parent() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "dom-check-"));
   try {
     const outcomes = {};
-    for (const [name, withFault] of [["as-is", false], ["fault-in-c3", true]]) {
+    for (const [name, fault] of [["as-is", null], ...FAULTS.map((f) => [f.name, f])]) {
       const out = path.join(tmp, `${name}.mjs`);
-      await buildApp(out, withFault);
+      await buildApp(out, fault);
       const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--child", out], {
         env: { ...process.env, DOM_CHECK_JSDOM: jsdom },
         encoding: "utf8",
@@ -114,10 +163,11 @@ async function parent() {
       console.log(`--- ${name} (exit ${run.status})\n${run.stdout}${run.stderr && !run.stdout ? run.stderr : ""}`);
     }
     const good = outcomes["as-is"].status === 0;
-    const controlRed = outcomes["fault-in-c3"].status === 1;
-    console.log(`as-is passes: ${good ? "yes" : "NO"}; negative control fails: ${controlRed ? "yes" : "NO"}`);
-    console.log(good && controlRed ? "ALL OK" : "FAILED");
-    process.exit(good && controlRed ? 0 : 1);
+    const red = FAULTS.map((f) => [f.name, outcomes[f.name].status === 1]);
+    const controlsRed = red.every(([, r]) => r);
+    console.log(`as-is passes: ${good ? "yes" : "NO"}; negative controls that fail: ${red.map(([n, r]) => `${n} ${r ? "yes" : "NO"}`).join(", ")}`);
+    console.log(good && controlsRed ? "ALL OK" : "FAILED");
+    process.exit(good && controlsRed ? 0 : 1);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
@@ -346,6 +396,39 @@ async function child(bundle) {
     }
     return cards[0] ? chartState(cards[0]) : null;
   };
+  /**
+   * The benefit boxes of the chart on the stage (spec 6.4, 14.3): one to three, each with a printed number that is not
+   * zero, a label and a comparator line, the caption kept as the accessible name, and no shadow or round corner.
+   * Returns what is wrong, and the comparator names, so a later step can compare them with the selector.
+   */
+  const readBoxes = (id) => {
+    const slot = doc.querySelector('[data-slot="benefit-boxes"]');
+    const items = slot ? [...slot.querySelectorAll("li.benefit-box")] : [];
+    const problems = [];
+    if (items.length < 1 || items.length > 3) problems.push(`${items.length} boxes`);
+    const comparators = [];
+    for (const li of items) {
+      const [v, l, c] = [".benefit-box__value", ".benefit-box__label", ".benefit-box__comparator"].map(
+        (q) => li.querySelector(q)?.textContent?.trim() ?? "",
+      );
+      if (!/[1-9]/.test(v)) problems.push(`value "${v}"`);
+      if (!l) problems.push("a box has no label");
+      if (!/^vs \S/.test(c)) problems.push(`comparator "${c}"`);
+      comparators.push(c.replace(/^vs /, ""));
+    }
+    const group = slot?.querySelector('[role="group"]');
+    const labelledBy = group?.getAttribute("aria-labelledby");
+    if (!(labelledBy && doc.getElementById(labelledBy)?.textContent?.trim())) problems.push("the caption is not the accessible name");
+    for (const el of slot ? [...slot.querySelectorAll("*")] : []) {
+      const cs = window.getComputedStyle(el);
+      if (cs.boxShadow && cs.boxShadow !== "none") problems.push(`box-shadow ${cs.boxShadow} on ${el.className || el.tagName}`);
+      if (cs.borderRadius && !/^(0|0px|2px)$/.test(cs.borderRadius)) problems.push(`border-radius ${cs.borderRadius} on ${el.className || el.tagName}`);
+    }
+    const boxFailed = problems.length > 0;
+    if (boxFailed) failed++;
+    console.log(`${boxFailed ? "FAIL" : "PASS"} ${id} benefit boxes: ${items.length} shown${boxFailed ? `; ${problems.join("; ")}` : ""}`);
+    return comparators;
+  };
   for (let i = 0; i < IDS.length; i++) {
     if (i > 0) {
       const next = doc.querySelector('button[aria-label="Next chart"]');
@@ -360,6 +443,7 @@ async function child(bundle) {
       await settle(`after next to ${IDS[i]}`);
     }
     stage[IDS[i]] = readSlide(IDS[i]);
+    readBoxes(IDS[i]);
   }
   for (const id of IDS) {
     const pass = drawn(stage[id]);
@@ -395,6 +479,12 @@ async function child(bundle) {
       const pass = drawn(state);
       if (!pass) failed++;
       console.log(`${pass ? "PASS" : "FAIL"} ${IDS[i]} under the new comparator`);
+      // Every box names the comparator the selector now shows.
+      const chosen = select.options[select.selectedIndex].textContent;
+      const names = readBoxes(`${IDS[i]} (new comparator)`);
+      const named = names.length > 0 && names.every((n) => n && chosen.includes(n));
+      if (!named) failed++;
+      console.log(`${named ? "PASS" : "FAIL"} ${IDS[i]} boxes name "${chosen}": ${JSON.stringify(names)}`);
     }
   }
   const messages = logs.filter((l) => !/Not implemented/.test(l));

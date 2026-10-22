@@ -10,13 +10,14 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { compute, scenarioAtTarget } from "../../compute";
+import { benefitHeadcount, compute, scenarioAtTarget } from "../../compute";
 import { loadScenario, loadTables } from "../../data/load";
 import type { Results } from "../../contract";
 import { chartRegistry } from "../registry";
 import { tokensFrom } from "../tokens";
 import type { Tokens } from "../tokens";
 import { runBudgetChecks, runChartChecks, runComparatorChecks, runSelfTests, selectorProblems } from "./renderCheck";
+import { benefitMarkupProblems, benefitSelfTests, benefitStyleProblems } from "./benefitCheck";
 import { sampleResults, sampleResultsEdge } from "./sampleResults";
 
 const mockRoot = process.env.MOCK_ROOT ?? process.cwd();
@@ -86,6 +87,22 @@ const s1 = await loadScenario("http://x/data", "s1");
 for (const id of scenarios) {
   const resp = await loadScenario("http://x/data", id);
   show(`${id}-selector`, { problems: selectorProblems(id, compute(resp.scenario, tables)), notes: [] });
+}
+// Benefit boxes: the markup of every chart's boxes on every shipped scenario and stage, and the stylesheet.
+const benefitCss = fs.readFileSync(path.join(mockRoot, "src/styles/benefits.css"), "utf8");
+show("benefit-style", { problems: benefitStyleProblems(benefitCss), notes: [] });
+show("benefit-self-tests", { problems: benefitSelfTests(benefitCss), notes: [] });
+for (const id of scenarios) {
+  const resp = await loadScenario("http://x/data", id);
+  for (const stage of ["seats", "api", "platform"] as const) {
+    const scenario = { ...resp.scenario, stage_today: stage };
+    const results = compute(scenario, tables);
+    const context = { scenario, goal: "G1" as const, solve: null, frontier: null, headcount: benefitHeadcount(scenario, tables) };
+    const problems = chartRegistry.flatMap((d) =>
+      benefitMarkupProblems(d.benefits(results, context), d.caption(results), `${id}-${stage} ${d.id}`),
+    );
+    show(`${id}-${stage}-benefit-markup`, { problems, notes: [] });
+  }
 }
 show("self-tests", runSelfTests(tokens, compute({ ...s1.scenario, stage_today: "seats" }, tables)));
 console.log(bad === 0 ? "ALL OK" : `FAILED ${bad}`);

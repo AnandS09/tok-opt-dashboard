@@ -7,6 +7,7 @@ import type { EChartsCoreOption } from "echarts/core";
 import type { ChartDef, ChartProps, GoalView, Provenance, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
 import { c5Figures, COVERAGE_MESSAGE_ABOVE } from "../compute/goals";
+import { tokensBoughtBenefits } from "./benefits";
 import type { C5Figures } from "../compute/goals";
 import { ChartFigure } from "./ChartFigure";
 import { BELOW_FLOOR, barRowsHeight, comparisonOf, qualityText } from "./comparison";
@@ -419,7 +420,6 @@ export const tokensBoughtChart: ChartDef = {
   caption: tokensBoughtCaption,
   howComputed: TOKENS_HOW_COMPUTED,
   toCsv: tokensBoughtCsv,
-  // Benefit boxes (spec 6.4) are built in a later step.
-  benefits: (_results, _context) => [],
+  benefits: tokensBoughtBenefits,
   Component: TokensBoughtChart,
 };
