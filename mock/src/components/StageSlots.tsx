@@ -68,11 +68,14 @@ export function ComparatorSlot({ ctx }: { ctx: StageSlotContext }) {
 // ---------------------------------------------------------------------------
 
 export function BenefitsSlot({ def, results, ctx }: { def: ChartDef; results: Results; ctx: StageSlotContext }) {
-  // Solve and frontier are not handed over yet.
-  const context = benefitContext(ctx.scenario, ctx.tables, null, null);
+  // The goal tabs hand over the active tab's solve result (null in G1, and in G2 and G3 until it arrives);
+  // C10 does not yet hand over a frontier. While a solve is on its way the boxes stay and dim.
+  const { solve, stale } = ctx.goalView;
+  const context = benefitContext(ctx.scenario, ctx.tables, solve, null);
   const boxes = attempt(() => def.benefits(results, context), []);
+  const waiting = stale || ((ctx.goalView.goal === "G2" || ctx.goalView.goal === "G3") && solve === null);
   return (
-    <div data-slot="benefit-boxes">
+    <div data-slot="benefit-boxes" data-stale={waiting ? "true" : undefined}>
       <BenefitBoxes boxes={boxes} caption={attempt(() => def.caption(results, ctx.goalView), "")} saved={def.id === "C1"} />
     </div>
   );

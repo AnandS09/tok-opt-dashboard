@@ -2,9 +2,9 @@
  * The `BenefitContext` the benefit boxes read (spec 6.4), built from what the
  * stage already holds. The goal is the scenario's own (`withView` writes the
  * active tab into it; absent means G1). `solve` and `frontier` are passed in
- * by the caller: the stage passes null until the goal tabs and C10 supply
- * their results, and a boxes chart on a solved tab then falls back to the
- * linear figures.
+ * by the caller: the stage passes the active goal tab's solve result (null in G1
+ * and while a solve is on its way) and null for the frontier until C10 supplies
+ * it; a boxes chart on a solved tab with no solve falls back to the linear figures.
  */
 
 import { benefitHeadcount } from "../compute";

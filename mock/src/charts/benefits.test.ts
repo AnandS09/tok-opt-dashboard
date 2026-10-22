@@ -136,10 +136,34 @@ describe("benefit boxes", () => {
       const solve = solveFor(scenario, tables, goal) as SolveResult;
       const context = contextFor(scenario, tables, goal, solve);
       const headline = headlineNumbers(results, context);
-      expect(headline).toEqual([{ unit: "multiple", value: solve.multiple }]);
+      expect(headline[0]).toEqual({ unit: "multiple", value: solve.multiple });
+      expect(headline).toContainEqual({ unit: "multiple", value: solve.infravana_scale });
+      expect(headline).toContainEqual({ unit: "percent", value: solve.infravana_scale * 100 });
       const repeat: BenefitBox = { value: solve.multiple, unit: "multiple", label: "times the work", comparator: "vs x" };
       const other: BenefitBox = { value: solve.multiple + 1, unit: "multiple", label: "other", comparator: "vs x" };
       expect(selectBoxes([repeat, other], headline)).toEqual([other]);
+    }
+  });
+
+  it("on a solved tab, no box restates a scale the hero states, as a multiple or a percentage (acceptance 2)", async () => {
+    const { tables, scenarios } = await load();
+    for (const id of ["s1", "s2"] as const) {
+      for (const goal of ["G2", "G3"] as const) {
+        const scenario = { ...scenarios[id], goal };
+        const results = compute(scenario, tables);
+        const solve = solveFor(scenario, tables, goal) as SolveResult;
+        const context = contextFor(scenario, tables, goal, solve);
+        // What the hero states, written out here from the solve (not read back from headlineNumbers).
+        const stated = [solve.multiple, solve.today_scale, solve.infravana_scale].flatMap((v) => [
+          { unit: "multiple" as const, value: v },
+          { unit: "percent" as const, value: v * 100 },
+        ]);
+        for (const def of chartRegistry) {
+          for (const box of def.benefits(results, context)) {
+            expect(stated.some((h) => h.unit === box.unit && formatBenefitValue(h) === formatBenefitValue(box)), `${id} ${goal} ${def.id}: ${box.label}`).toBe(false);
+          }
+        }
+      }
     }
   });
 

@@ -67,7 +67,8 @@ function candidate(results: Results, value: number, unit: BenefitUnit, label: st
  * The numbers the hero states on the active tab. G1 and G4 state the saving
  * in dollars and percent and the linear multiple, and, when the budget does
  * not cover the work, the coverage percentages. G2 and G3 state the solved
- * multiple. While a solved tab has no solve yet there is no number to repeat.
+ * multiple and each side's solved scale, as a multiple and as a percentage. While a
+ * solved tab has no solve yet there is no number to repeat.
  *
  * G4's hero also states the saving at the visitor's own floors, which comes
  * from a second `compute()` call that `BenefitContext` does not carry; here G4
@@ -75,7 +76,17 @@ function candidate(results: Results, value: number, unit: BenefitUnit, label: st
  */
 export function headlineNumbers(results: Results, context: BenefitContext): HeadlineNumber[] {
   if (context.goal === "G2" || context.goal === "G3") {
-    return context.solve ? [{ unit: "multiple", value: solvedHeadline(context.scenario, context.solve).multiple }] : [];
+    if (!context.solve) return [];
+    const { today_scale, infravana_scale } = context.solve;
+    // The hero states the solved multiple and each side's scale ("1.4x your current work with InfraVana,
+    // 1.0x with <comparator>"); a box that restates a scale as a percentage ("142% of your current work") repeats it too.
+    return [
+      { unit: "multiple", value: solvedHeadline(context.scenario, context.solve).multiple },
+      { unit: "multiple", value: today_scale },
+      { unit: "multiple", value: infravana_scale },
+      { unit: "percent", value: today_scale * PERCENT },
+      { unit: "percent", value: infravana_scale * PERCENT },
+    ];
   }
   const g1 = g1Headline(results);
   const numbers: HeadlineNumber[] = [
