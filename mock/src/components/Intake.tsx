@@ -2,7 +2,11 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { LatencyClass, Results, Scenario, Tables } from "../contract";
 import { fmtInt, joinList, LATENCY_LABEL } from "./format";
 import { fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
+import { BUDGET_USD_PER_QUARTER_RANGE, CUSTOMERS_RANGE, USERS_RANGE } from "../data/ranges";
+import { LogSlider } from "./LogSlider";
+import "../styles/intake.css";
 import {
+  BUDGET_MARKS,
   BUDGETS,
   COMPANIES,
   companyOf,
@@ -35,7 +39,14 @@ const SPEED_HINT: Record<LatencyClass, string> = {
   batch: "Jobs run in the background, as in nightly reports",
 };
 
-const ICON_SHAPES: Record<CompanyType, ReactNode> = {
+const ICON_SHAPES: Record<CompanyType | "provider", ReactNode> = {
+  provider: (
+    <>
+      <rect x="4" y="3" width="16" height="6" rx="1" />
+      <rect x="4" y="15" width="16" height="6" rx="1" />
+      <path d="M7 6h.01M7 18h.01M12 9v6" />
+    </>
+  ),
   ai_first: (
     <>
       <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z" />
@@ -200,20 +211,34 @@ export function IntakeQuestions({
       </button>
     ));
 
+  // Every step but the company type and the sliders is a ruled list of equal rows (spec 4.3, 5.1).
+  let listClass = "choices--list choices--plain";
   let title: string;
   let choices: ReactNode;
   switch (current) {
     case "company":
       title = "What kind of company are you?";
-      choices = COMPANIES.map((c) => (
-        <button key={c.id} type="button" className="choice" aria-pressed={company === c.id} onClick={() => pickCompany(c)}>
-          <svg className="choice__icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-            {ICON_SHAPES[c.id]}
-          </svg>
-          <span className="choice__label">{c.title}</span>
-          <span className="choice__hint">{c.line}</span>
-        </button>
-      ));
+      listClass = "choices--list";
+      choices = (
+        <>
+          {COMPANIES.map((c) => (
+            <button key={c.id} type="button" className="choice" aria-pressed={company === c.id} onClick={() => pickCompany(c)}>
+              <svg className="choice__icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                {ICON_SHAPES[c.id]}
+              </svg>
+              <span className="choice__label">{c.title}</span>
+              <span className="choice__hint">{c.line}</span>
+            </button>
+          ))}
+          <a className="choice choice--provider" href={contactUrl}>
+            <svg className="choice__icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              {ICON_SHAPES.provider}
+            </svg>
+            <span className="choice__label">I sell AI compute</span>
+            <span className="choice__hint">Cloud or GPU provider: talk to us instead</span>
+          </a>
+        </>
+      );
       break;
     case "work":
       title = "What do you use AI for?";
@@ -234,23 +259,51 @@ export function IntakeQuestions({
       break;
     case "users":
       title = "How many people on your team will use AI?";
-      choices = single(
-        (info?.teamSizes ?? []).map((n) => ({ value: String(n), label: `About ${fmtInt(n)}`, hint: "people" })),
-        (s, v) => setUsers(s, Number(v)),
+      listClass = "choices--slider";
+      choices = (
+        <LogSlider
+          label={title}
+          unit="people"
+          range={USERS_RANGE}
+          marks={info?.teamSizes ?? []}
+          marksLabel="Common team sizes"
+          value={users}
+          formatMark={fmtInt}
+          onChange={(n) => onEdit((s) => setUsers(s, n))}
+        />
       );
       break;
     case "customers":
       title = `How many ${customerWord} use your AI?`;
-      choices = single(
-        (info?.customerCounts ?? []).map((n) => ({ value: String(n), label: `About ${fmtInt(n)}`, hint: customerWord })),
-        (s, v) => setCustomers(s, Number(v)),
+      listClass = "choices--slider";
+      choices = (
+        <LogSlider
+          label={title}
+          unit={customerWord}
+          range={CUSTOMERS_RANGE}
+          marks={info?.customerCounts ?? []}
+          marksLabel={`Common numbers of ${customerWord}`}
+          value={customers}
+          formatMark={fmtInt}
+          onChange={(n) => onEdit((s) => setCustomers(s, n))}
+        />
       );
       break;
     case "budget":
       title = "What is your AI budget each quarter?";
-      choices = single(
-        BUDGETS.map((n) => ({ value: String(n), label: fmtUsd(n), hint: "a quarter" })),
-        (s, v) => setBudget(s, Number(v)),
+      listClass = "choices--slider";
+      choices = (
+        <LogSlider
+          label={title}
+          unit={null}
+          money
+          range={BUDGET_USD_PER_QUARTER_RANGE}
+          marks={BUDGET_MARKS}
+          marksLabel="Common budgets"
+          value={budget}
+          formatMark={fmtUsd}
+          onChange={(n) => onEdit((s) => setBudget(s, n))}
+        />
       );
       break;
     case "speed":
@@ -265,7 +318,7 @@ export function IntakeQuestions({
   const chips = steps.filter((step) => step !== current && answered.includes(step));
 
   return (
-    <section className="intake card" aria-labelledby="intake-title">
+    <section className={`intake card intake--${current}`} aria-labelledby="intake-title">
       <div className="intake__main">
         <label className="intake__step">
           {info ? `Step ${index + 1} of ${steps.length}` : "Step 1"}
@@ -292,7 +345,7 @@ export function IntakeQuestions({
           {title}
         </h2>
         {current === "work" ? <p className="intake__note">Pick all that apply.</p> : null}
-        <div className="choices" role="group" aria-labelledby="intake-title">
+        <div className={`choices ${listClass}`} role="group" aria-labelledby="intake-title">
           {choices}
         </div>
         <div className="intake__nav">
@@ -306,7 +359,7 @@ export function IntakeQuestions({
               Back
             </button>
           ) : null}
-          {current === "work" ? (
+          {current === "work" || current === "users" || current === "customers" || current === "budget" ? (
             <button
               type="button"
               className="button button--primary"
@@ -317,22 +370,11 @@ export function IntakeQuestions({
             </button>
           ) : null}
         </div>
-        {current === "company" ? (
-          <a className="intake__aside" href={contactUrl}>
-            I sell AI compute (cloud or GPU provider)
-          </a>
-        ) : null}
       </div>
-      <Estimate
-        results={results}
-        note={
-          company === null
-            ? "Pick your company type to start."
-            : stuck
-              ? "Pick at least one kind of work."
-              : null
-        }
-      />
+      {/* Step 1 has nothing to estimate yet, so the panel starts at step 2 (spec 4.3). */}
+      {current === "company" ? null : (
+        <Estimate results={results} note={stuck ? "Pick at least one kind of work." : null} />
+      )}
     </section>
   );
 }
