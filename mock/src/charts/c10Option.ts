@@ -201,13 +201,16 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       tip: todayTip(mark, data),
       symbol: markerOf(mark),
       symbolSize: MARKER_SIZE,
+      // Lines close in height would stack their markers at the right edge, so each stands a marker's width further in.
+      symbolOffset: [-i * (MARKER_SIZE + 4), 0],
       itemStyle: { color: colour, borderColor: t.surface, borderWidth: t.savingsOutlineWidth, opacity: 1 },
       label: {
         show: labelled,
         position: "right",
         align: "left",
         distance: t.space2,
-        offset: [0, offsets[i]],
+        // The label follows its marker, so it is moved back to the shared column.
+        offset: [i * (MARKER_SIZE + 4), offsets[i]],
         formatter: () => labelLines[i].map((l) => `{${l.style}|${l.text}}`).join("\n"),
         rich,
       },
@@ -270,6 +273,9 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
         color: t.accentStrong,
         fontSize: t.fontSm,
         fontWeight: t.weightBold,
+        // On the chart's ground, so a Today line behind the text does not strike it through.
+        backgroundColor: t.surface,
+        padding: [1, 3],
         formatter: (p: { dataIndex: number }) => (p.dataIndex === 0 ? INFRAVANA_LABEL : ""),
       },
       data: points.map((p) => ({
@@ -301,6 +307,8 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
         color: t.text,
         fontSize: t.fontXs,
         fontWeight: t.weightBold,
+        backgroundColor: t.surface,
+        padding: [1, 3],
         formatter: () => CURRENT_LABEL,
       },
       data: [

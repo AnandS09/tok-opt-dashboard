@@ -162,7 +162,7 @@ function C10Key({ data }: { data: C10Data }) {
     </li>
   );
   const figures = (m: C10Data["today"][number]) =>
-    `${fmtTokensSig(m.tokens)} tokens${m.speed === null ? "" : `, ${Math.round(m.speed)} tokens a second`}`;
+    `${fmtTokensSig(m.tokens)} tokens${m.speed === null ? (data.view === "speed" ? ", no speed data, drawn as a line" : "") : `, ${Math.round(m.speed)} tokens a second`}`;
   return (
     <ul className="chart-key" aria-label="Key to the lines and markers">
       {data.today.map((m) => {
