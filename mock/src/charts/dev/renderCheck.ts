@@ -70,7 +70,7 @@ export interface CheckReport {
   notes: string[];
 }
 
-function renderSvg(option: EChartsCoreOption, dims: Dims): string {
+export function renderSvg(option: EChartsCoreOption, dims: Dims): string {
   const chart = init(null, undefined, { renderer: "svg", ssr: true, width: dims.width, height: dims.height });
   try {
     chart.setOption(option);
@@ -144,7 +144,7 @@ const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 const RGB = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/g;
 
 /** The stylesheet zrender's server-side renderer adds to every svg (animation and hover rules). */
-const STYLE_BLOCK = /<style[^>]*>[\s\S]*?<\/style>/g;
+export const STYLE_BLOCK = /<style[^>]*>[\s\S]*?<\/style>/g;
 
 function toHex(r: string, g: string, b: string): string {
   return `#${[r, g, b].map((v) => Number(v).toString(16).padStart(2, "0")).join("")}`;
@@ -162,7 +162,7 @@ function toHex(r: string, g: string, b: string): string {
  * separately as `hoverOnly`, so a colour that appears only there is reported
  * in the notes, and any colour drawn on a shape is still checked.
  */
-function coloursOf(svg: string): { drawn: Set<string>; hoverOnly: Set<string> } {
+export function coloursOf(svg: string): { drawn: Set<string>; hoverOnly: Set<string> } {
   const read = (text: string) => {
     const out = new Set<string>();
     for (const m of text.match(HEX) ?? []) out.add(m.toLowerCase());
@@ -182,16 +182,16 @@ const joinedText = (svg: string): string => textsOf(svg).join(" ");
 const countOf = (text: string, phrase: string): number => text.split(phrase).length - 1;
 
 /** Texts drawn into an svg. */
-function textsOf(svg: string): string[] {
+export function textsOf(svg: string): string[] {
   return [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
 }
 
 /** Series of an ECharts option, as the loosely typed objects the builders return. */
-type Obj = Record<string, unknown>;
-const seriesOf = (option: EChartsCoreOption): Obj[] => ((option as Obj).series as Obj[]) ?? [];
-const dataOf = (s: Obj): (Obj | null)[] => (s.data as (Obj | null)[]) ?? [];
+export type Obj = Record<string, unknown>;
+export const seriesOf = (option: EChartsCoreOption): Obj[] => ((option as Obj).series as Obj[]) ?? [];
+export const dataOf = (s: Obj): (Obj | null)[] => (s.data as (Obj | null)[]) ?? [];
 const styleOf = (d: Obj | null): Obj => ((d?.itemStyle as Obj | undefined) ?? {}) as Obj;
-const sameDash = (a: unknown, b: number[]): boolean =>
+export const sameDash = (a: unknown, b: number[]): boolean =>
   Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
 
 /** The provenance a drawn outline stands for, read back from its dash array. */
@@ -647,11 +647,18 @@ export function runChartChecks(label: string, results: Results, tokens: Tokens):
 
   problems.push(...designTableProblems());
   const ids = chartRegistry.map((c) => c.id).join(",");
-  if (ids !== "C1,C5,C3") problems.push(`registry order is ${ids}, expected C1,C5,C3`);
+  if (ids !== "C1,C5,C3,C10") problems.push(`registry order is ${ids}, expected C1,C5,C3,C10`);
 
   const allowed = new Set(Object.values(tokens).filter((v): v is string => typeof v === "string").map((v) => v.toLowerCase()));
   for (const def of chartRegistry) {
     if (def.title.trim() === "" || def.howComputed.trim() === "") problems.push(`${def.id}: empty title or howComputed`);
+    // C10 draws from the scenario and the tables as well, so `runC10Checks` draws it; the text checks run here.
+    if (def.id === "C10") {
+      checkCaption(def, results, problems, label);
+      checkCsv(def, results, problems, notes, label);
+      checkMarkup(def, results, problems, label);
+      continue;
+    }
     const build = BUILDERS[def.id];
     if (!build) {
       problems.push(`${def.id}: no option builder known to this check`);
