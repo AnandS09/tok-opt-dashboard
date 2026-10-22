@@ -1,11 +1,11 @@
 /**
- * Spec 6.2 and 6.3: the two functions that sweep the engine. `solveAtBudget`
- * is implemented; `frontier` is still a typed stub that throws until its
- * step implements it.
+ * Spec 6.2 and 6.3: the two functions that sweep the engine, `solveAtBudget`
+ * and `frontier`. Both call the internal core, not `compute()`.
  */
 
 import type {
   FrontierAxis,
+  FrontierPoint,
   FrontierResult,
   Scenario,
   SolveAxis,
@@ -14,6 +14,9 @@ import type {
 } from "../contract";
 import { USERS_RANGE } from "../data/ranges";
 import { computeCore } from "./core";
+import { SpeedInfeasibleError } from "./infravana";
+import { compositeScores } from "./patterns";
+import { speedUnavailableReason } from "./tradeoff";
 
 /** The scan starts here: one hundredth of the current volume. */
 export const SCAN_START = 0.01;
@@ -228,16 +231,126 @@ export function solveAtBudget(scenario: Scenario, tables: Tables, axis: SolveAxi
   };
 }
 
+/** Which frontier axes can be shown, and why not (a one-line reason, else null). */
+export interface FrontierAvailability {
+  quality: string | null;
+  speed: string | null;
+}
+
+/**
+ * Spec 6.3: the quality view is always available; the speed view needs at
+ * least one proprietary offer with speed data (`speedUnavailableReason`).
+ */
+export function frontierAvailability(tables: Tables): FrontierAvailability {
+  return { quality: null, speed: speedUnavailableReason(tables) };
+}
+
+/** Workloads that carry demand in the scenario's mix. */
+function workloadsInMix(scenario: Scenario, tables: Tables) {
+  const used = tables.workloads.filter((w) => (scenario.workload_mix[w.workload_id] ?? 0) > 0);
+  return used.length > 0 ? used : tables.workloads.filter((w) => w.workload_id in scenario.workload_mix);
+}
+
+/** The visitor's current setting on an axis: the lowest workload floor, or the latency class's minimum speed. */
+function currentThreshold(scenario: Scenario, tables: Tables, axis: FrontierAxis): number {
+  if (axis === "speed") {
+    return tables.manifest.parameters.latency_classes[scenario.latency_class].min_tok_s_per_user;
+  }
+  const floors = workloadsInMix(scenario, tables).map((w) => scenario.quality_floor ?? w.quality_floor);
+  return floors.length > 0 ? Math.min(...floors) : (scenario.quality_floor ?? 0);
+}
+
+/**
+ * The thresholds spec 6.3 sweeps, ascending: the distinct composite scores of
+ * the scenario's workloads (quality), or the distinct `tok_s_per_user` values
+ * of the proprietary offers that carry speed data and of the throughput rows
+ * (speed).
+ */
+export function frontierThresholds(scenario: Scenario, tables: Tables, axis: FrontierAxis): number[] {
+  const values = new Set<number>();
+  if (axis === "quality") {
+    const workloads = new Set(workloadsInMix(scenario, tables).map((w) => w.workload_id));
+    for (const [key, score] of compositeScores(tables)) {
+      if (workloads.has(key.slice(key.indexOf("|") + 1))) values.add(score);
+    }
+  } else {
+    const proprietary = new Set(
+      tables.models.filter((m) => m.license === "proprietary").map((m) => m.model_id),
+    );
+    for (const o of tables.model_offers) {
+      if (proprietary.has(o.model_id) && o.tok_s_per_user !== null) values.add(o.tok_s_per_user);
+    }
+    for (const row of tables.throughput_curves) values.add(row.tok_s_per_user);
+  }
+  return [...values].sort((a, b) => a - b);
+}
+
 /**
  * Spec 6.3 `frontier`: tokens a quarter the budget buys with InfraVana at
- * each threshold of the quality floor or the speed per user. Not implemented
- * yet.
+ * each threshold, for one axis. Each point is one engine run, so a point
+ * equals a direct `computeCore()` at that threshold.
+ *
+ *   - `quality`: one global floor replaces every workload's floor
+ *     (`Scenario.quality_floor`, so each point equals `compute()` on that
+ *     scenario). The speed stays the scenario's.
+ *   - `speed`: the minimum tokens a second per user. It replaces the latency
+ *     class for the InfraVana plan with no limit on time to first token, so
+ *     offers slower than it cannot be used, and a proprietary model may move
+ *     to its own batch or flex tier (spec 7.2 step 3; see `EngineOptions`). A
+ *     threshold at which some model the visitor buys has no offer fast enough
+ *     has no plan and gives no point. Floors stay the scenario's.
+ *
+ * The scenario's own floors and speed apply on the axis not swept, and any G4
+ * trade-off is ignored, as in `solveAtBudget`. Only points not beaten on both
+ * axes are returned (no other point has a threshold at least as high and at
+ * least as many tokens, with one strictly more), ordered by threshold. Higher
+ * is stricter on both axes, so with a monotone engine the tokens never rise as
+ * the threshold tightens, and the filter makes that hold regardless.
+ * `current_threshold` marks the visitor's own setting and need not be a point.
+ *
+ * Throws for the speed axis while `frontierAvailability` gives a reason, and
+ * for a threshold that is not a finite number.
  */
 export function frontier(
-  _scenario: Scenario,
-  _tables: Tables,
+  scenario: Scenario,
+  tables: Tables,
   axis: FrontierAxis,
-  _thresholds: readonly number[],
+  thresholds: readonly number[],
 ): FrontierResult {
-  throw new Error(`frontier(axis "${axis}") is not implemented yet (spec 11 step 9)`);
+  const unavailable = frontierAvailability(tables)[axis];
+  if (unavailable !== null) throw new Error(`frontier(axis "${axis}"): ${unavailable}`);
+  const bad = thresholds.find((t) => !Number.isFinite(t));
+  if (bad !== undefined) throw new Error(`frontier(axis "${axis}"): threshold ${bad} is not a finite number`);
+
+  const { tradeoff: _ignored, ...own } = scenario;
+  const tokensAt = (threshold: number): number | null => {
+    try {
+      const core =
+        axis === "quality"
+          ? computeCore({ ...own, quality_floor: threshold }, tables)
+          : computeCore(own, tables, { min_tok_s_per_user: threshold });
+      return core.tokens_bought.infravana_tokens;
+    } catch (error) {
+      if (error instanceof SpeedInfeasibleError) return null;
+      throw error;
+    }
+  };
+
+  const swept: FrontierPoint[] = [];
+  for (const threshold of [...new Set(thresholds)].sort((a, b) => a - b)) {
+    const tokens = tokensAt(threshold);
+    if (tokens !== null) swept.push({ threshold, infravana_tokens: tokens });
+  }
+
+  // From the strictest threshold down, keep a point only if it buys more than every stricter one.
+  const kept: FrontierPoint[] = [];
+  let best = -Infinity;
+  for (let i = swept.length - 1; i >= 0; i--) {
+    const point = swept[i] as FrontierPoint;
+    if (point.infravana_tokens > best) {
+      kept.push(point);
+      best = point.infravana_tokens;
+    }
+  }
+  return { axis, points: kept.reverse(), current_threshold: currentThreshold(scenario, tables, axis) };
 }
