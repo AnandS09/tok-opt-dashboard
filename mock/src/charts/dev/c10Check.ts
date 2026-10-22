@@ -20,7 +20,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { EChartsCoreOption } from "echarts/core";
 import type { Results, Scenario, Tables } from "../../contract";
-import { compute, computeCore } from "../../compute";
+import { benefitHeadcount, compute, computeCore } from "../../compute";
+import type { BenefitBox } from "../../contract";
+import { paretoBenefits } from "../benefits";
 import { fmtTokensSig } from "../../shared/format";
 import { parseHash, serialiseHash, DEFAULT_FIELDS } from "../../store/hash";
 import type { HashFields } from "../../store/hash";
@@ -98,6 +100,39 @@ const pointsOf = (option: EChartsCoreOption, name: string): number[][] =>
   seriesOf(option)
     .filter((s) => s.name === name)
     .flatMap((s) => dataOf(s).map((d) => (Array.isArray(d) ? d : ((d as Obj).value as number[]))));
+
+/** The three boxes of spec 6.4 for C10, each against a direct engine run and the comparator's own figure. */
+export function c10BoxProblems(c: C10Case, boxes: BenefitBox[], where: string): string[] {
+  const problems: string[] = [];
+  const fr = c10Data(c.results, c.scenario, c.tables, c.view).frontier;
+  const comparator = comparisonOf(c.results).comparator;
+  const current = direct(c, expectedCurrent(c));
+  const lowest = direct(c, fr.points[0]?.threshold ?? NaN);
+  const want = [current, lowest, current !== null && comparator ? current - comparator.tokens_at_budget : null].filter(
+    (v): v is number => v !== null && v > 0,
+  );
+  if (boxes.length > 3) problems.push(`${where}: ${boxes.length} boxes, at most 3`);
+  if (boxes.length !== want.length) problems.push(`${where}: ${boxes.length} boxes, expected ${want.length}`);
+  boxes.forEach((b, i) => {
+    if (want[i] === undefined || !near(b.value, want[i])) problems.push(`${where}: box ${i + 1} is ${b.value}, a direct run gives ${want[i]}`);
+    if (b.unit !== "tokens") problems.push(`${where}: box ${i + 1} has unit ${b.unit}`);
+    if (b.comparator !== `vs ${comparator?.label}`) problems.push(`${where}: box ${i + 1} names "${b.comparator}", not the comparator`);
+    if (b.value <= 0) problems.push(`${where}: box ${i + 1} is not positive`);
+  });
+  return problems;
+}
+
+/** The boxes the stage would show, from the frontier of the view. */
+function boxesOf(c: C10Case): BenefitBox[] {
+  const frontier = c10Data(c.results, c.scenario, c.tables, c.view).frontier;
+  return paretoBenefits(c.results, {
+    scenario: c.scenario,
+    goal: c.scenario.goal ?? "G1",
+    solve: null,
+    frontier,
+    headcount: benefitHeadcount(c.scenario, c.tables),
+  });
+}
 
 /** Spec 6.3 acceptance (1) to (3), the Today lines and the line style, read from the drawn option. */
 export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: string): string[] {
@@ -333,6 +368,9 @@ export function runC10Checks(label: string, scenario: Scenario, tables: Tables, 
       problems.push(...c10OptionProblems(c, option, where), ...c10SvgProblems(c, svg, size, dims, where));
     }
     problems.push(...c10MarkupProblems(c10Markup(c, view), view, reason === null, reason, `${label} C10 ${view} markup`));
+    problems.push(...c10BoxProblems(c, boxesOf(c), `${label} C10 ${view} boxes`));
+    // Without a frontier there are no boxes, and the stage does not invent any.
+    if (paretoBenefits(results, { scenario, goal: "G1", solve: null, frontier: null, headcount: null }).length !== 0) problems.push(`${label} C10 ${view}: boxes without a frontier`);
     const thumb = c10Markup(c, view, "thumb");
     if (thumb.includes("<input") || thumb.includes("Source:")) problems.push(`${label} C10 ${view} thumb: switch or source line present`);
     if (pointMarks(data).length + lineMarks(data).length !== data.today.length) problems.push(`${label} C10 ${view}: a Today option is neither a line nor a point`);
@@ -388,6 +426,12 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
     expect(v("the InfraVana line is solid whatever its provenance"), c10OptionProblems(c, edit(option, INFRAVANA_LABEL, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), type: "solid" } })), view));
     expect(v("the InfraVana line is not a step"), c10OptionProblems(c, edit(option, INFRAVANA_LABEL, (s) => ({ ...s, step: undefined })), view));
     const cmp = comparisonOf(results);
+    const boxes = boxesOf(c);
+    const cleanBoxes = c10BoxProblems(c, boxes, view);
+    expect(v("(6.4) a box is 1% off its direct value"), c10BoxProblems(c, boxes.map((b, i) => (i === 0 ? { ...b, value: b.value * 1.01 } : b)), view), cleanBoxes);
+    expect(v("(6.4) a box names no comparator"), c10BoxProblems(c, boxes.map((b, i) => (i === 1 ? { ...b, comparator: "" } : b)), view));
+    expect(v("(6.4) four boxes"), c10BoxProblems(c, [...boxes, boxes[0]], view));
+    expect(v("(6.4) the boxes are in the wrong order"), c10BoxProblems(c, [...boxes].reverse(), view));
     const some = cmp.options[0];
     const someName = some.alt.label;
     if (view === "quality") {

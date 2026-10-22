@@ -1,13 +1,13 @@
 import "../styles/c10.css";
 import { useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import type { BenefitContext, ChartDef, ChartProps, Results } from "../contract";
+import type { ChartDef, ChartProps, Results } from "../contract";
 import { fmtTokensSig } from "../shared/format";
 import { ChartFigure } from "./ChartFigure";
-import { c10Benefits, c10Data, effectiveView, speedViewReason } from "./c10Data";
+import { paretoBenefits } from "./benefits";
+import { c10Data, effectiveView, speedViewReason } from "./c10Data";
 import type { C10Data, C10View } from "./c10Data";
 import { C10Context } from "./c10Context";
-import type { C10Inputs } from "./c10Context";
 import { AXIS_TITLE, CURRENT_LABEL, NARROW, lineMarks, markName, markerOf, pointMarks } from "./c10Option";
 import { buildParetoOption } from "./c10Option";
 import { comparisonOf } from "./comparison";
@@ -173,23 +173,6 @@ function C10Key({ data }: { data: C10Data }) {
   );
 }
 
-/** Spec 6.4's three boxes in plain form, until the page's box slot draws them. */
-function C10Boxes({ results, data, scenario }: { results: Results; data: C10Data; scenario: C10Inputs["scenario"] }) {
-  const context: BenefitContext = { scenario, goal: scenario.goal ?? "G1", solve: null, frontier: data.frontier, headcount: null };
-  const boxes = c10Benefits(results, context).filter((b) => b.value > 0);
-  return (
-    <ul className="c10-boxes" data-slot="c10-benefits-minimal" aria-label="What the line says">
-      {boxes.map((b) => (
-        <li key={b.label} className="c10-boxes__box">
-          <span className="c10-boxes__value">{fmtTokensSig(b.value)}</span>
-          <span className="c10-boxes__label">{b.label}</span>
-          <span className="c10-boxes__comparator">{b.comparator}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** The sentence a screen reader gets for the picture: the comparator's figure, then the line's. */
 function ariaLabelOf(results: Results, data: C10Data | null): string {
   const base = paretoCaption(results);
@@ -242,7 +225,6 @@ export function ParetoChart({ results, size }: ChartProps) {
   const header = stage ? (
     <>
       {inputs ? <C10Switch view={view} reason={reason} onChange={inputs.setView} /> : null}
-      {data && scenario ? <C10Boxes results={results} data={data} scenario={scenario} /> : null}
       {showKey && data ? <C10Key data={data} /> : null}
       {error ? (
         <p role="alert" className="c10-error">
@@ -292,7 +274,7 @@ export const paretoChart: ChartDef = {
   caption: paretoCaption,
   howComputed: PARETO_HOW_COMPUTED,
   toCsv: paretoCsv,
-  benefits: c10Benefits,
+  benefits: paretoBenefits,
   Component: ParetoChart,
 };
 

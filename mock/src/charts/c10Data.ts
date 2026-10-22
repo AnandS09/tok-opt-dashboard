@@ -4,8 +4,6 @@
  * option stands. `c10Pareto.tsx` draws them; the benefit boxes read them.
  */
 import type {
-  BenefitBox,
-  BenefitContext,
   FrontierAxis,
   FrontierPoint,
   FrontierResult,
@@ -38,9 +36,15 @@ export function speedViewReason(tables: Tables): string | null {
   return frontierAvailability(tables).speed;
 }
 
+/** The last frontier worked out, kept by the objects it was worked out from, so the chart and its boxes share one sweep. */
+let lastSweep: { scenario: Scenario; tables: Tables; view: C10View; result: FrontierResult } | null = null;
+
 /** The frontier of one view: one engine run per distinct threshold of the axis (spec 6.3). */
 export function frontierForView(scenario: Scenario, tables: Tables, view: C10View): FrontierResult {
-  return frontier(scenario, tables, view, frontierThresholds(scenario, tables, view));
+  if (lastSweep && lastSweep.scenario === scenario && lastSweep.tables === tables && lastSweep.view === view) return lastSweep.result;
+  const result = frontier(scenario, tables, view, frontierThresholds(scenario, tables, view));
+  lastSweep = { scenario, tables, view, result };
+  return result;
 }
 
 /**
@@ -126,38 +130,4 @@ export function c10Data(results: Results, scenario: Scenario, tables: Tables, re
     budget_usd: results.tokens_bought.budget_usd,
     provenance: view === "speed" ? "modelled" : results.tokens_bought.provenance.infravana,
   };
-}
-
-/**
- * Spec 6.4 benefit boxes of C10, in candidate order: the volume at the
- * visitor's setting, the volume at the lowest (most relaxed) step, and the
- * extra volume over the comparator at the setting. Everything is read from
- * `context.frontier`, so the boxes follow the view C10 shows. An extra volume
- * that is not positive is left out rather than shown as a loss named "extra".
- */
-export function c10Benefits(results: Results, context: BenefitContext): BenefitBox[] {
-  const fr = context.frontier;
-  if (fr === null || fr.points.length === 0) return [];
-  const cmp = comparisonOf(results);
-  const comparator = `vs ${cmp.label}`;
-  const boxes: BenefitBox[] = [];
-  const current = tokensAtThreshold(fr.points, fr.current_threshold);
-  const lowest = fr.points[0].infravana_tokens;
-  const setting = fr.axis === "quality" ? "your quality floor" : "your speed";
-  if (current !== null) {
-    boxes.push({ value: current, unit: "tokens", label: `Tokens a quarter at ${setting}`, comparator });
-  }
-  boxes.push({
-    value: lowest,
-    unit: "tokens",
-    label: fr.axis === "quality" ? "Tokens a quarter at the lowest quality step" : "Tokens a quarter at the lowest speed step",
-    comparator,
-  });
-  if (current !== null && cmp.comparator !== null) {
-    const extra = current - cmp.comparator.tokens_at_budget;
-    if (extra > 0) {
-      boxes.push({ value: extra, unit: "tokens", label: `Extra tokens a quarter at ${setting}`, comparator });
-    }
-  }
-  return boxes.filter((b) => Number.isFinite(b.value));
 }

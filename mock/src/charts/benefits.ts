@@ -17,6 +17,7 @@
 import { COVERAGE_MESSAGE_ABOVE, c5Figures, g1Headline, solvedHeadline } from "../compute/goals";
 import type { BenefitBox, BenefitContext, BenefitUnit, CostPerMtokRow, Results } from "../contract";
 import { fmtMultiple, fmtPct, fmtTokensSig, fmtUsdSig } from "../shared/format";
+import { tokensAtThreshold } from "./c10Data";
 import { comparisonOf } from "./comparison";
 import { fmtUsdPerMtok } from "./format";
 import { BRAND, MODEL_CLASS_NAME } from "./labels";
@@ -243,6 +244,30 @@ export function costPerMtokBenefits(results: Results, context: BenefitContext): 
             "usd_per_mtok",
             `per million tokens across all models, against ${fmtUsdPerMtok(blendedToday)}`,
           )
+        : null,
+    ],
+    headlineNumbers(results, context),
+  );
+}
+
+/**
+ * C10 (spec 6.4): the volume at the visitor's own setting, the volume at the
+ * lowest (most relaxed) step, and the extra volume over the comparator at the
+ * setting. All three come from `context.frontier`, the frontier of the view C10
+ * shows, so the boxes follow the switch; with no frontier there are none.
+ */
+export function paretoBenefits(results: Results, context: BenefitContext): BenefitBox[] {
+  const fr = context.frontier;
+  if (fr === null || fr.points.length === 0) return [];
+  const current = tokensAtThreshold(fr.points, fr.current_threshold);
+  const comparator = comparisonOf(results).comparator;
+  const setting = fr.axis === "quality" ? "quality floor" : "speed";
+  return selectBoxes(
+    [
+      current !== null ? candidate(results, current, "tokens", `tokens a quarter at your ${setting}`) : null,
+      candidate(results, fr.points[0].infravana_tokens, "tokens", `tokens a quarter at the lowest ${fr.axis} step`),
+      current !== null && comparator !== null
+        ? candidate(results, current - comparator.tokens_at_budget, "tokens", `more tokens a quarter at your ${setting}`)
         : null,
     ],
     headlineNumbers(results, context),
