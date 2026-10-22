@@ -397,6 +397,14 @@ describe("the best single option (spec 6.1)", () => {
     expect(high?.total_usd).toBeGreaterThan(low?.total_usd ?? Infinity);
   });
 
+  it("a model scoring exactly the floor qualifies: software engineering at floor 82 still picks mid_a (score 82.0)", () => {
+    const b = best(compute({ ...s1, workload_mix: { software_design: 1 }, quality_floor: 82 }, base));
+    expect(b?.detail).toBe("mid_a via ec2 (useast)");
+    // One point above, mid_a no longer qualifies.
+    const above = best(compute({ ...s1, workload_mix: { software_design: 1 }, quality_floor: 82.1 }, base));
+    expect(modelOf(above?.detail ?? null)).not.toBe("mid_a");
+  });
+
   it("is absent when no single offer meets every floor, and compute does not throw", () => {
     const r = compute({ ...s1, quality_floor: 99 }, base);
     expect(best(r)).toBeUndefined();

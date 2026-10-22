@@ -163,6 +163,58 @@ describe("the default scenarios give the pinned numbers", () => {
 });
 
 // ---------------------------------------------------------------------------
+// The two savings segments and the open-weight share (spec 6 C1, 7.2 step 3, 5)
+// ---------------------------------------------------------------------------
+
+describe("InfraVana's savings are two segments, told apart by source", () => {
+  const savings = (r: Results) => r.allocation.infravana.filter((s) => s.kind === "savings");
+
+  it("S1: 19,042.38 saved by provider arbitrage and 10,530.03 by routing, each tagged with its own source", () => {
+    const segments = savings(compute(s1, tables));
+    expect(segments).toHaveLength(2);
+    const arbitrage = segments.find((s) => s.kind === "savings" && s.savings_source === "arbitrage");
+    const routing = segments.find((s) => s.kind === "savings" && s.savings_source === "routing");
+    expect(arbitrage?.label).toBe("Provider arbitrage");
+    expect(routing?.label).toBe("Routing");
+    expect(arbitrage?.usd).toBeCloseTo(19_042.38, 2);
+    expect(routing?.usd).toBeCloseTo(10_530.03, 2);
+    // Together they are the whole saving, 100,012.50 less 70,440.09.
+    expect((arbitrage?.usd ?? 0) + (routing?.usd ?? 0)).toBeCloseTo(100_012.5 - 70_440.09, 2);
+  });
+
+  it("with no open-weight share there is nothing to route: all the saving is arbitrage and the routing segment is 0", () => {
+    const r = compute({ ...s1, model_mix: { ...s1.model_mix, open_weight_share: 0 } }, tables);
+    const routing = savings(r).find((s) => s.kind === "savings" && s.savings_source === "routing");
+    const arbitrage = savings(r).find((s) => s.kind === "savings" && s.savings_source === "arbitrage");
+    expect(routing?.usd).toBe(0);
+    expect(arbitrage?.usd).toBeCloseTo(r.allocation.total_usd - infravanaSpend(r), 6);
+    expect(arbitrage?.usd).toBeGreaterThan(0);
+  });
+});
+
+describe("effective_open_share (spec 5: the share a promise of 'up to X% open-weight' must use)", () => {
+  it("is 0.1331 on S1 and 0.2065 on S2", () => {
+    expect(compute(s1, tables).effective_open_share).toBeCloseTo(0.1331, 4);
+    expect(compute(s2, tables).effective_open_share).toBeCloseTo(0.2065, 4);
+  });
+
+  it("S2 asked for 100% open-weight gets the same result as 40%", () => {
+    const at = (open_weight_share: number) => compute({ ...s2, model_mix: { ...s2.model_mix, open_weight_share } }, tables);
+    expect(s2.model_mix.open_weight_share).toBe(0.4);
+    expect(at(1).effective_open_share).toBe(at(0.4).effective_open_share);
+    expect(infravanaSpend(at(1))).toBeCloseTo(infravanaSpend(at(0.4)), 6);
+  });
+
+  it("is 0 when no open-weight share is asked for, and is never above the share asked for", () => {
+    expect(compute({ ...s1, model_mix: { ...s1.model_mix, open_weight_share: 0 } }, tables).effective_open_share).toBe(0);
+    for (const share of [0.1, 0.2, 0.4]) {
+      const r = compute({ ...s1, model_mix: { ...s1.model_mix, open_weight_share: share } }, tables);
+      expect(r.effective_open_share).toBeLessThanOrEqual(share + 1e-9);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // infravana_side (spec 6.2 G4 "Two calls")
 // ---------------------------------------------------------------------------
 

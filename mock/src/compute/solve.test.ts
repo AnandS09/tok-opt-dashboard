@@ -449,6 +449,18 @@ describe("default scenarios reproduce G1 (g1Headline)", () => {
   });
 });
 
+describe("g1Headline: the ten-times message", () => {
+  it("applies strictly above 10 times: exactly 10 shows the multiple, just above shows the message", () => {
+    const r = compute(s1, tables);
+    const demand = r.tokens_bought.demand_tokens;
+    const at = (times: number) => ({ ...r, tokens_bought: { ...r.tokens_bought, today_tokens: demand * times } });
+    expect(g1Headline(at(10)).coverage).toBe(10);
+    expect(g1Headline(at(10)).over_ten_times).toBe(false);
+    expect(g1Headline(at(10.0001)).over_ten_times).toBe(true);
+    expect(g1Headline(at(9.9999)).over_ten_times).toBe(false);
+  });
+});
+
 describe("solvedHeadline", () => {
   const base: SolveResult = {
     axis: "users",

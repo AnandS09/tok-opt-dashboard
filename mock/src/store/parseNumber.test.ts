@@ -27,6 +27,14 @@ describe("parseNumber: the forms a visitor types (spec 5.1)", () => {
     expect(parseNumber(text)).toBe(expected);
   });
 
+  it("accepts a leading plus sign", () => {
+    expect(parseNumber("+5")).toBe(5);
+    expect(parseNumber("+1,500")).toBe(1500);
+    expect(parseNumber("+$20M")).toBe(20_000_000);
+    expect(parseNumber("++5")).toBeNull();
+    expect(parseNumber("+-5")).toBeNull();
+  });
+
   it("reads a decimal as the nearest whole number", () => {
     expect(parseNumber("999.6")).toBe(1000);
     expect(parseNumber("1,500.5")).toBe(1501);
