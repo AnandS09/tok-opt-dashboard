@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { chartRegistry } from "./charts/registry";
 import { AssumptionsPanel } from "./components/AssumptionsPanel";
-import { ChartSections } from "./components/ChartSections";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { HeadlineStrip } from "./components/HeadlineStrip";
@@ -10,12 +9,22 @@ import { KnobRail } from "./components/KnobRail";
 import { Notice } from "./components/Notice";
 import { openShareOf, ResultNotices } from "./components/ResultNotices";
 import { Skeleton } from "./components/Skeleton";
+import { Stage } from "./components/Stage";
+import { ComparatorSlot, GoalTabsSlot } from "./components/StageSlots";
 import { compute } from "./compute";
-import type { Results, Scenario, ScenarioResponse } from "./contract";
+import type { GoalId, PatternId, Results, Scenario, ScenarioResponse } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
 import type { CompanyType } from "./store/intake";
+import {
+  activeIndex,
+  useStageHash,
+  useStageState,
+  withView,
+  type StageDirection,
+  type StageSlotContext,
+} from "./store/stage";
 import { useThrottledValue } from "./store/useThrottledValue";
 
 /** Folder of the data files, relative to the page so the bundle can be mounted under a sub-path. */
@@ -42,6 +51,9 @@ function messageOf(error: unknown): string {
 
 export default function App() {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  // Chart in focus, goal tab, comparator and the other fields the page address holds (spec 4.1).
+  const [stage, stageDispatch] = useStageState();
+  const { view } = stage;
   const [panelOpen, setPanelOpen] = useState(false);
   // The guided questions show until they are answered or an example is picked.
   const [answered, setAnswered] = useState(false);
@@ -108,7 +120,13 @@ export default function App() {
   }, []);
 
   // Every knob change recomputes locally through compute(), throttled while a slider is dragged.
-  const liveScenario = useThrottledValue(scenario, RECOMPUTE_MS);
+  // The goal, comparator and G4 steps join the scenario here; the chart in focus does not, so changing chart never recomputes.
+  const { goal, comparator, qualityStep, speedStep } = view;
+  const viewedScenario = useMemo(
+    () => (scenario && tables ? withView(scenario, { goal, comparator, qualityStep, speedStep }, tables) : scenario),
+    [scenario, tables, goal, comparator, qualityStep, speedStep],
+  );
+  const liveScenario = useThrottledValue(viewedScenario, RECOMPUTE_MS);
   const computed = useMemo<{ results: Results | null; error: string | null }>(() => {
     if (!tables || !liveScenario || response?.verdict !== "ok") return { results: null, error: null };
     try {
@@ -124,6 +142,32 @@ export default function App() {
     () => (response ? chartRegistry.filter((def) => response.charts.includes(def.id)) : []),
     [response],
   );
+
+  // The stage is on screen once the answers are in and there is something to draw; only then does it own the address.
+  const stageShown = !!tables && !!scenario && response?.verdict === "ok" && answered && !!results && slides.length > 0;
+  const active = activeIndex(slides, view.slide);
+  useStageHash(view, stageShown ? slides[active].id : null, stageDispatch);
+
+  const slideTo = useCallback(
+    (index: number, direction: StageDirection) => {
+      const target = slides[index];
+      if (target) stageDispatch({ type: "slide_set", slide: target.id, direction });
+    },
+    [slides, stageDispatch],
+  );
+  const slotContext: StageSlotContext | null =
+    tables && liveScenario && results
+      ? {
+          view,
+          scenario: liveScenario,
+          tables,
+          results,
+          setGoal: (next: GoalId) => stageDispatch({ type: "goal_set", goal: next }),
+          setComparator: (next: PatternId | null) => stageDispatch({ type: "comparator_set", comparator: next }),
+          setSteps: (steps) => stageDispatch({ type: "steps_set", ...steps }),
+          setC10: (next) => stageDispatch({ type: "c10_set", c10: next }),
+        }
+      : null;
 
   // The questions (and the focused control) are gone once answered: focus moves to the answers.
   useEffect(() => {
@@ -234,11 +278,20 @@ export default function App() {
             {computed.error} Try changing an answer back.
           </Notice>
         ) : null}
-        {results ? (
+        {results && slotContext ? (
           <>
+            <GoalTabsSlot ctx={slotContext} />
             <HeadlineStrip results={results} contactUrl={CONTACT_URL} />
+            <ComparatorSlot ctx={slotContext} />
             <ResultNotices results={results} tables={tables} />
-            <ChartSections slides={slides} results={results} />
+            <Stage
+              slides={slides}
+              results={results}
+              active={active}
+              direction={stage.direction}
+              ctx={slotContext}
+              onSlide={slideTo}
+            />
             <section className="cta card" aria-label="Contact">
               <h2 className="cta__title">Want this with your real numbers?</h2>
               <p>We model your actual workloads, contracts and hardware options, and show what you can save.</p>
