@@ -49,8 +49,8 @@ const ICON_SHAPES: Record<CompanyType | "provider", ReactNode> = {
   ),
   ai_first: (
     <>
-      <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z" />
-      <path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+      <path d="M12 3l9 4.5-9 4.5-9-4.5z" />
+      <path d="M3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />
     </>
   ),
   software: (
