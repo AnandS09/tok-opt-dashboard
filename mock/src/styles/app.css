@@ -693,9 +693,16 @@ a {
   font-size: var(--font-size-xl);
 }
 
-/* Room for two lines of the full-size figure on every tab, so a figure that arrives (or a sentence that replaces it) does not move what is below it. */
+/* Room for the full-size figure on every tab, so a figure that arrives (or a sentence that replaces it) does not move what is below it:
+   one line where the headline fits on one (desktop), two lines on narrow screens where it wraps. */
 .hero .hero__figure {
-  min-height: calc(2 * var(--line-height-tight) * var(--font-size-hero));
+  min-height: calc(var(--line-height-tight) * var(--font-size-hero));
+}
+
+@media (max-width: 720px) {
+  .hero .hero__figure {
+    min-height: calc(2 * var(--line-height-tight) * var(--font-size-hero));
+  }
 }
 
 /* "than <the Today it is measured against>", in the same line as the saving. */
