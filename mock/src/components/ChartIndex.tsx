@@ -111,6 +111,8 @@ function CompactIndex({ slides, active, onPick }: ChartIndexProps) {
               aria-current={i === active ? "true" : undefined}
               onClick={() => {
                 setOpen(false);
+                // The picked button is about to be hidden with the list: keep focus on the toggle (WCAG 2.4.3).
+                toggle.current?.focus();
                 onPick(i);
               }}
             >
