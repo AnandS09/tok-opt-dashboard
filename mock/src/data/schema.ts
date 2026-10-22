@@ -1,5 +1,5 @@
 /**
- * Column contracts for the nine CSVs (spec 7.3, mock/public/data/README.md).
+ * Column contracts for the ten CSVs (spec 7.3, mock/public/data/README.md).
  * A table is valid when its header row has exactly these columns and every
  * cell has the kind declared here. A trailing `?` marks a column that may be
  * empty (parsed as `null`).
@@ -11,7 +11,10 @@ import type {
   LatencyClass,
   ModelLicense,
   ModelTier,
+  GoalId,
   OfferChannel,
+  PatternKind,
+  PricingRule,
   Stage,
   Verdict,
   WorkloadBasis,
@@ -42,6 +45,9 @@ export const LATENCY_CLASSES = ["interactive", "standard", "batch"] as const sat
 export const VERDICTS = ["ok", "off_topic", "unsafe", "unclear"] as const satisfies readonly Verdict[];
 export const WORKLOAD_BASES = ["employee", "customer"] as const satisfies readonly WorkloadBasis[];
 export const DEMAND_UNITS = ["people", "workflows"] as const;
+export const PATTERN_KINDS = ["way_to_buy", "vendor_end_to_end", "best_single"] as const satisfies readonly PatternKind[];
+export const PRICING_RULES = ["list", "commit"] as const satisfies readonly PricingRule[];
+export const GOALS = ["G1", "G2", "G3", "G4"] as const satisfies readonly GoalId[];
 
 const SEAT_CAP_PATTERN = /cap_mtok_per_user_month=(\d+(?:\.\d+)?)/;
 
@@ -150,16 +156,32 @@ export const WORKLOADS: TableSpec = {
   enums: { basis: WORKLOAD_BASES },
 };
 
+export const BUYING_PATTERNS: TableSpec = {
+  file: "buying_patterns.csv",
+  columns: {
+    pattern_id: "string",
+    label: "string",
+    kind: "string",
+    stage: "string?",
+    vendor: "string?",
+    pricing_rule: "string",
+    popularity_rank: "number?",
+    popularity_source: "string?",
+    source_url: "string",
+    as_of: "string",
+  },
+  enums: { kind: PATTERN_KINDS, stage: STAGES, pricing_rule: PRICING_RULES },
+};
+
 export const BASELINE_PROVIDERS: TableSpec = {
   file: "baseline_providers.csv",
   columns: {
-    stage: "string",
+    pattern_id: "string",
     workload_id: "string",
     offer_id: "string?",
     plan_id: "string?",
     share_default: "number",
   },
-  enums: { stage: STAGES },
 };
 
 export const CASE_STUDIES: TableSpec = {

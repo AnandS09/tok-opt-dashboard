@@ -1,20 +1,26 @@
 /**
- * Spec 7.2 step 2: what the workload costs today, under the buying pattern
- * that `baseline_providers.csv` defines for the scenario's stage.
+ * Spec 7.2 step 2: what the workload costs today, under one buying pattern
+ * (spec 6.1). The pattern's rows in `baseline_providers.csv` say what it
+ * buys for each workload, and its `pricing_rule` in `buying_patterns.csv`
+ * says how a per-token offer is priced:
  *
- *   seats    : users x seat price x months, plus the tokens above the plan's
- *              usage cap billed at the overage model's direct list price.
- *   api      : tokens at the baseline offer's list price.
- *   platform : same, with the offer's commit discount (spec 12 BD-3). Only
- *              this stage applies `commit_discount_pct`.
+ *   plan rows   : users x seat price x months, plus the tokens above the
+ *                 plan's usage cap billed at the overage model's direct list
+ *                 price (always list price).
+ *   offer rows  : tokens at the offer's price, at list price for rule `list`
+ *                 and with the offer's commit discount for rule `commit`
+ *                 (spec 12 BD-3). Only `commit` applies `commit_discount_pct`.
  *
  * Prices come from vendor price pages, so every Today segment is
  * `vendor_reported`.
  */
 
 import type {
+  BaselineProviderRow,
   ModelOfferRow,
   ModelTier,
+  PatternId,
+  PricingRule,
   Provenance,
   Scenario,
   SeatPlanRow,
@@ -23,6 +29,7 @@ import type {
 } from "../contract";
 import { seatCapMtokPerUserMonth } from "../data/schema";
 import type { WorkloadDemand } from "./demand";
+import { deriveBestSingle, patternById, rowsForPattern } from "./patterns";
 import {
   TOKENS_PER_MTOK,
   SpendBook,
@@ -116,10 +123,43 @@ function offerById(tables: Tables, offerId: string): TokenPricedOffer {
   return offer;
 }
 
+/**
+ * Prices the workload under the buying pattern `patternId`. A `best_single`
+ * pattern has no rows: its offer is derived from the demand and the tables.
+ *
+ * `_scenario` is part of the signature of spec 7.4 and is unused until the
+ * G4 trade-off (spec 6.2) needs it; demand already carries the floors.
+ */
 export function computeToday(
   demand: readonly WorkloadDemand[],
-  scenario: Scenario,
+  _scenario: Scenario,
   tables: Tables,
+  patternId: PatternId,
+): TodayResult {
+  const pattern = patternById(tables, patternId);
+  if (pattern.kind === "best_single") {
+    const derived = deriveBestSingle(pattern, demand, tables);
+    if (derived === null) {
+      throw new Error(`buying_patterns.csv: no single offer meets every quality floor, so "${patternId}" has no result`);
+    }
+    return computeTodayFromRows(demand, tables, derived.rows, pattern.pricing_rule, patternId);
+  }
+  const rows = rowsForPattern(tables, patternId, demand);
+  if (rows === null) {
+    const missing = demand.find((d) => rowsForPattern(tables, patternId, [d]) === null);
+    throw new Error(
+      `baseline_providers.csv: no rows for pattern "${patternId}" and workload "${missing?.workload_id ?? ""}"`,
+    );
+  }
+  return computeTodayFromRows(demand, tables, rows, pattern.pricing_rule, patternId);
+}
+
+function computeTodayFromRows(
+  demand: readonly WorkloadDemand[],
+  tables: Tables,
+  patternRows: readonly BaselineProviderRow[],
+  pricingRule: PricingRule,
+  patternId: PatternId,
 ): TodayResult {
   const { months_per_quarter: months } = tables.manifest.parameters;
   const book = new SpendBook();
@@ -146,12 +186,10 @@ export function computeToday(
   };
 
   for (const d of demand) {
-    const rows = tables.baseline_providers.filter(
-      (r) => r.stage === scenario.stage_today && r.workload_id === d.workload_id,
-    );
+    const rows = patternRows.filter((r) => r.workload_id === d.workload_id);
     if (rows.length === 0) {
       throw new Error(
-        `baseline_providers.csv: no rows for stage "${scenario.stage_today}" and workload "${d.workload_id}"`,
+        `baseline_providers.csv: no rows for pattern "${patternId}" and workload "${d.workload_id}"`,
       );
     }
     for (const row of rows) {
@@ -202,7 +240,7 @@ export function computeToday(
 
   for (const { offer, tokensIn, tokensOut } of offerVolume.values()) {
     const usd =
-      scenario.stage_today === "platform"
+      pricingRule === "commit"
         ? committedCostUsd(offer, tokensIn, tokensOut)
         : listCostUsd(offer, tokensIn, tokensOut);
     book.add(offer.channel, "provider", usd, TODAY_PROVENANCE);

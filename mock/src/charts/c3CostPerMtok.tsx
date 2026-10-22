@@ -209,5 +209,7 @@ export const costPerMtokChart: ChartDef = {
   caption: costPerMtokCaption,
   howComputed: COST_HOW_COMPUTED,
   toCsv: costPerMtokCsv,
+  // Benefit boxes (spec 6.4) are built in a later step.
+  benefits: () => [],
   Component: CostPerMtokChart,
 };

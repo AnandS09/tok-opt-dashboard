@@ -6,17 +6,33 @@
 
 import type {
   ChartId,
+  GoalId,
   LatencyClass,
   ModelMix,
   Scenario,
   ScenarioResponse,
   ScenarioState,
   Stage,
+  Tradeoff,
   Verdict,
 } from "../contract";
-import { DEMAND_UNITS, LATENCY_CLASSES, STAGES, VERDICTS } from "./schema";
+import {
+  BUDGET_USD_PER_QUARTER_RANGE,
+  CUSTOMERS_RANGE,
+  USERS_RANGE,
+  clampToRange,
+} from "./ranges";
+import { DEMAND_UNITS, GOALS, LATENCY_CLASSES, STAGES, VERDICTS } from "./schema";
 
-const CHART_IDS: readonly ChartId[] = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"];
+const CHART_IDS: readonly ChartId[] = ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10"];
+
+/** Ids a scenario may name, read from the data files it is checked against. */
+export interface KnownIds {
+  /** hw_ids of hardware.csv, to check `tiers_allowed` against. */
+  hardwareIds: ReadonlySet<string>;
+  /** pattern_ids of buying_patterns.csv, to check `comparator` against. */
+  patternIds: ReadonlySet<string>;
+}
 
 type Json = Record<string, unknown>;
 
@@ -26,8 +42,7 @@ const MIX_SUM_TOLERANCE = 1e-6;
 class Reader {
   constructor(
     private readonly file: string,
-    /** hw_ids of hardware.csv, to check `tiers_allowed` against. */
-    private readonly hardwareIds: ReadonlySet<string>,
+    private readonly known: KnownIds,
   ) {}
 
   fail(path: string, expected: string): never {
@@ -64,13 +79,29 @@ class Reader {
     return value as string[];
   }
 
+  /** Users, budget and customers are clamped to the spec 5.2 ranges, not rejected. */
   state(path: string, value: unknown): ScenarioState {
     const o = this.object(path, value);
     return {
-      users: this.number(`${path}.users`, o.users),
-      budget_usd_per_quarter: this.number(`${path}.budget_usd_per_quarter`, o.budget_usd_per_quarter),
-      ...(o.customers === undefined ? {} : { customers: this.number(`${path}.customers`, o.customers) }),
+      users: clampToRange(this.number(`${path}.users`, o.users), USERS_RANGE),
+      budget_usd_per_quarter: clampToRange(
+        this.number(`${path}.budget_usd_per_quarter`, o.budget_usd_per_quarter),
+        BUDGET_USD_PER_QUARTER_RANGE,
+      ),
+      ...(o.customers === undefined
+        ? {}
+        : { customers: clampToRange(this.number(`${path}.customers`, o.customers), CUSTOMERS_RANGE) }),
     };
+  }
+
+  tradeoff(path: string, value: unknown): Tradeoff {
+    const o = this.object(path, value);
+    const step = (key: "quality_step" | "speed_step"): number => {
+      const n = this.number(`${path}.${key}`, o[key]);
+      if (!Number.isInteger(n) || n < 0) this.fail(`${path}.${key}`, `a whole number from 0, got ${n}`);
+      return n;
+    };
+    return { quality_step: step("quality_step"), speed_step: step("speed_step") };
   }
 
   modelMix(path: string, value: unknown): ModelMix {
@@ -105,7 +136,7 @@ class Reader {
       tiersValue === "all" ? "all" : this.stringList(`${path}.tiers_allowed`, tiersValue);
     if (tiers_allowed !== "all") {
       tiers_allowed.forEach((id, i) => {
-        if (!this.hardwareIds.has(id)) {
+        if (!this.known.hardwareIds.has(id)) {
           this.fail(`${path}.tiers_allowed[${i}]`, `an hw_id in hardware.csv, got "${id}"`);
         }
       });
@@ -125,6 +156,15 @@ class Reader {
     if (o.quality_floor !== undefined) {
       scenario.quality_floor = this.number(`${path}.quality_floor`, o.quality_floor);
     }
+    if (o.comparator !== undefined) {
+      const comparator = this.string(`${path}.comparator`, o.comparator);
+      if (!this.known.patternIds.has(comparator)) {
+        this.fail(`${path}.comparator`, `a pattern_id in buying_patterns.csv, got "${comparator}"`);
+      }
+      scenario.comparator = comparator;
+    }
+    if (o.goal !== undefined) scenario.goal = this.oneOf<GoalId>(`${path}.goal`, o.goal, GOALS);
+    if (o.tradeoff !== undefined) scenario.tradeoff = this.tradeoff(`${path}.tradeoff`, o.tradeoff);
     return scenario;
   }
 }
@@ -132,9 +172,9 @@ class Reader {
 export function parseScenarioResponse(
   file: string,
   json: unknown,
-  hardwareIds: ReadonlySet<string>,
+  known: KnownIds,
 ): ScenarioResponse {
-  const r = new Reader(file, hardwareIds);
+  const r = new Reader(file, known);
   const o = r.object("(root)", json);
   const charts = o.charts;
   if (!Array.isArray(charts)) r.fail("charts", "a list of chart ids");

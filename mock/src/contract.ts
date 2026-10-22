@@ -1,5 +1,5 @@
 /**
- * Shared contract for the static mock (spec.md v0.2). TYPES ONLY, no logic.
+ * Shared contract for the static mock (spec.md v0.3). TYPES ONLY, no logic.
  *
  * Three parts of the app meet at this file:
  *   - compute engine : (Scenario, Tables) -> Results         (spec 7.2)
@@ -27,8 +27,31 @@ import type { ComponentType } from "react";
 // Shared enumerations
 // ---------------------------------------------------------------------------
 
-/** Spec 5 / 7.1 `stage_today`, and `baseline_providers.csv` `stage`. */
+/**
+ * Spec 5 / 7.1 `stage_today`, and `buying_patterns.csv` `stage` (the stage a
+ * `way_to_buy` pattern is the typical buyer for). It stays a three-value
+ * enum for the intake (spec 7.4).
+ */
 export type Stage = "seats" | "api" | "platform";
+
+/**
+ * Spec 6.1, 7.4: the id of a row of `buying_patterns.csv`. A string that
+ * comes from data, not a fixed enum, so a new Today option is a CSV row.
+ */
+export type PatternId = string;
+
+/** Spec 7.4 `buying_patterns.csv` `kind`. */
+export type PatternKind = "way_to_buy" | "vendor_end_to_end" | "best_single";
+
+/**
+ * Spec 7.4 `buying_patterns.csv` `pricing_rule`: `list` prices at the offer's
+ * list price, `commit` applies the offer's `commit_discount_pct` when the
+ * list-price spend at that offer reaches its `min_commit_usd` (spec 12 BD-3).
+ */
+export type PricingRule = "list" | "commit";
+
+/** Spec 6.2 goal tabs: G1 less money, G2 more AI, G3 more people, G4 trade-off. */
+export type GoalId = "G1" | "G2" | "G3" | "G4";
 
 /** Spec 7.3 `models.csv` `tier`; also the "model class" of chart C3 (spec 6). */
 export type ModelTier = "frontier" | "mid" | "small";
@@ -73,7 +96,8 @@ export type ChartId =
   | "C6"
   | "C7"
   | "C8"
-  | "C9";
+  | "C9"
+  | "C10";
 
 /**
  * Spec 9 provenance values. The throughput CSV only ever carries `measured`
@@ -208,17 +232,45 @@ export interface WorkloadRow {
 }
 
 /**
- * Spec 7.3 `baseline_providers.csv`: defines "today" for each stage.
- * Exactly one of `offer_id` / `plan_id` is non-null: `plan_id` for stage
- * `seats`, `offer_id` for `api` and `platform` (spec 7.2 step 2).
+ * Spec 7.3 / 7.4 `baseline_providers.csv`: what each buying pattern buys for
+ * each workload. A row has exactly one of `offer_id` / `plan_id`: `plan_id`
+ * names a seat plan, `offer_id` a per-token offer (spec 7.2 step 2). A
+ * pattern with `kind = best_single` has no rows (compute derives it).
  */
 export interface BaselineProviderRow {
-  stage: Stage;
+  /** Foreign key to `buying_patterns.csv`. Replaces the v0.2 `stage` column. */
+  pattern_id: PatternId;
   workload_id: string;
   offer_id: string | null;
   plan_id: string | null;
   /** Share of the workload's traffic bought this way, 0..1. */
   share_default: number;
+}
+
+/**
+ * Spec 7.4 `buying_patterns.csv`: one row per Today option (spec 6.1).
+ *
+ *   - `way_to_buy` patterns carry the `stage` they are the typical buyer for
+ *     (one per stage); `vendor_end_to_end` patterns have an empty stage and
+ *     name their `vendor`; the `best_single` row has no baseline rows.
+ *   - `popularity_rank` is one integer per pattern (lower is more popular,
+ *     ties broken by `pattern_id`); empty means the pattern is never a
+ *     default grey option. The mock's ranks are invented, labelled in
+ *     `popularity_source`.
+ */
+export interface BuyingPatternRow {
+  pattern_id: PatternId;
+  label: string;
+  kind: PatternKind;
+  stage: Stage | null;
+  vendor: string | null;
+  pricing_rule: PricingRule;
+  popularity_rank: number | null;
+  /** Where the rank comes from; present whenever `popularity_rank` is. */
+  popularity_source: string | null;
+  source_url: string;
+  /** ISO date the pattern was captured (spec 12 BD-2, BD-5). */
+  as_of: string;
 }
 
 /** Spec 7.3 `case_studies.csv`. Drives the case-study presets (spec 6). */
@@ -280,6 +332,7 @@ export interface Tables {
   seat_plans: SeatPlanRow[];
   quality: QualityRow[];
   workloads: WorkloadRow[];
+  buying_patterns: BuyingPatternRow[];
   baseline_providers: BaselineProviderRow[];
   case_studies: CaseStudyRow[];
   manifest: Manifest;
@@ -341,6 +394,27 @@ export interface Scenario {
    * the same floor (spec 9).
    */
   quality_floor?: number;
+  /**
+   * Spec 6.1: the Today option InfraVana is measured against, a
+   * `buying_patterns.csv` `pattern_id`. Absent means the typical buyer for
+   * `stage_today` (the `way_to_buy` pattern whose `stage` equals it).
+   */
+  comparator?: PatternId;
+  /** Spec 6.2: the active goal tab. Absent means `G1`. */
+  goal?: GoalId;
+  /**
+   * Spec 6.2 G4: the give-up the visitor accepts, read only while `goal` is
+   * `G4`. Each step is an index into a list that comes from data: 0 keeps
+   * the visitor's own quality floor (`quality_step`) or latency class
+   * (`speed_step`), each further step gives up one more level.
+   */
+  tradeoff?: Tradeoff;
+}
+
+/** Spec 6.2 G4 `tradeoff`: two separate stepped controls. */
+export interface Tradeoff {
+  quality_step: number;
+  speed_step: number;
 }
 
 /**
@@ -533,6 +607,99 @@ export interface Results {
    * `compute()`.
    */
   floor_unmet_workloads: string[];
+  /**
+   * Spec 6.1: the Today option every other figure in this `Results` is
+   * measured against: `scenario.comparator`, else the typical buyer for
+   * `stage_today`. The hero, the benefit boxes and every chart name it.
+   */
+  comparator: PatternId;
+  /**
+   * Spec 6.1, 7.4: every Today option that applies to the scenario's
+   * workloads, in display order: the grey options first (`is_grey`, at most
+   * four, in popularity order with the typical buyer always among them, and
+   * the comparator among them when it is not one by rank), then the rest by
+   * popularity (unranked last), then the derived best single option. The
+   * comparator itself is one of the entries. An option appears only if its
+   * pattern has baseline rows for every workload in the mix.
+   */
+  today_alternatives: TodayAlternative[];
+}
+
+/** One Today option in `Results.today_alternatives` (spec 6.1, 7.4). */
+export interface TodayAlternative {
+  pattern_id: PatternId;
+  label: string;
+  kind: PatternKind;
+  /**
+   * For the derived `best_single` option, the offer it picked in plain
+   * ids (for example "mid_a via ec2 (useast)"); null for every other kind.
+   */
+  detail: string | null;
+  /** True for the typical buyer for `stage_today`, listed once. */
+  is_typical: boolean;
+  /** True when this option is a grey bar by default or by being the comparator. */
+  is_grey: boolean;
+  /** Quarterly USD this option costs for the whole workload. */
+  total_usd: number;
+  /**
+   * Tokens per quarter the budget buys at this option's average price:
+   * demand tokens times budget divided by `total_usd` (0 when the cost is 0).
+   */
+  tokens_at_budget: number;
+  /**
+   * Token-weighted mean composite quality score of the models this option
+   * buys, over all workloads; null when there is no demand.
+   */
+  quality_score: number | null;
+  /** False when any model it buys scores below a workload's floor in effect (or has no score). */
+  meets_floors: boolean;
+  /** Worst provenance of the data behind this option's spend. */
+  provenance: Provenance;
+  /** USD per million tokens by model class, null where the option buys none of that class (C3 markers). */
+  usd_per_mtok_by_class: Record<ModelTier, number | null>;
+}
+
+// ---------------------------------------------------------------------------
+// Solver and frontier results (spec 6.2, 6.3)
+// ---------------------------------------------------------------------------
+
+/** Spec 6.2 `solveAtBudget` axis: scale all token intensity, or employee workloads only. */
+export type SolveAxis = "intensity" | "users";
+
+/** Spec 6.2 `solveAtBudget` result: each side's solved scale and tokens, at the budget. */
+export interface SolveResult {
+  axis: SolveAxis;
+  /** Largest scale of the volume at which Today's spend stays within the budget. */
+  today_scale: number;
+  /** Same for InfraVana. */
+  infravana_scale: number;
+  /** `infravana_scale / today_scale`: "N times the AI work (or people) for your budget". */
+  multiple: number;
+  /** Tokens a quarter at the solved scale, each side. */
+  today_tokens: number;
+  infravana_tokens: number;
+  /** True when the solved head-count was capped at the users range (spec 5.2, G3 only). */
+  capped_at_users_max: boolean;
+}
+
+/** Spec 6.3 `frontier` axis: quality floor, or minimum tokens per second per user. */
+export type FrontierAxis = "quality" | "speed";
+
+/** One non-dominated point of the iso-cost frontier (spec 6.3). */
+export interface FrontierPoint {
+  /** The quality floor or minimum tok/s per user at this point. */
+  threshold: number;
+  /** Tokens a quarter the budget buys with InfraVana at this threshold. */
+  infravana_tokens: number;
+}
+
+/** Spec 6.3 `frontier` result. */
+export interface FrontierResult {
+  axis: FrontierAxis;
+  /** Points not beaten on both axes, ordered by threshold. */
+  points: FrontierPoint[];
+  /** The visitor's current setting on the axis (lowest workload floor, or the latency class's minimum speed). */
+  current_threshold: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -568,5 +735,24 @@ export interface ChartDef {
    * chart plots, for the "Download CSV" link (spec 4.1, 9).
    */
   toCsv: (results: Results) => string;
+  /**
+   * Spec 6.4 benefit boxes, in candidate order (the page shows the first
+   * three that are non-zero and differ from the active tab's headline). Every
+   * number is derived from `results`; none is typed. `caption` stays as the
+   * chart's accessible name.
+   */
+  benefits: (results: Results) => BenefitBox[];
   Component: ComponentType<ChartProps>;
+}
+
+/** How a `BenefitBox.value` is to be formatted. */
+export type BenefitUnit = "usd" | "usd_per_mtok" | "tokens" | "multiple" | "percent";
+
+/** One spec 6.4 benefit box: a number, a short label and the named comparator. */
+export interface BenefitBox {
+  value: number;
+  unit: BenefitUnit;
+  label: string;
+  /** The comparator's label, for example "vs Pay-as-you-go API". */
+  comparator: string;
 }

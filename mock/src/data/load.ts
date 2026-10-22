@@ -1,5 +1,5 @@
 /**
- * Data loader (spec 7.3): fetches the nine CSVs and `manifest.json` under a
+ * Data loader (spec 7.3): fetches the ten CSVs and `manifest.json` under a
  * base URL, parses them with PapaParse, and validates headers, cell kinds
  * and foreign keys. Every failure throws an Error whose message names the
  * file and, where there is one, the column (spec 7.3 "fail loudly").
@@ -11,6 +11,7 @@
 import Papa from "papaparse";
 import type {
   BaselineProviderRow,
+  BuyingPatternRow,
   CaseStudyRow,
   HardwareRow,
   Manifest,
@@ -25,6 +26,7 @@ import type {
 } from "../contract";
 import {
   BASELINE_PROVIDERS,
+  BUYING_PATTERNS,
   CASE_STUDIES,
   HARDWARE,
   LATENCY_CLASSES,
@@ -34,6 +36,7 @@ import {
   SEAT_PLANS,
   THROUGHPUT_CURVES,
   WORKLOADS,
+  STAGES,
   seatCapMtokPerUserMonth,
   type TableSpec,
 } from "./schema";
@@ -291,34 +294,85 @@ function validateReferences(t: Tables): void {
     checkModelMixCell(CASE_STUDIES.file, "model_mix_json", lineOf(i), r.model_mix_json),
   );
 
+  validateBuyingPatterns(t);
+
+  const patternById = new Map(t.buying_patterns.map((p) => [p.pattern_id, p]));
+  const patternIds = new Set(patternById.keys());
   const customerWorkloads = new Set(t.workloads.filter((w) => w.basis === "customer").map((w) => w.workload_id));
   const shareSums = new Map<string, number>();
   t.baseline_providers.forEach((r, i) => {
     const file = BASELINE_PROVIDERS.file;
+    need(file, "pattern_id", i, r.pattern_id, patternIds, BUYING_PATTERNS.file);
+    const pattern = patternById.get(r.pattern_id) as BuyingPatternRow;
+    if (pattern.kind === "best_single") {
+      throw new Error(
+        `${file}: column "pattern_id" on line ${lineOf(i)} names "${r.pattern_id}", a best_single pattern, which has no rows (compute derives it)`,
+      );
+    }
     need(file, "workload_id", i, r.workload_id, ids.workloads, WORKLOADS.file);
     if ((r.offer_id === null) === (r.plan_id === null)) {
       throw new Error(`${file}: columns "offer_id" and "plan_id" on line ${lineOf(i)}: fill exactly one`);
     }
-    // Nobody buys seats for customers: customer workloads are bought per token on every stage.
-    if (r.stage === "seats" && !customerWorkloads.has(r.workload_id)) {
-      if (r.plan_id === null) throw new Error(`${file}: column "plan_id" on line ${lineOf(i)} is required for stage seats`);
+    // Seat plans exist only in the seats pattern, and nobody buys seats for
+    // customers: customer workloads are bought per token in every pattern.
+    if (pattern.stage === "seats" && !customerWorkloads.has(r.workload_id)) {
+      if (r.plan_id === null) throw new Error(`${file}: column "plan_id" on line ${lineOf(i)} is required for pattern ${r.pattern_id}`);
       need(file, "plan_id", i, r.plan_id, ids.plans, SEAT_PLANS.file);
     } else {
       if (r.offer_id === null) {
-        throw new Error(`${file}: column "offer_id" on line ${lineOf(i)} is required for stage ${r.stage} and customer workloads`);
+        throw new Error(`${file}: column "offer_id" on line ${lineOf(i)} is required for pattern ${r.pattern_id} and customer workloads`);
       }
       need(file, "offer_id", i, r.offer_id, ids.offers, MODEL_OFFERS.file);
     }
-    const key = `${r.stage}|${r.workload_id}`;
+    const key = `${r.pattern_id}|${r.workload_id}`;
     shareSums.set(key, (shareSums.get(key) ?? 0) + r.share_default);
   });
   for (const [key, sum] of shareSums) {
     if (Math.abs(sum - 1) > SHARE_SUM_TOLERANCE) {
-      const [stage, workload] = key.split("|");
+      const [pattern, workload] = key.split("|");
       throw new Error(
-        `${BASELINE_PROVIDERS.file}: column "share_default" for stage ${stage} and workload ${workload} sums to ${sum}, not 1`,
+        `${BASELINE_PROVIDERS.file}: column "share_default" for pattern ${pattern} and workload ${workload} sums to ${sum}, not 1`,
       );
     }
+  }
+}
+
+/** Structure of buying_patterns.csv (spec 7.4): ids, one typical buyer per stage, rank labelling. */
+function validateBuyingPatterns(t: Tables): void {
+  const file = BUYING_PATTERNS.file;
+  const seen = new Set<string>();
+  t.buying_patterns.forEach((p, i) => {
+    const where = `${file}: column`;
+    if (seen.has(p.pattern_id)) {
+      throw new Error(`${where} "pattern_id" on line ${lineOf(i)} repeats "${p.pattern_id}"`);
+    }
+    seen.add(p.pattern_id);
+    if (p.kind === "way_to_buy" && p.stage === null) {
+      throw new Error(`${where} "stage" on line ${lineOf(i)} is required for a way_to_buy pattern`);
+    }
+    if (p.kind !== "way_to_buy" && p.stage !== null) {
+      throw new Error(`${where} "stage" on line ${lineOf(i)} must be empty for a ${p.kind} pattern`);
+    }
+    if (p.kind === "vendor_end_to_end" && p.vendor === null) {
+      throw new Error(`${where} "vendor" on line ${lineOf(i)} is required for a vendor_end_to_end pattern`);
+    }
+    if (p.popularity_rank !== null) {
+      if (!Number.isInteger(p.popularity_rank) || p.popularity_rank < 1) {
+        throw new Error(`${where} "popularity_rank" on line ${lineOf(i)} must be a whole number from 1`);
+      }
+      if (p.popularity_source === null) {
+        throw new Error(`${where} "popularity_source" on line ${lineOf(i)} is required when popularity_rank is set`);
+      }
+    }
+  });
+  for (const stage of STAGES) {
+    const typical = t.buying_patterns.filter((p) => p.kind === "way_to_buy" && p.stage === stage);
+    if (typical.length !== 1) {
+      throw new Error(`${file}: column "stage" needs exactly one way_to_buy pattern for stage "${stage}", found ${typical.length}`);
+    }
+  }
+  if (t.buying_patterns.filter((p) => p.kind === "best_single").length > 1) {
+    throw new Error(`${file}: column "kind" has more than one best_single pattern`);
   }
 }
 
@@ -339,6 +393,7 @@ export async function loadTables(baseUrl: string): Promise<Tables> {
     SEAT_PLANS,
     QUALITY,
     WORKLOADS,
+    BUYING_PATTERNS,
     BASELINE_PROVIDERS,
     CASE_STUDIES,
   ];
@@ -356,8 +411,9 @@ export async function loadTables(baseUrl: string): Promise<Tables> {
     seat_plans: rows[4] as SeatPlanRow[],
     quality: rows[5] as QualityRow[],
     workloads: rows[6] as WorkloadRow[],
-    baseline_providers: rows[7] as BaselineProviderRow[],
-    case_studies: rows[8] as CaseStudyRow[],
+    buying_patterns: rows[7] as BuyingPatternRow[],
+    baseline_providers: rows[8] as BaselineProviderRow[],
+    case_studies: rows[9] as CaseStudyRow[],
     manifest: parseManifest(manifestText),
   };
   validateReferences(tables);
@@ -389,5 +445,14 @@ export async function loadScenario(baseUrl: string, id: string): Promise<Scenari
         parseTable<HardwareRow>(HARDWARE, await fetchText(baseUrl, HARDWARE.file)).map((h) => h.hw_id),
       )
     : new Set<string>();
-  return parseScenarioResponse(file, json, hardwareIds);
+  // buying_patterns.csv is needed only to check an explicit `comparator`.
+  const namesComparator = isRecord(json) && isRecord(json.scenario) && json.scenario.comparator !== undefined;
+  const patternIds = namesComparator
+    ? new Set(
+        parseTable<BuyingPatternRow>(BUYING_PATTERNS, await fetchText(baseUrl, BUYING_PATTERNS.file)).map(
+          (p) => p.pattern_id,
+        ),
+      )
+    : new Set<string>();
+  return parseScenarioResponse(file, json, { hardwareIds, patternIds });
 }
