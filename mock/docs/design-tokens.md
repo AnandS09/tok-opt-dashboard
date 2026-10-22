@@ -237,7 +237,7 @@ Both fonts are self-hosted in the repo (BD-16, spec 14.2).
 | Group | Tokens |
 |---|---|
 | Spacing | `--space-1` to `-8`: 4, 8, 12, 16, 24, 32, 48, 64px |
-| Chart strokes | Separator 1px, savings outline 1.5px, budget line 1.5px (solid). **New:** `--chart-provenance-width` 2px, `--chart-dash-modelled` 6 3, `--chart-dash-vendor` 2 3 |
+| Chart strokes | Separator 1px, savings outline 1.5px, budget line 1.5px (solid). **New:** `--chart-provenance-width` 2px, `--chart-dash-modelled` 6 3, `--chart-dash-vendor` 2 3. C10: `--chart-today-line-width` 1.5px, `--chart-frontier-line-width` 2px |
 | Chart size | `--chart-stage-height` 320px |
 | Radii | `--radius-sm`, `-md`, `-lg`, `-pill`: all 2px (spec 14.3) |
 | Shadow | `--shadow-card`: none. `--shadow-stage`: a 1px `#d6d1c7` ring only. No box shadows on the page (spec 14.3). |
@@ -307,6 +307,8 @@ Both fonts are self-hosted in the repo (BD-16, spec 14.2).
   --chart-provenance-width: 2px;          /* new */
   --chart-dash-modelled: 6 3;             /* new: dash array, modelled */
   --chart-dash-vendor: 2 3;               /* new: dash array, vendor-reported */
+  --chart-today-line-width: 1.5px;        /* C10 Today reference lines (3.2) */
+  --chart-frontier-line-width: 2px;       /* C10 InfraVana step line (3.2) */
   --chart-stage-height: 320px;
 
   /* Notices (BD-6) and the invented-placeholder badge */
