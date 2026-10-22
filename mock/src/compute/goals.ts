@@ -42,7 +42,8 @@ export interface SolvedHeadline {
   solve: SolveResult;
   /**
    * G3 only: the head-count each side's budget covers (the solved scale times
-   * the scenario's people). Null for G2, where the people do not change.
+   * the scenario's people), not clamped to the users range. Null for G2, where
+   * the people do not change.
    */
   today_people: number | null;
   infravana_people: number | null;
@@ -60,8 +61,9 @@ export interface SolvedHeadline {
    */
   no_volume_fits: { today: boolean; infravana: boolean };
   /**
-   * G3 only: true when the head-count hit the users range (`solve.capped_at_users_max`),
-   * so the page shows the "more than 10,000 people" message instead of a figure.
+   * G3 only: true when either side's solved head-count is above the users range
+   * (`solve.capped_at_users_max`), so the page shows the "more than 10,000 people"
+   * message instead of a figure. The people fields and `multiple` stay the true solved ones.
    */
   capped_at_users_max: boolean;
 }
@@ -94,6 +96,12 @@ export interface C5Figures {
   extra_tokens: number;
   /** True in G4, where the figures are the linear ones at the relaxed plan ("at the trade-off you chose"). */
   at_tradeoff: boolean;
+  /**
+   * True in G3 when the solved head-count is above the users range, so the page
+   * can replace the G3 figures with the spec 5.2 message. The figures themselves
+   * are the true solved volumes.
+   */
+  capped_at_users_max: boolean;
   /** The grey options other than the comparator, in the order of `Results.today_alternatives`. */
   options: C5Option[];
 }
@@ -178,6 +186,7 @@ export function c5Figures(goal: GoalId, results: Results, solve: SolveResult | n
     multiple: todayTokens > 0 ? infravanaTokens / todayTokens : infravanaTokens > 0 ? Infinity : 1,
     extra_tokens: infravanaTokens - todayTokens,
     at_tradeoff: goal === "G4",
+    capped_at_users_max: goal === "G3" && solve !== null && solve.capped_at_users_max,
     options: results.today_alternatives
       .filter((a) => a.is_grey && a.pattern_id !== results.comparator)
       .map((a) => ({

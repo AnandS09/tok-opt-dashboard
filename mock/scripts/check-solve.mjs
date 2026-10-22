@@ -109,12 +109,22 @@ try {
   ok(`S1 at 5,000 people and $90M: G2 ${bigG2.multiple.toFixed(4)} (about 1.42, not 1.0)`);
 
   const bigG3 = solved(big, "users");
-  // Today's 44,968 and InfraVana's 63,860 people both exceed 10,000, so both sides are capped.
+  // Today's 44,968 and InfraVana's 63,860 people both exceed 10,000: the flag is set and the scales stay the true ones.
   assert.equal(bigG3.capped_at_users_max, true, "63,860 people is above the users range");
-  close(bigG3.infravana_scale * 5000, USERS_RANGE.max, 1e-6, "InfraVana head-count at the cap");
-  close(bigG3.today_scale * 5000, USERS_RANGE.max, 1e-6, "Today head-count at the cap");
-  assert.equal(bigG3.multiple, 1, "both sides capped, so the capped ratio is 1");
-  ok(`S1 at 5,000 people and $90M: G3 head-count capped at ${USERS_RANGE.max} on both sides (flag set)`);
+  close(bigG3.multiple, 1.4201, 0.0014, "S1 5,000 people $90M G3 multiple is uncapped (within 0.1%)");
+  close(bigG3.infravana_scale * 5000, 63_860, 5, "InfraVana head-count is the true solved one");
+  close(bigG3.today_scale * 5000, 44_968, 5, "Today head-count is the true solved one");
+  ok(`S1 at 5,000 people and $90M: G3 ${bigG3.multiple.toFixed(4)} (not 1.0), flag set, head-counts 44,968 and 63,860`);
+
+  // Only InfraVana passes 10,000 here (Today 7,996 people, InfraVana 11,355): the one-sided case.
+  const oneSided = at(s1, 5000, 16e6);
+  const oneSidedG3 = solved(oneSided, "users");
+  assert.equal(oneSidedG3.capped_at_users_max, true, "InfraVana's 11,355 people is above the users range");
+  assert.ok(oneSidedG3.today_scale * 5000 < USERS_RANGE.max, "Today's head-count is below the range");
+  assert.ok(oneSidedG3.infravana_scale * 5000 > USERS_RANGE.max, "InfraVana's head-count is above the range");
+  close(oneSidedG3.multiple, 1.4201, 0.0014, "S1 5,000 people $16M G3 multiple is uncapped (within 0.1%)");
+  assert.equal(solved(oneSided, "intensity").capped_at_users_max, false, "the flag is G3 only");
+  ok(`S1 at 5,000 people and $16M: only InfraVana is over the range; flag set, G3 ${oneSidedG3.multiple.toFixed(4)}`);
 
   const one = at(s1, 1, 100e6);
   const oneG2 = solved(one, "intensity");
@@ -123,8 +133,9 @@ try {
   const oneG3 = solved(one, "users");
   assert.ok(Number.isFinite(oneG3.multiple), "finite G3");
   assert.equal(oneG3.capped_at_users_max, true);
-  assert.ok(oneG3.today_scale * 1 <= USERS_RANGE.max && oneG3.infravana_scale * 1 <= USERS_RANGE.max, "both sides capped");
-  ok(`S1 at 1 user and $100M: G2 ${oneG2.multiple.toFixed(4)} finite; G3 finite with the cap flag`);
+  assert.ok(oneG3.today_scale > USERS_RANGE.max && oneG3.infravana_scale > USERS_RANGE.max, "true head-counts, not clamped");
+  close(oneG3.multiple, 1.4201, 0.0014, "S1 1 user $100M G3 multiple is uncapped (within 0.1%)");
+  ok(`S1 at 1 user and $100M: G2 ${oneG2.multiple.toFixed(4)} finite; G3 ${oneG3.multiple.toFixed(4)} with the cap flag`);
 
   const lowBudget = at(s2, s2.baseline.users, 30_000);
   const lowG2 = solved(lowBudget, "intensity");
@@ -160,6 +171,7 @@ try {
     ["hardware_heavy default", hardwareHeavy],
     ["S1 5,000 people $90M", big],
     ["S1 1 user $100M", one],
+    ["S1 5,000 people $16M (only InfraVana over the users range)", oneSided],
     ["S2 $30K", lowBudget],
     ["S1 seats, $50K", { ...at(s1, s1.baseline.users, 50_000), stage_today: "seats" }],
     ["S1 seats, 100 people $10K (below the seat fees)", { ...at(s1, 100, 10_000), stage_today: "seats" }],
@@ -172,19 +184,18 @@ try {
       const fns = spendFns(s, axis);
       const today = specSolve(fns.today, budget);
       const infravana = specSolve(fns.infravana, budget);
-      // The solver caps G3's head-count; the independent scales are uncapped.
+      // The scales are never clamped; the flag says whether either head-count is above the users range.
       const cap = axis === "users" ? USERS_RANGE.max / s.baseline.users : Infinity;
       // The independent solver finds nothing (null) where no volume fits; the solver returns 0 there.
       const todayLo = today.lo ?? 0;
       const infravanaLo = infravana.lo ?? 0;
-      close(result.today_scale, Math.min(todayLo, cap), 1e-9 * todayLo, `${name} ${axis} Today scale`);
-      close(result.infravana_scale, Math.min(infravanaLo, cap), 1e-9 * infravanaLo, `${name} ${axis} InfraVana scale`);
-      assert.ok(result.today_scale === 0 || fns.today(result.today_scale) <= budget || result.today_scale === cap, `${name} ${axis} Today fits the budget`);
-      assert.ok(result.infravana_scale === 0 || fns.infravana(result.infravana_scale) <= budget || result.infravana_scale === cap, `${name} ${axis} InfraVana fits the budget`);
-      if (axis === "intensity" || infravana.lo <= cap) {
-        assert.ok(noScannedAbove(fns.infravana, budget, result.infravana_scale), `${name} ${axis}: a scanned scale above the InfraVana result fits`);
-        assert.ok(noScannedAbove(fns.today, budget, result.today_scale), `${name} ${axis}: a scanned scale above the Today result fits`);
-      }
+      close(result.today_scale, todayLo, 1e-9 * todayLo, `${name} ${axis} Today scale`);
+      close(result.infravana_scale, infravanaLo, 1e-9 * infravanaLo, `${name} ${axis} InfraVana scale`);
+      assert.ok(result.today_scale === 0 || fns.today(result.today_scale) <= budget, `${name} ${axis} Today fits the budget`);
+      assert.ok(result.infravana_scale === 0 || fns.infravana(result.infravana_scale) <= budget, `${name} ${axis} InfraVana fits the budget`);
+      assert.equal(result.capped_at_users_max, axis === "users" && (todayLo > cap || infravanaLo > cap), `${name} ${axis} cap flag`);
+      assert.ok(noScannedAbove(fns.infravana, budget, result.infravana_scale), `${name} ${axis}: a scanned scale above the InfraVana result fits`);
+      assert.ok(noScannedAbove(fns.today, budget, result.today_scale), `${name} ${axis}: a scanned scale above the Today result fits`);
       assert.equal(result.multiple, result.infravana_scale / result.today_scale);
     }
   }
@@ -323,6 +334,18 @@ try {
     assert.equal(h.capped_at_users_max, true);
     assert.equal(h.over_ten_times, true, "$100M for one person is far above ten times the work");
     assert.equal(h.today_people, oneG3.today_scale);
+    assert.ok(h.infravana_people > USERS_RANGE.max, "people are the true solved head-count, not clamped");
+    close(h.multiple, 1.4201, 0.0014, "G3 headline multiple is the solved one");
+    // C5 in G3 uses the solved volumes and says whether the cap applies.
+    const c5 = compute.c5Figures("G3", compute.compute(big, tables), bigG3);
+    assert.equal(c5.capped_at_users_max, true);
+    assert.equal(c5.basis, "solved");
+    assert.equal(c5.today_tokens, bigG3.today_tokens);
+    assert.equal(c5.infravana_tokens, bigG3.infravana_tokens);
+    close(c5.multiple, 1.4201, 0.0014, "C5 G3 multiple is the solved one at $90M");
+    assert.ok(c5.extra_tokens > 0, "C5 G3 has extra tokens");
+    assert.equal(compute.c5Figures("G3", compute.compute(lowBudget, tables), lowG3).capped_at_users_max, false);
+    assert.equal(compute.c5Figures("G2", compute.compute(big, tables), bigG2).capped_at_users_max, false);
     const g2h = compute.solvedHeadline(one, oneG2);
     assert.equal(g2h.goal, "G2");
     assert.equal(g2h.today_people, null);

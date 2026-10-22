@@ -151,9 +151,11 @@ function solveSide(
  *   - `intensity` (goal G2): scale the tokens per user per day of all
  *     workloads, employee and customer.
  *   - `users` (goal G3): scale the head-count, so employee workloads only;
- *     customers stay fixed. The solved head-count is capped at the users
- *     range afterwards (spec 5.2), on both sides, and `capped_at_users_max`
- *     says whether either side was capped.
+ *     customers stay fixed. The scales, tokens and `multiple` are the true
+ *     solved ones, never clamped; `capped_at_users_max` is true whenever
+ *     either side's solved head-count (its scale times the scenario's
+ *     people) is above the users range (spec 5.2), and the page shows the
+ *     "more than 10,000 people" message in place of the figure.
  *
  * Each side has its own ceiling, twice the budget over that side's linear
  * spend at the current volume. The scan is geometric from 0.01 in 1 percent
@@ -207,16 +209,12 @@ export function solveAtBudget(scenario: Scenario, tables: Tables, axis: SolveAxi
     throw new Error("solveAtBudget: the scenario has no spend at its current volume, so there is nothing to scale");
   }
 
-  let todayScale = solveSide((s) => evaluate(s).today_usd, budgetUsd, current.today_usd);
-  let infravanaScale = solveSide((s) => evaluate(s).infravana_usd, budgetUsd, current.infravana_usd);
+  const todayScale = solveSide((s) => evaluate(s).today_usd, budgetUsd, current.today_usd);
+  const infravanaScale = solveSide((s) => evaluate(s).infravana_usd, budgetUsd, current.infravana_usd);
 
-  let capped = false;
-  if (axis === "users") {
-    const cap = USERS_RANGE.max / own.baseline.users;
-    capped = todayScale > cap || infravanaScale > cap;
-    todayScale = Math.min(todayScale, cap);
-    infravanaScale = Math.min(infravanaScale, cap);
-  }
+  // Only the flag carries the cap: clamping the scales would distort the multiple.
+  const cap = USERS_RANGE.max / own.baseline.users;
+  const capped = axis === "users" && (todayScale > cap || infravanaScale > cap);
 
   const tokensAt = (scale: number): number => (scale > 0 ? evaluate(scale).demand_tokens : 0);
   return {
