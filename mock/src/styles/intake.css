@@ -27,9 +27,11 @@
   column-gap: var(--space-5);
   min-height: 0;
   height: 100%;
-  padding: var(--space-4) var(--space-3);
+  /* The left border is always there, transparent, so the state marks below move nothing. */
+  padding: var(--space-4) var(--space-3) var(--space-4) calc(var(--space-3) - 3px);
   background: transparent;
   border: 0;
+  border-left: 3px solid transparent;
   border-bottom: 1px solid var(--color-border);
   border-radius: 0;
   box-shadow: none;
@@ -43,10 +45,27 @@
   font-size: var(--font-size-lg);
 }
 
-.choices--list .choice:hover,
+/*
+ * Hover, selected and hover on a selected row look different, with no shadow
+ * (spec 14.3): the mark is a 3px left border. Hover is white with the strong
+ * edge; selected is the soft accent fill with the accent edge; hover on a
+ * selected row is white with the accent edge, so deselecting shows at once.
+ */
+.choices--list .choice:hover {
+  background: var(--color-surface-raised);
+  border-left-color: var(--color-border-strong);
+  border-bottom-color: var(--color-border);
+}
+
 .choices--list .choice[aria-pressed="true"] {
   background: var(--color-accent-soft);
-  box-shadow: inset 3px 0 0 var(--color-accent-strong);
+  border-left-color: var(--color-accent-strong);
+  border-bottom-color: var(--color-border);
+}
+
+.choices--list .choice[aria-pressed="true"]:hover {
+  background: var(--color-surface-raised);
+  border-left-color: var(--color-accent-strong);
 }
 
 .choices--list .choice__icon {
@@ -325,7 +344,7 @@
     align-content: center;
     column-gap: var(--space-3);
     row-gap: 2px;
-    padding: var(--space-3) var(--space-1);
+    padding: var(--space-3) var(--space-1) var(--space-3) calc(var(--space-1) - 3px);
   }
 
   .choices--list .choice__icon {
