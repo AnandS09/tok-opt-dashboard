@@ -144,9 +144,13 @@ export function buildCostPerMtokOption(
     ),
   );
   // Each marker carries its price above it when the markers can be spaced a price apart (the tooltip carries it otherwise).
+  // The first label is centred on its marker, so the marker starts far enough from the bar pair that the label clears the bar's edge.
   const labelStep = Math.ceil(priceWidth) + t.space1;
-  const roomStep = cmp.options.length > 1 ? (room - first) / (cmp.options.length - 1) : Infinity;
-  const priced = stage && !narrow && roomStep >= labelStep;
+  const clearOfBar = pairHalf + Math.ceil(priceWidth / 2) + t.space1;
+  const roomStepFrom = (from: number) => (cmp.options.length > 1 ? (room - from) / (cmp.options.length - 1) : Infinity);
+  const priced = stage && !narrow && clearOfBar <= room && roomStepFrom(Math.max(first, clearOfBar)) >= labelStep;
+  const start = priced ? Math.max(first, clearOfBar) : first;
+  const roomStep = roomStepFrom(start);
   const step = cmp.options.length > 1 ? Math.max(0, Math.min(priced ? labelStep : narrow ? MARKER_SIZE : 20, roomStep)) : 0;
 
   const markers: ScatterSeriesOption[] = cmp.options.map((o, i) => {
@@ -157,7 +161,7 @@ export function buildCostPerMtokOption(
       symbol: style.marker,
       symbolSize: MARKER_SIZE,
       symbolKeepAspect: true,
-      symbolOffset: [first + i * step, 0],
+      symbolOffset: [start + i * step, 0],
       z: 5,
       silent: !stage,
       emphasis: { disabled: true },
