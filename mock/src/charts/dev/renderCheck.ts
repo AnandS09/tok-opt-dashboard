@@ -344,8 +344,9 @@ export function runChartChecks(label: string, results: Results, tokens: Tokens):
 }
 
 /**
- * Budgets the budget knob can reach (spec 5: $1K to $10M), plus the band
- * just under a million where a compact figure rounds up to the next unit.
+ * Budgets sampled from what the budget knob can reach (spec 5.2: $1K to
+ * $100M; the list stops at $10M), plus the band just under a million where a
+ * compact figure rounds up to the next unit.
  */
 export const CHECK_BUDGETS = [1000, 100000, 999500, 999600, 999999, 1000000, 10000000];
 

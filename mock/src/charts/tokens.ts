@@ -2,8 +2,9 @@
  * Design tokens for chart code. ECharts draws to canvas, which cannot resolve
  * `var()`, so colours, stroke sizes, type sizes and timings are read from the
  * CSS custom properties at draw time with getComputedStyle. The tokens stay
- * the single source (design-tokens.md); no colour, stroke or font size is
- * written in chart code.
+ * the single source (styles/tokens.css, spec 14); no colour, stroke, font or
+ * font size is written in chart code, so a change of theme is a change of
+ * stylesheet only.
  */
 
 /** Colour and font-family tokens, kept as the text the stylesheet gives. */
@@ -46,9 +47,14 @@ export type Tokens = Record<ColourKey, string> &
     lineSm: number;
   };
 
-/** Custom property behind each colour token. */
+/**
+ * Custom property behind each colour token. `surface` is the chart's own
+ * ground, the colour behind and between marks and under label chips and the
+ * text drawn on dark fills; in the Research Note theme that is the paper
+ * (`--color-bg`), so a chart carries no box of its own (spec 14.1).
+ */
 export const COLOUR_VARS: Record<ColourKey, string> = {
-  surface: "--color-surface",
+  surface: "--color-chart-ground",
   separator: "--color-series-separator",
   text: "--color-text",
   textSecondary: "--color-text-secondary",
