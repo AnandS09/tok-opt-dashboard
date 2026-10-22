@@ -262,6 +262,24 @@ function validateReferences(t: Tables): void {
         );
       }
     }
+    // Speed (spec 7.4): both columns or neither, positive, and never on a row
+    // costed from hardware (its speed comes from throughput_curves.csv).
+    if ((r.tok_s_per_user === null) !== (r.p95_ttft_ms === null)) {
+      throw new Error(
+        `${MODEL_OFFERS.file}: columns "tok_s_per_user" and "p95_ttft_ms" on line ${lineOf(i)}: fill both or neither`,
+      );
+    }
+    for (const column of ["tok_s_per_user", "p95_ttft_ms"] as const) {
+      const value = r[column];
+      if (value !== null && !(value > 0)) {
+        throw new Error(`${MODEL_OFFERS.file}: column "${column}" on line ${lineOf(i)} must be above 0`);
+      }
+    }
+    if (selfHost && (r.price_tier !== "standard" || r.tok_s_per_user !== null)) {
+      throw new Error(
+        `${MODEL_OFFERS.file}: columns "price_tier" and "tok_s_per_user" on line ${lineOf(i)} must be "standard" and empty for a self-host row`,
+      );
+    }
   });
 
   t.seat_plans.forEach((r, i) => {
@@ -301,6 +319,7 @@ function validateReferences(t: Tables): void {
   const patternById = new Map(t.buying_patterns.map((p) => [p.pattern_id, p]));
   const patternIds = new Set(patternById.keys());
   const vendorOfModel = new Map(t.models.map((m) => [m.model_id, m.vendor]));
+  const tierByOffer = new Map(t.model_offers.map((o) => [o.offer_id, o.price_tier]));
   const modelVendorByOffer = new Map(t.model_offers.map((o) => [o.offer_id, vendorOfModel.get(o.model_id)]));
   const customerWorkloads = new Set(t.workloads.filter((w) => w.basis === "customer").map((w) => w.workload_id));
   const shareSums = new Map<string, number>();
@@ -327,6 +346,12 @@ function validateReferences(t: Tables): void {
         throw new Error(`${file}: column "offer_id" on line ${lineOf(i)} is required for pattern ${r.pattern_id} and customer workloads`);
       }
       need(file, "offer_id", i, r.offer_id, ids.offers, MODEL_OFFERS.file);
+      // Today buys at list price; batch and flex rows belong to InfraVana's G4 speed step only (BD-11).
+      if (tierByOffer.get(r.offer_id) !== "standard") {
+        throw new Error(
+          `${file}: column "offer_id" on line ${lineOf(i)} names "${r.offer_id}", which is not a standard-tier offer`,
+        );
+      }
       // A vendor end-to-end pattern buys only that vendor's models.
       if (pattern.kind === "vendor_end_to_end") {
         const vendor = modelVendorByOffer.get(r.offer_id);

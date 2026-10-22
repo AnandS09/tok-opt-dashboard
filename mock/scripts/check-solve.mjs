@@ -299,8 +299,12 @@ try {
     const rows = JSON.stringify(tables.workloads);
     solved(s1, "intensity");
     assert.equal(JSON.stringify(tables.workloads), rows, "the tables are not modified");
-    throwsLike(() => compute.frontier(s1, tables, "quality", [60]), /not implemented/, "frontier is still a stub");
-    ok("no demand and no budget throw by name; neither argument is modified; frontier is still a stub");
+    // frontier is implemented (scripts/check-frontier.mjs checks it); it too leaves both arguments alone.
+    const tablesBefore = JSON.stringify(tables);
+    for (const axis of ["quality", "speed"]) compute.frontier(s1, tables, axis, compute.frontierThresholds(s1, tables, axis));
+    assert.equal(JSON.stringify(s1), before, "frontier does not modify the scenario");
+    assert.equal(JSON.stringify(tables), tablesBefore, "frontier does not modify the tables");
+    ok("no demand and no budget throw by name; neither argument is modified by a solve or by frontier");
   }
 
   // ---- C5 follows the tab ---------------------------------------------------

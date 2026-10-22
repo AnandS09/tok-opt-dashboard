@@ -70,6 +70,14 @@ export type OfferChannel =
   | "neocloud"
   | "self-host";
 
+/**
+ * Spec 7.4 `model_offers.csv` `price_tier`. `standard` is the list price every
+ * default view uses. `batch` and `flex` are cheaper, slower prices of the same
+ * model that only the G4 speed step and the C10 speed view may use (spec 6.2,
+ * 6.3, 12 BD-11).
+ */
+export type PriceTier = "standard" | "batch" | "flex";
+
 /** Spec 4.3 (speed step) and A.2 `latency_class`. */
 export type LatencyClass = "interactive" | "standard" | "batch";
 
@@ -181,6 +189,23 @@ export interface ModelOfferRow {
   source_url: string;
   /** ISO date the price was captured (spec 12 BD-2, BD-5). */
   as_of: string;
+  /** Spec 7.4. Every default view buys at `standard` only. */
+  price_tier: PriceTier;
+  /**
+   * Spec 7.4. The weakest provenance of any value on the row, so a row that
+   * carries invented speed values is `modelled` even when its price is not.
+   * `compute()` uses it only where it uses the speed columns (G4's speed step
+   * and the C10 speed view); every other view keeps the price provenance.
+   */
+  provenance: Provenance;
+  /**
+   * Spec 7.4 (BD-11): speed one user sees through this offer, in tokens per
+   * second. Null when the row has no speed data (an unknown speed never gates
+   * the offer). Filled for proprietary offers only.
+   */
+  tok_s_per_user: number | null;
+  /** Spec 7.4 (BD-11): p95 time to first token in milliseconds; null exactly when `tok_s_per_user` is. */
+  p95_ttft_ms: number | null;
 }
 
 /**
