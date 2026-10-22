@@ -7,9 +7,8 @@
  *   ComparatorSlot  under the hero            the "Compared with" selector (6.1)
  *   BenefitsSlot    under each figure title   the benefit boxes (6.4)
  *
- * Until a slot is built it draws a quiet, clearly marked placeholder (the two
- * above the stage) or, for the boxes, the one-sentence takeaway the page has
- * always shown. `data-slot` names each one for tests and for the step that
+ * Until a slot is built it draws nothing (the two above the stage) or, for the
+ * boxes, the one-sentence takeaway the page has always shown. `data-slot` names each one for tests and for the step that
  * replaces it. The view state and its setters arrive in `ctx`.
  */
 import type { ChartDef, Results } from "../contract";
@@ -30,14 +29,8 @@ function attempt(fn: () => string): string {
 
 export function GoalTabsSlot({ ctx }: { ctx: StageSlotContext }) {
   void ctx;
-  return (
-    <div
-      className="stage-slot stage-slot--empty"
-      data-slot="goal-tabs"
-      data-label="Slot: goal tabs (a later step fills this)"
-      aria-hidden="true"
-    />
-  );
+  // Nothing is drawn until the tabs exist: an empty hook for them, not text for visitors.
+  return <div data-slot="goal-tabs" />;
 }
 
 // ---------------------------------------------------------------------------
@@ -46,14 +39,8 @@ export function GoalTabsSlot({ ctx }: { ctx: StageSlotContext }) {
 
 export function ComparatorSlot({ ctx }: { ctx: StageSlotContext }) {
   void ctx;
-  return (
-    <div
-      className="stage-slot stage-slot--empty"
-      data-slot="comparator"
-      data-label="Slot: Compared with selector (a later step fills this)"
-      aria-hidden="true"
-    />
-  );
+  // Nothing is drawn until the selector is mounted here.
+  return <div data-slot="comparator" />;
 }
 
 // ---------------------------------------------------------------------------

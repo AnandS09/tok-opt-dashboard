@@ -15,25 +15,6 @@
   min-width: 0;
 }
 
-/* ---- Slots for later steps (components/StageSlots.tsx) ---- */
-
-.stage-slot--empty {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  letter-spacing: var(--letter-spacing-label);
-  text-transform: uppercase;
-}
-
-.stage-slot--empty::before {
-  content: attr(data-label);
-}
-
 /* ---- Index and grid button ---- */
 
 .stage__bar {
