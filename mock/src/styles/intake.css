@@ -372,6 +372,7 @@
 
   .choices--list .choice--provider .choice__label {
     grid-column: 1;
+    font-size: var(--font-size-md);
   }
 
   .choices--list .choice--provider::after {
