@@ -34,6 +34,21 @@ import { addToClass, computeToday, emptyClassTotals, type TodayResult } from "./
 export { computeCore, type CoreResults } from "./core";
 export { benefitHeadcount } from "./headcount";
 export { frontier, solveAtBudget } from "./solve";
+export {
+  c5Figures,
+  COVERAGE_MESSAGE_ABOVE,
+  g1Headline,
+  goalAvailability,
+  NO_EMPLOYEE_WORK_REASON,
+  solveGoal,
+  solvedHeadline,
+  type C5Figures,
+  type C5Option,
+  type G1Headline,
+  type GoalAvailability,
+  type SolvedHeadline,
+} from "./goals";
+export { SOLVE_DEBOUNCE_MS, SolveClient, type SolveClientOptions, type SolveSnapshot, type SolveWorkerHandle } from "./solveClient";
 
 /** The scenario with its `target` state as the state to price, or null without one. */
 export function scenarioAtTarget(scenario: Scenario): Scenario | null {
