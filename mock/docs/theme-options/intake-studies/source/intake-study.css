@@ -1,0 +1,136 @@
+/* Intake study, Research Note theme (?theme=d1). Scratch copy only; reproduce with the patch notes in README. */
+
+/* ---- Company step: one column, the empty estimate is hidden until a type is picked ---- */
+[data-theme="d1"] .intake--company { grid-template-columns: minmax(0, 1fr); }
+[data-theme="d1"] .intake--company .estimate { display: none; }
+
+/* Equal boxes: every option in a layout is the same size, whatever its text length. */
+[data-theme="d1"] .choices--list,
+[data-theme="d1"] .choices--row5,
+[data-theme="d1"] .choices--grid6 { display: grid; grid-auto-rows: 1fr; }
+[data-theme="d1"] .choices .choice { height: 100%; text-decoration: none; }
+[data-theme="d1"] .choice__icon { flex: none; }
+
+/* A. Ruled list of equal rows */
+[data-theme="d1"] .choices--list { grid-template-columns: minmax(0, 1fr); gap: 0; border-top: 1px solid var(--color-text); }
+[data-theme="d1"] .choices--list .choice,
+[data-theme="d1"] .intake__aside--list {
+  display: grid; grid-template-columns: 28px minmax(0, 17rem) minmax(0, 1fr) 20px; align-items: center; column-gap: var(--space-5);
+  min-height: 0; padding: var(--space-4) var(--space-3); background: transparent; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0;
+}
+[data-theme="d1"] .choices--list .choice::after,
+[data-theme="d1"] .intake__aside--list::after { content: "\2192"; justify-self: end; color: var(--color-text-secondary); font-size: 1.1rem; }
+[data-theme="d1"] .choices--list .choice:hover,
+[data-theme="d1"] .choices--list .choice[aria-pressed="true"] { background: #ffffff; box-shadow: inset 3px 0 0 var(--color-accent-strong); }
+[data-theme="d1"] .choices--list .choice__hint { font-size: var(--font-size-md); }
+[data-theme="d1"] .intake__aside--list { align-self: stretch; margin-top: calc(var(--space-4) * -1); color: var(--color-text-secondary); font-size: var(--font-size-md); text-decoration: none; }
+[data-theme="d1"] .intake__aside--list::before { content: ""; }
+
+/* B. Equal-width row of five */
+[data-theme="d1"] .choices--row5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); }
+[data-theme="d1"] .choices--row5 .choice { min-height: 0; padding: var(--space-4); }
+[data-theme="d1"] .choices--row5 .choice__label { font-size: 1.15rem; }
+[data-theme="d1"] .choices--row5 .choice__hint { font-size: var(--font-size-sm); }
+[data-theme="d1"] .intake__aside--row5 { align-self: flex-end; }
+
+/* C. Six-card grid, the sixth for compute providers */
+[data-theme="d1"] .choices--grid6 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+[data-theme="d1"] .choices--grid6 .choice { min-height: 0; }
+[data-theme="d1"] .choice--provider { background: transparent; border-style: dashed; color: var(--color-text); }
+[data-theme="d1"] .choice--provider .choice__label { font-style: italic; font-weight: 500; }
+[data-theme="d1"] .choice--provider:hover { background: #ffffff; }
+
+/* ---- Continuous control ---- */
+[data-theme="d1"] .choices--control { display: block; max-width: 44rem; }
+[data-theme="d1"] .cc { display: flex; flex-direction: column; gap: var(--space-4); }
+[data-theme="d1"] .cc__readout,
+[data-theme="d1"] .cc__stepper { display: flex; align-items: center; gap: var(--space-3); }
+[data-theme="d1"] .cc__number { display: inline-flex; align-items: baseline; gap: var(--space-2); font-family: var(--font-display); font-size: 2.6rem; line-height: 1.1; }
+[data-theme="d1"] .cc__affix { font-family: var(--font-display); font-style: italic; font-size: 1.4rem; color: var(--color-text-secondary); }
+[data-theme="d1"] .cc__number > .cc__affix:first-child { font-style: normal; font-size: 2.6rem; color: var(--color-text); }
+[data-theme="d1"] .cc__input {
+  width: 6.2ch; padding: 0 2px; border: 0; border-bottom: 2px solid var(--color-accent-strong); border-radius: 0;
+  background: transparent; color: var(--color-text); font: inherit; font-variant-numeric: tabular-nums lining-nums; text-align: right;
+}
+[data-theme="d1"] .cc__input:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 4px; }
+[data-theme="d1"] .cc__step {
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: var(--color-surface);
+  border: 1px solid var(--color-border-strong); border-radius: 2px; color: var(--color-text); cursor: pointer;
+}
+[data-theme="d1"] .cc__step svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
+[data-theme="d1"] .cc__step:hover:not(:disabled) { border-color: var(--color-accent-strong); }
+[data-theme="d1"] .cc__step:disabled { color: var(--color-text-disabled); cursor: not-allowed; }
+[data-theme="d1"] .cc__track { position: relative; display: flex; flex-direction: column; gap: var(--space-2); }
+/* The range input: a 44px tall hit area, a 2px ink track filled in accent up to the thumb. */
+[data-theme="d1"] .cc__range {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 44px; margin: 0; background: transparent; cursor: pointer;
+}
+[data-theme="d1"] .cc__range::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 0;
+  background: linear-gradient(to right, var(--color-accent-strong) 0 var(--cc-fill), var(--color-border-strong) var(--cc-fill) 100%);
+}
+[data-theme="d1"] .cc__range::-moz-range-track { height: 4px; background: var(--color-border-strong); }
+[data-theme="d1"] .cc__range::-moz-range-progress { height: 4px; background: var(--color-accent-strong); }
+[data-theme="d1"] .cc__range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9px; border-radius: 50%;
+  background: var(--color-accent-deep); border: 3px solid var(--color-surface); box-shadow: 0 0 0 1px var(--color-accent-deep);
+}
+[data-theme="d1"] .cc__range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--color-accent-deep); border: 3px solid var(--color-surface); }
+[data-theme="d1"] .cc__range:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; }
+[data-theme="d1"] .cc__ticks { position: absolute; left: 11px; right: 11px; top: 30px; height: 8px; pointer-events: none; }
+[data-theme="d1"] .cc__tick { position: absolute; top: 0; width: 1px; height: 8px; background: var(--color-text); }
+[data-theme="d1"] .cc__ends { display: flex; justify-content: space-between; color: var(--color-text-secondary); font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; }
+[data-theme="d1"] .cc__marks { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+[data-theme="d1"] .cc__marks::before { content: "Common:"; margin-right: var(--space-1); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+[data-theme="d1"] .cc__mark {
+  min-width: 44px; min-height: 44px; padding: 0 var(--space-3); background: transparent; color: var(--color-text);
+  border: 1px solid var(--color-border-strong); border-radius: 2px; font: inherit; font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; cursor: pointer;
+}
+[data-theme="d1"] .cc__mark:hover { border-color: var(--color-accent-strong); }
+[data-theme="d1"] .cc__mark[aria-pressed="true"] { background: var(--color-text); border-color: var(--color-text); color: var(--color-surface); }
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme="d1"] .cc__range::-webkit-slider-thumb { transition: transform var(--duration-fade) var(--ease-standard); }
+  [data-theme="d1"] .cc__range:active::-webkit-slider-thumb { transform: scale(1.1); }
+}
+
+/* ---- Phones ---- */
+@media (max-width: 600px) {
+  [data-theme="d1"] .choices--list .choice,
+  [data-theme="d1"] .intake__aside--list { grid-template-columns: 24px minmax(0, 1fr) 16px; column-gap: var(--space-3); row-gap: 2px; padding: var(--space-3) var(--space-1); }
+  [data-theme="d1"] .choices--list .choice__icon { grid-row: 1 / 3; align-self: start; margin-top: 2px; width: 22px; height: 22px; }
+  [data-theme="d1"] .choices--list .choice__label { grid-column: 2; font-size: 1.15rem; }
+  [data-theme="d1"] .choices--list .choice__hint { grid-column: 2; font-size: var(--font-size-sm); }
+  [data-theme="d1"] .choices--list .choice::after { grid-column: 3; grid-row: 1 / 3; }
+  [data-theme="d1"] .intake__aside--list { grid-template-columns: minmax(0, 1fr) 16px; }
+  /* Five across cannot fit a phone: the row becomes the same ruled list. */
+  [data-theme="d1"] .choices--row5 { grid-template-columns: minmax(0, 1fr); }
+  [data-theme="d1"] .choices--grid6 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+  [data-theme="d1"] .choices--grid6 .choice { padding: var(--space-3); }
+  [data-theme="d1"] .choices--grid6 .choice__label { font-size: 1.05rem; }
+  [data-theme="d1"] .choices--grid6 .choice__hint { font-size: 0.8rem; }
+  [data-theme="d1"] .cc__number,
+  [data-theme="d1"] .cc__number > .cc__affix:first-child { font-size: 2.1rem; }
+  [data-theme="d1"] .cc__affix { font-size: 1.15rem; }
+}
+/* The provider path as the list's last row, aligned to the same columns as the five rows. */
+[data-theme="d1"] .intake__aside--list { grid-template-columns: 28px minmax(0, 1fr) 20px; }
+[data-theme="d1"] .intake__aside--list::before { content: ""; grid-column: 1; }
+@media (max-width: 600px) {
+  [data-theme="d1"] .intake__aside--list { grid-template-columns: 24px minmax(0, 1fr) 16px; }
+}
+/* Number box sizes to its content; the unit follows it directly. */
+[data-theme="d1"] .cc__input { field-sizing: content; width: auto; min-width: 2ch; text-align: left; padding: 0 4px; }
+/* Wide tracks (640px and up): the preset marks sit under the track at their own values. Narrower tracks fall back to a row of buttons. */
+@container cc (min-width: 640px) {
+  [data-theme="d1"] .cc__marks { position: relative; display: block; order: 2; height: 40px; margin: 0 11px; }
+  [data-theme="d1"] .cc__marks::before { content: none; }
+  [data-theme="d1"] .cc__mark { position: absolute; top: 0; left: var(--cc-at); transform: translateX(-50%); min-height: 36px; padding: 0 var(--space-2); }
+  [data-theme="d1"] .cc__ends { order: 3; }
+}
+[data-theme="d1"] .cc__track { container: cc / inline-size; }
+[data-theme="d1"] .cc__number > .cc__affix:first-child { margin-right: calc(var(--space-2) * -1); }
+/* Phone: marks spaced by value would sit 20 to 25px apart, under the 44px target, so they become a row of buttons. */
+@media (max-width: 600px) {
+  [data-theme="d1"] .choices--list .choice { grid-template-rows: auto auto; align-content: center; }
+}

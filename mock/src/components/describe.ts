@@ -1,4 +1,5 @@
 import type { Scenario, Tables } from "../contract";
+import { lowerFirst } from "../store/intake";
 import { fmtShare, fmtUsd, hwLabel } from "../shared/format";
 import {
   joinList,
@@ -28,6 +29,16 @@ export function understoodItems(scenario: Scenario, tables: Tables): Understood[
       value: `${scenario.baseline.users.toLocaleString("en-US")} ${unit}`,
       aliases: ["users", "baseline.users", "baseline", "unit"],
     },
+    ...(scenario.baseline.customers === undefined
+      ? []
+      : [
+          {
+            key: "customers",
+            label: "Customers",
+            value: scenario.baseline.customers.toLocaleString("en-US"),
+            aliases: ["customers", "baseline.customers", "baseline"],
+          },
+        ]),
     {
       key: "budget",
       label: "Budget",
@@ -51,7 +62,7 @@ export function understoodItems(scenario: Scenario, tables: Tables): Understood[
       label: "Work",
       value: Object.entries(scenario.workload_mix)
         .filter(([, share]) => share > 0)
-        .map(([id, share]) => `${workloadLabel(tables, id).toLowerCase()} ${fmtShare(share)}`)
+        .map(([id, share]) => `${lowerFirst(workloadLabel(tables, id))} ${fmtShare(share)}`)
         .join(", "),
       aliases: ["workload_mix"],
     },

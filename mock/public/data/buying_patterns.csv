@@ -1,0 +1,8 @@
+pattern_id,label,kind,stage,vendor,pricing_rule,source_url,as_of
+seats,Seats (per-user plans),way_to_buy,seats,,list,https://example.invalid/placeholder-invented-data/patterns/seats,2026-10-21
+api,Pay-as-you-go API,way_to_buy,api,,list,https://example.invalid/placeholder-invented-data/patterns/api,2026-10-21
+platform,Cloud platform (committed capacity),way_to_buy,platform,,commit,https://example.invalid/placeholder-invented-data/patterns/platform,2026-10-21
+vendor1_direct,"Placeholder vendor 1, end to end, direct",vendor_end_to_end,,Placeholder vendor 1,list,https://example.invalid/placeholder-invented-data/patterns/vendor1_direct,2026-10-21
+vendor2_direct,"Placeholder vendor 2, end to end, direct",vendor_end_to_end,,Placeholder vendor 2,list,https://example.invalid/placeholder-invented-data/patterns/vendor2_direct,2026-10-21
+vendor2_bedrock,"Placeholder vendor 2, end to end, Bedrock",vendor_end_to_end,,Placeholder vendor 2,commit,https://example.invalid/placeholder-invented-data/patterns/vendor2_bedrock,2026-10-21
+best_single,Best single option,best_single,,,commit,https://example.invalid/placeholder-invented-data/patterns/best_single,2026-10-21

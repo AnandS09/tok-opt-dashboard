@@ -1,0 +1,375 @@
+/*
+ * The stage (spec 4.1) in the Research Note language (spec 14.3): a ruled,
+ * serif index, ink rules, 2px corners, no shadows, and the accent only on the
+ * item in focus. Every value comes from tokens.css.
+ *
+ * This file is imported by the stage component, so it loads before app.css.
+ * Rules that touch a class app.css also styles therefore start from `.stage`
+ * to win on specificity rather than on order.
+ */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* ---- Index and grid button ---- */
+
+.stage__bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.chart-index {
+  flex: 1;
+  min-width: 0;
+}
+
+.chart-index__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chart-index__list[hidden] {
+  display: none;
+}
+
+.stage .chart-index__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-1) 0;
+  background: none;
+  border: 0;
+  /* Sits on the figure's ink rule: the active item's accent line is the only coloured rule. */
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .chart-index__item:hover {
+  color: var(--color-text);
+}
+
+.stage .chart-index__item[aria-current="true"] {
+  border-bottom-color: var(--color-accent-strong);
+  color: var(--color-accent-strong);
+  font-weight: var(--font-weight-medium);
+}
+
+.chart-index__num {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: var(--font-numeric);
+}
+
+/* Under 600px: one button, "2 / 4 What the budget buys", that opens the list. */
+
+.chart-index--compact {
+  position: relative;
+}
+
+.stage .chart-index__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chart-index__count {
+  flex: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: var(--font-numeric);
+}
+
+.chart-index__toggle .chart-index__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-index__caret {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-index__toggle[aria-expanded="true"] .chart-index__caret {
+  transform: rotate(180deg);
+}
+
+.chart-index__list--menu {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+  margin-top: 2px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.stage .chart-index__list--menu .chart-index__item {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 0;
+  border-left: 2px solid transparent;
+}
+
+.stage .chart-index__list--menu .chart-index__item[aria-current="true"] {
+  border-left-color: var(--color-accent-strong);
+}
+
+.stage .stage__grid-button {
+  flex: none;
+  min-height: 36px;
+}
+
+/* ---- The figure in focus ---- */
+
+.stage .stage__panel {
+  /* A slide of a few pixels must not widen the page. */
+  overflow-x: clip;
+  /* Vertical scrolling stays with the browser; a sideways swipe is the stage's. */
+  touch-action: pan-y;
+}
+
+.stage__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.stage .stage__arrow {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.stage .stage__arrow:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+
+.stage .stage__arrow:disabled {
+  border-color: var(--color-border);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.stage__chevron {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stage .stage__title {
+  min-width: 0;
+}
+
+.stage__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* The new chart slides in from the side it came from while it fades in, over the fade token (spec 14.5). */
+.stage__body[data-direction="next"] {
+  animation: stage-in-next var(--duration-fade) var(--ease-standard) both;
+}
+
+.stage__body[data-direction="prev"] {
+  animation: stage-in-prev var(--duration-fade) var(--ease-standard) both;
+}
+
+.stage__body[data-direction="jump"] {
+  animation: stage-in-jump var(--duration-fade) var(--ease-standard) both;
+}
+
+@keyframes stage-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes stage-in-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes stage-in-jump {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The token is 0ms under reduced motion; this also removes the animation outright. */
+@media (prefers-reduced-motion: reduce) {
+  .stage__body[data-direction] {
+    animation: none;
+  }
+}
+
+/* ---- Grid view: live thumbnails of every chart ---- */
+
+.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5) var(--space-4);
+}
+
+.grid-view__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-text);
+}
+
+.grid-view__cell:has(> [aria-current="true"]) {
+  border-top: 2px solid var(--color-accent-strong);
+  padding-top: calc(var(--space-3) - 1px);
+}
+
+.stage .grid-view__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The whole cell is the target, so a click on the picture chooses the chart. */
+.grid-view__item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.stage .grid-view__item:focus-visible {
+  outline: none;
+}
+
+.grid-view__item:focus-visible::after {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.grid-view__item[aria-current="true"] {
+  color: var(--color-accent-strong);
+}
+
+.grid-view__num {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: var(--font-numeric);
+}
+
+.grid-view__thumb {
+  pointer-events: none;
+  min-width: 0;
+}
+
+.grid-view__frame {
+  aspect-ratio: 16 / 9;
+  min-width: 0;
+}
+
+/* ---- Phones ---- */
+
+@media (max-width: 600px) {
+  .stage__bar {
+    align-items: stretch;
+  }
+
+  .stage .stage__grid-button {
+    min-height: 44px;
+  }
+
+  .stage__head {
+    gap: var(--space-2);
+  }
+
+  .grid-view {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4) var(--space-3);
+  }
+
+  .grid-view__cell {
+    padding-top: var(--space-2);
+  }
+}

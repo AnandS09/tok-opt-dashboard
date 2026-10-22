@@ -1,0 +1,109 @@
+/* D2 Spec Sheet: graphite datasheet, mono uppercase labels, FIG caption boxes, 2px corners. */
+:root[data-theme="d2"] {
+  color-scheme: dark;
+  --color-bg: #0f1214;
+  --color-bg-top: #0f1214;
+  --color-surface: #161b1e;
+  --color-surface-muted: #1d2327;
+  --color-skeleton: #232a2e;
+  --color-text: #e4e7e5;
+  --color-text-secondary: #9aa3a8;
+  --color-text-disabled: #6b757b;
+  --color-border: #2b3237;
+  --color-border-strong: #6b757b;
+  --color-grid: #262d32;
+  --color-accent: #9ac0d5;
+  --color-accent-strong: #b6d2e1;
+  --color-accent-deep: #9ac0d5;
+  --color-accent-hover: #b6d2e1;
+  --color-accent-soft: #1b252b;
+  --color-hero-end: #1b252b;
+  --color-positive: #6fcfa6;
+  --color-saved: #163128;
+  --color-today-1: #848b8f;
+  --color-today-2: #80878b;
+  --color-today-3: #80878b;
+  --color-today-4: #848b8f;
+  --color-notice-bg: #2a2412;
+  --color-notice-text: #f2cf7a;
+  --color-notice-border: #a07a1a;
+  --focus-ring-color: #e4e7e5;
+  --font-sans: "Switzer", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-pill: 2px;
+  --shadow-card: none;
+  --shadow-stage: none;
+}
+[data-theme="d2"] body {
+  counter-reset: fig;
+  background:
+    linear-gradient(var(--color-border) 1px, transparent 1px) 0 0 / 100% 96px,
+    var(--color-bg);
+  background-attachment: fixed;
+}
+[data-theme="d2"] .header,
+[data-theme="d2"] .page,
+[data-theme="d2"] .footer { max-width: 1120px; }
+[data-theme="d2"] .header { border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-5); }
+[data-theme="d2"] .header__logo { background: #f9f9f9; padding: 2px; border-radius: 2px; width: 36px; height: 36px; }
+[data-theme="d2"] .header__title { font-weight: 600; letter-spacing: -0.01em; }
+[data-theme="d2"] .header__tagline,
+[data-theme="d2"] .intake__step,
+[data-theme="d2"] .examples__label,
+[data-theme="d2"] .estimate__title,
+[data-theme="d2"] .estimate__figures dt,
+[data-theme="d2"] .hero__lead,
+[data-theme="d2"] .chart-card__how,
+[data-theme="d2"] .finetune > summary,
+[data-theme="d2"] .footer {
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem;
+}
+[data-theme="d2"] .card { background: var(--color-surface); border: 1px solid var(--color-border); }
+[data-theme="d2"] .intake { grid-template-columns: minmax(0, 1fr) 260px; padding: 0; gap: 0; }
+[data-theme="d2"] .intake__main { padding: var(--space-6); }
+[data-theme="d2"] .intake__progress { height: 2px; border-radius: 0; }
+[data-theme="d2"] .intake__title { font-weight: 600; font-size: 2.3rem; letter-spacing: -0.02em; }
+[data-theme="d2"] .choices { gap: 0; border: 1px solid var(--color-border); }
+[data-theme="d2"] .choice { border: 0; border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); border-radius: 0; background: transparent; min-height: 120px; margin: 0 -1px -1px 0; }
+[data-theme="d2"] .choice:hover,
+[data-theme="d2"] .choice[aria-pressed="true"] { background: var(--color-accent-soft); box-shadow: inset 2px 0 0 var(--color-accent); }
+[data-theme="d2"] .choice__icon { color: var(--color-accent); }
+[data-theme="d2"] .choice__label { font-weight: 600; }
+[data-theme="d2"] .choice__hint { font-size: 0.82rem; }
+[data-theme="d2"] .estimate { position: static; align-self: stretch; background: var(--color-surface-muted); border-left: 1px solid var(--color-border); border-radius: 0; padding: var(--space-6) var(--space-5); }
+[data-theme="d2"] .estimate__figures dd { font-family: var(--font-mono); font-weight: 500; font-size: 1.5rem; }
+[data-theme="d2"] .estimate__saving dd { color: var(--color-positive); }
+[data-theme="d2"] .chip { background: transparent; font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; border-color: var(--color-border-strong); }
+[data-theme="d2"] .chip[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); border-color: var(--color-accent); }
+[data-theme="d2"] .button { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; }
+[data-theme="d2"] .button--primary { color: #0f1214; font-weight: 700; }
+[data-theme="d2"] .link-button { color: var(--color-text-secondary); }
+[data-theme="d2"] .sentence { font-size: 1.6rem; font-weight: 500; letter-spacing: -0.01em; }
+[data-theme="d2"] .blank { background: var(--color-accent-soft); color: var(--color-accent-strong); border-bottom: 1px solid var(--color-accent); font-family: var(--font-mono); font-weight: 500; font-size: 0.9em; }
+[data-theme="d2"] .hero { background: var(--color-surface); border: 1px solid var(--color-border); border-left: 2px solid var(--color-positive); }
+[data-theme="d2"] .hero__figure { font-weight: 600; font-size: 3.2rem; letter-spacing: -0.03em; }
+[data-theme="d2"] .hero__stats strong { font-family: var(--font-mono); font-weight: 500; color: var(--color-accent-strong); }
+[data-theme="d2"] .chart-card { counter-increment: fig; border-top: 1px solid var(--color-border); position: relative; padding-top: var(--space-7); }
+[data-theme="d2"] .chart-card::before {
+  content: "FIG. 0" counter(fig) "  \00B7  ILLUSTRATIVE \00B7  INVENTED DATA";
+  position: absolute; top: var(--space-4); left: var(--space-5);
+  padding: 2px 8px; border: 1px solid var(--color-border-strong);
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; color: var(--color-text-secondary); white-space: pre;
+}
+[data-theme="d2"] .chart-card__title { font-weight: 600; letter-spacing: -0.01em; }
+[data-theme="d2"] .cta { border-left: 2px solid var(--color-accent); }
+[data-theme="d2"] .notice { border-radius: 2px; }
+@media (max-width: 720px) {
+  [data-theme="d2"] .intake { display: flex; }
+  [data-theme="d2"] .estimate { position: sticky; bottom: 0; border-left: 0; border-top: 1px solid var(--color-border); padding: var(--space-2) var(--space-3); }
+}
+@media (max-width: 600px) {
+  [data-theme="d2"] .intake__main { padding: var(--space-4); }
+  [data-theme="d2"] .intake__title { font-size: 1.6rem; }
+  [data-theme="d2"] .hero__figure { font-size: 2.1rem; }
+  [data-theme="d2"] .sentence { font-size: 1.2rem; }
+  [data-theme="d2"] .chart-card::before { left: var(--space-4); }
+}

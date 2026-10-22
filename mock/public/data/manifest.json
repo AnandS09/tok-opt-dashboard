@@ -1,6 +1,6 @@
 {
-  "data_version": "0.1.0-placeholder",
-  "generated_at": "2026-10-19T21:00:00Z",
+  "data_version": "0.3.0-placeholder",
+  "generated_at": "2026-10-21T14:00:00Z",
   "placeholder": true,
   "notice": "INVENTED PLACEHOLDER DATA. Nothing in this folder is measured, quoted or taken from a vendor, benchmark or price page. Every throughput row is provenance=modelled. Do not present any of it as real.",
   "parameters": {
@@ -43,7 +43,7 @@
     "model_offers.csv": {
       "version": "0.1.0-placeholder",
       "row_count": 22,
-      "checksum": "sha256:8583f2b3d540b474a1e9c253596a7ec5ef408ede1a5e3bab49fc0bd3c5b9941c",
+      "checksum": "sha256:5aefb30fb27013f04b0aae815b3f039370969f1dc1dd2bcd790f0b43f25955ae",
       "placeholder": true
     },
     "seat_plans.csv": {
@@ -54,20 +54,32 @@
     },
     "quality.csv": {
       "version": "0.1.0-placeholder",
-      "row_count": 49,
-      "checksum": "sha256:f3f6da98ab66af637f97372dd16085b5c291ea5f3e087c7a61f36a7a85e0fa9a",
+      "row_count": 77,
+      "checksum": "sha256:18f9a05a9be2e5cf1c7ad4109c580fc1d5407687725f9d9257306c1bdc63965d",
       "placeholder": true
     },
     "workloads.csv": {
       "version": "0.1.0-placeholder",
-      "row_count": 4,
-      "checksum": "sha256:19df21cbe72b5e8ef1778173fb59706bb5c98ec807b57b49c0694735a538ce25",
+      "row_count": 8,
+      "checksum": "sha256:8100194d5034252d4ca70ea997da64a8b51bea6851ceda27d87d8ef3bb4d789c",
+      "placeholder": true
+    },
+    "buying_patterns.csv": {
+      "version": "0.3.0-placeholder",
+      "row_count": 7,
+      "checksum": "sha256:8fb420ff09f5af0c82d0e10f53132d01a2041fe6a25f89168016950b8c72c7a3",
+      "placeholder": true
+    },
+    "pattern_popularity.csv": {
+      "version": "0.3.0-placeholder",
+      "row_count": 17,
+      "checksum": "sha256:919fd2de6abe5b36dbeddbcffd1268485ef58836666a608fc656dee1f73a8630",
       "placeholder": true
     },
     "baseline_providers.csv": {
-      "version": "0.1.0-placeholder",
-      "row_count": 12,
-      "checksum": "sha256:fb7eabd50fb53456ed8b8943653b5ef34497fb355f05c33df6ef234861c54a39",
+      "version": "0.2.0-placeholder",
+      "row_count": 48,
+      "checksum": "sha256:8191ad1e1140db4e2cbae6f75b14aab81923194c4f8ec30ce5b0dcf8360e33b6",
       "placeholder": true
     },
     "case_studies.csv": {

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Note: chart patterns and provenance marks</title>
+<!-- Real ECharts from the repo's mock/node_modules (5.x/6.x dist build). -->
+<script src="../../../node_modules/echarts/dist/echarts.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;1,6..72,400&family=Hanken+Grotesk:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#f6f4ef;--surface:#fbfaf6;--text:#1c1c1a;--sec:#5c5a55;--border:#d6d1c7;--bs:#8a867f;--grid:#e4e0d7;
+ --accent:#466577;--acs:#3d5a6b;--pos:#1f6b5e;--saved:#dcebe5;--t1:#2a2a28;--t2:#43413d;--nbg:#fff6dd;--ntext:#6b4a00;--nb:#a07a1a}
+*{box-sizing:border-box} html{background:var(--bg)} html.grey{filter:grayscale(1)}
+body{margin:0 auto;max-width:1360px;padding:40px 40px 56px;color:var(--text);font:16px/1.5 "Hanken Grotesk",Arial,sans-serif;font-variant-numeric:tabular-nums lining-nums}
+h1{font:500 2.2rem/1.15 Newsreader,Georgia,serif;margin:0 0 4px} .lede{color:var(--sec);margin:0 0 28px;max-width:70ch}
+section{border-top:1px solid var(--text);padding:18px 0 10px;margin-bottom:8px}
+h2{font:500 1.5rem/1.2 Newsreader,Georgia,serif;margin:0 0 4px} h2 i{color:var(--sec);font-weight:400}
+.sub{color:var(--sec);font-size:.875rem;margin:0 0 10px}
+.chart{width:100%} .lib{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.lib h3{font:600 .75rem/1.2 "Hanken Grotesk";letter-spacing:.08em;text-transform:uppercase;color:var(--sec);margin:0 0 4px}
+.source{margin-top:6px;padding-top:6px;border-top:1px solid var(--border);color:var(--sec);font-size:.75rem}
+.source b{font-weight:600;color:var(--text)}
+.badges{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 4px}
+.badge{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border:1px solid var(--bs);border-radius:2px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text);background:transparent}
+.badge--measured{border-style:solid;border-color:var(--text)}
+.badge--modelled{border-style:dashed}
+.badge--vendor{border-style:dotted;border-width:2px}
+.badge--invented{background:var(--nbg);border-color:var(--nb);color:var(--ntext)}
+.badge a{color:inherit}
+.legend-note{font-size:.8125rem;color:var(--sec)}
+@media (max-width:600px){body{padding:20px 14px 40px}.lib{grid-template-columns:1fr}h1{font-size:1.6rem}}
+</style></head>
+<body>
+<h1>Chart patterns and provenance marks</h1>
+<p class="lede">Research Note values, drawn with the real ECharts build. Patterns sit inside a fill; provenance sits on the perimeter (dashed = modelled, dotted = vendor-reported). Figures are invented placeholders.</p>
+
+<section>
+ <h2><i>Figure A.</i> The pattern library</h2>
+ <p class="sub">Ten patterns on the three fills they are used on. P1 to P5 belong to channel and InfraVana segments, P6 to P9 to option bars only, P10 is spare.</p>
+ <div class="lib">
+  <div><h3>On Today grey 1 (#2a2a28)</h3><div id="libT1" class="chart" style="height:420px"></div></div>
+  <div><h3>On Today grey 2 (#43413d)</h3><div id="libT2" class="chart" style="height:420px"></div></div>
+  <div><h3>On the accent (#466577)</h3><div id="libA" class="chart" style="height:420px"></div></div>
+ </div>
+</section>
+
+<section>
+ <h2><i>Figure B.</i> C1, comparator with five channels and four option bars</h2>
+ <p class="sub">Comparator and InfraVana bars segmented; each other Today option is one unsegmented bar with a reserved option pattern. No pattern is on both a channel segment and an option bar.</p>
+ <div id="c1" class="chart" style="height:430px"></div>
+ <div class="badges"><span class="badge badge--vendor">Vendor-reported</span><span class="badge badge--modelled">Modelled</span><span class="badge badge--measured"><a href="#">Measured · run 214</a></span><span class="badge badge--invented">Invented placeholder</span></div>
+ <p class="source"><b>Source:</b> InfraVana cost model on illustrative price tables. <b>Note:</b> all figures are invented placeholders, not quotes.</p>
+</section>
+
+<section>
+ <h2><i>Figure C.</i> C3, price per million tokens, with option markers</h2>
+ <p class="sub">Comparator and InfraVana as grouped bars; each other option is one marker per priced class, its shape fixed by option rank.</p>
+ <div id="c3" class="chart" style="height:320px"></div>
+ <p class="source"><b>Source:</b> InfraVana cost model on illustrative price tables. <b>Note:</b> all figures are invented placeholders, not quotes.</p>
+</section>
+
+<section>
+ <h2><i>Figure D.</i> C10, tokens the budget buys at each quality floor</h2>
+ <p class="sub">Today options are solid reference lines told apart by end marker and label; the InfraVana step line is dashed here because its points are modelled.</p>
+ <div id="c10" class="chart" style="height:320px"></div>
+ <p class="source"><b>Source:</b> invented placeholder data. <b>Note:</b> speed and batch rows are invented (BD-11).</p>
+</section>
+
+<script>
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const T = { bg: css('--bg'), surface: css('--surface'), text: css('--text'), sec: css('--sec'), grid: css('--grid'), bs: css('--bs'),
+  accent: css('--accent'), acs: css('--acs'), pos: css('--pos'), saved: css('--saved'), t1: css('--t1'), t2: css('--t2') };
+const font = '"Hanken Grotesk", Arial, sans-serif';
+const R = Math.PI / 4;
+/* The pattern table of design-tokens.md 3.1: ECharts decal objects. `c` is the pattern colour. */
+const PAT = {
+  P1: () => null,                                                                                       // solid
+  P2: (c) => ({ symbol: 'rect', symbolSize: 1, color: c, dashArrayX: [[1, 0]], dashArrayY: [2, 5], rotation: -R }), // hatch, 45° rising
+  P3: (c) => ({ symbol: 'circle', symbolSize: 0.7, color: c, dashArrayX: [[6, 6], [0, 6, 6, 0]], dashArrayY: [5, 0], rotation: 0 }), // small dots, staggered
+  P4: (c) => ({ symbol: 'rect', symbolSize: 1, color: c, dashArrayX: [[1, 0], [1, 6]], dashArrayY: [1, 0, 6, 0], rotation: R }),  // cross-hatch, diagonal
+  P5: (c) => ({ symbol: 'rect', symbolSize: 1, color: c, dashArrayX: [[1, 0]], dashArrayY: [1, 4], rotation: 0 }),  // fine horizontal lines
+  P6: (c) => ({ symbol: 'rect', symbolSize: 1, color: c, dashArrayX: [[1, 0]], dashArrayY: [3, 7], rotation: Math.PI / 2 }), // vertical bars
+  P7: (c) => ({ symbol: 'rect', symbolSize: 1, color: c, dashArrayX: [[1, 0], [1, 9]], dashArrayY: [1, 0, 9, 0], rotation: 0 }), // square grid
+  P8: (c) => ({ symbol: 'triangle', symbolSize: 0.9, color: c, dashArrayX: [[10, 10], [0, 10, 10, 0]], dashArrayY: [10, 0], rotation: 0 }), // triangles
+  P9: (c) => ({ symbol: 'diamond', symbolSize: 0.9, color: c, dashArrayX: [[10, 6]], dashArrayY: [10, 0], rotation: 0 }), // diamonds in rows
+  P10: (c) => ({ symbol: 'rect', symbolSize: 1, color: c, dashArrayX: [[1, 0]], dashArrayY: [6, 6], rotation: R }), // wide bands, 45° falling
+};
+const NAMES = { P1: 'P1 solid', P2: 'P2 hatch', P3: 'P3 dots', P4: 'P4 cross-hatch', P5: 'P5 fine lines', P6: 'P6 vertical bars', P7: 'P7 square grid', P8: 'P8 triangles', P9: 'P9 diamonds', P10: 'P10 wide bands (spare)' };
+const DASH = { modelled: [6, 3], vendor: [2, 3] };
+/* Provenance perimeter (design-tokens.md 3.3). */
+function edge(prov, hollow) {
+  if (prov === 'measured') return hollow ? { borderColor: T.pos, borderWidth: 1.5, borderType: 'solid' } : { borderColor: T.surface, borderWidth: 1, borderType: 'solid' };
+  const d = DASH[prov];
+  return hollow ? { borderColor: T.pos, borderWidth: 1.5, borderType: d } : { borderColor: T.surface, borderWidth: 2, borderType: d };
+}
+const narrow = innerWidth < 600;
+const base = { animation: false, textStyle: { fontFamily: font, color: T.text } };
+const opts = [];
+function make(id, option) { const el = document.getElementById(id); const c = echarts.init(el, null, { renderer: 'svg' }); c.setOption(Object.assign({}, base, option)); opts.push(c); }
+
+/* Figure A */
+function lib(id, fill) {
+  const keys = Object.keys(PAT);
+  make(id, {
+    grid: { left: narrow ? 108 : 132, right: 8, top: 4, bottom: 4 },
+    xAxis: { type: 'value', show: false, max: 1 },
+    yAxis: { type: 'category', inverse: true, data: keys.map((k) => NAMES[k]), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: T.text, fontSize: 12 } },
+    series: [{ type: 'bar', barWidth: '72%', silent: true, data: keys.map((k) => ({ value: 1, itemStyle: { color: fill, decal: PAT[k](T.surface) || undefined, borderColor: T.surface, borderWidth: 1 } })) }],
+  });
+}
+lib('libT1', T.t1); lib('libT2', T.t2); lib('libA', T.accent);
+
+/* Figure B: C1. Rows top to bottom: comparator, InfraVana, four option bars. */
+const rows = ['Today: typical buyer (API)', 'With InfraVana', 'Seats', 'Cloud platform', 'Vendor 2, direct', 'Vendor 2, Bedrock'];
+const segLabel = (show, fill) => ({ show, position: 'inside', color: T.surface, fontSize: 12, fontWeight: 600, backgroundColor: fill, padding: [2, 4], borderRadius: 2, formatter: (p) => p.seriesName.split('|')[1] });
+const segs = [
+  // comparator: five channels, alternating greys, channel patterns P1 P1 P2 P3 P4
+  ['cmp|Direct $38K', 38, T.t1, 'P1', 'vendor'], ['cmp|AWS Bedrock $24K', 24, T.t2, 'P1', 'vendor'], ['cmp|EC2 $16K', 16, T.t1, 'P2', 'vendor'], ['cmp|Neocloud $12K', 12, T.t2, 'P3', 'modelled'], ['cmp|Other $10K', 10, T.t1, 'P4', 'vendor'],
+];
+const series = [];
+segs.forEach(([n, v, f, p, prov]) => series.push({ type: 'bar', stack: 'a', name: n, barWidth: '58%', data: [{ value: v, itemStyle: { color: f, decal: PAT[p](T.surface) || undefined, ...edge(prov, false) } }, null, null, null, null, null], label: segLabel(!narrow, f) }));
+const inf = [['inf|AWS EC2 $52K', 52, T.accent, 'P1', 'modelled'], ['inf|Own hardware $18K', 18, T.accent, 'P2', 'modelled']];
+inf.forEach(([n, v, f, p, prov]) => series.push({ type: 'bar', stack: 'a', name: n, data: [null, { value: v, itemStyle: { color: f, decal: PAT[p](T.surface) || undefined, ...edge(prov, false) } }, null, null, null, null], label: segLabel(!narrow, f) }));
+[['inf|Saved: better price $19K', 19, 'P2', 'modelled'], ['inf|Saved: routing $11K', 11, 'P3', 'modelled']].forEach(([n, v, p, prov]) =>
+  series.push({ type: 'bar', stack: 'a', name: n, data: [null, { value: v, itemStyle: { color: T.saved, decal: PAT[p](T.pos), ...edge(prov, true) } }, null, null, null, null],
+    label: { show: !narrow, position: 'inside', color: T.text, fontSize: 12, fontWeight: 600, backgroundColor: T.saved, padding: [2, 4], borderRadius: 2, formatter: (q) => q.seriesName.split('|')[1].replace('Saved: ', '') } }));
+const optBars = [['Seats · quality 91', 99, T.t2, 'P6', 'vendor'], ['Cloud platform · quality 91', 96, T.t1, 'P7', 'modelled'], ['Vendor 2, direct · quality 87', 60, T.t2, 'P8', 'vendor'], ['Vendor 2, Bedrock · quality 87', 58, T.t1, 'P9', 'measured']];
+optBars.forEach(([n, v, f, p, prov], i) => {
+  const data = [null, null, null, null, null, null]; data[i + 2] = { value: v, itemStyle: { color: f, decal: PAT[p](T.surface), ...edge(prov, false) } };
+  series.push({ type: 'bar', stack: 'a', name: 'opt|' + n, data, label: { show: true, position: 'right', color: T.text, fontSize: 12, formatter: () => n.split(' · ')[1] + ' · $' + v + 'K' } });
+});
+series[0].markLine = { silent: true, symbol: 'none', animation: false, z: 0, lineStyle: { color: T.text, width: 1.5, type: 'solid' },
+  label: { formatter: 'Budget $100K', color: T.sec, fontSize: 12, position: 'start' }, data: [{ xAxis: 100 }] };
+make('c1', {
+  grid: { left: narrow ? 8 : 190, right: narrow ? 70 : 110, top: 28, bottom: 26, containLabel: narrow },
+  xAxis: { type: 'value', max: 120, axisLabel: { color: T.sec, fontSize: 12, hideOverlap: true, formatter: (v) => '$' + v + 'K' }, splitLine: { lineStyle: { color: T.grid } } },
+  yAxis: { type: 'category', inverse: true, data: rows, axisTick: { show: false }, axisLine: { lineStyle: { color: T.bs } },
+    axisLabel: { fontSize: narrow ? 11 : 13, width: narrow ? 90 : 180, overflow: 'break', color: T.text, formatter: (v) => v === 'With InfraVana' ? '{a|' + v + '}' : v, rich: { a: { color: T.acs, fontWeight: 700, fontSize: narrow ? 11 : 13 } } } },
+  series,
+});
+
+/* Figure C: C3 grouped bars plus option markers. */
+const classes = ['Flagship', 'Mid', 'Small'];
+const MK = ['circle', 'rect', 'triangle', 'diamond'];
+const optPrices = [[12.9, 2.9, 0.6], [12.1, null, 0.55], [null, 2.4, null], [9.6, 2.2, 0.5]];
+const c3s = [
+  { type: 'bar', name: 'Today: typical buyer', color: T.t1, barGap: '20%', barWidth: '22%', data: [12.47, 2.75, 0.62].map((v) => ({ value: v, itemStyle: { color: T.t1, ...edge('vendor', false) } })), label: { show: true, position: 'top', color: T.text, fontSize: 12, formatter: (p) => '$' + p.value } },
+  { type: 'bar', name: 'With InfraVana', color: T.accent, barWidth: '22%', data: [10.09, 0.44, 0.31].map((v) => ({ value: v, itemStyle: { color: T.accent, ...edge('modelled', false) } })), label: { show: true, position: 'top', color: T.acs, fontWeight: 700, fontSize: 12, formatter: (p) => '$' + p.value } },
+];
+optPrices.forEach((row, i) => c3s.push({ type: 'scatter', name: ['Seats', 'Cloud platform', 'Vendor 2, direct', 'Vendor 2, Bedrock'][i], symbol: MK[i], symbolSize: 12, color: i % 2 ? T.t1 : T.t2,
+  itemStyle: { color: i % 2 ? T.t1 : T.t2, borderColor: T.surface, borderWidth: 1.5 }, data: row.map((v, k) => (v === null ? null : [k, v])), z: 5,
+  symbolOffset: [(narrow ? 30 : 100) + i * (narrow ? 9 : 22), 0] }));
+make('c3', {
+  grid: { left: 52, right: narrow ? 20 : 12, top: narrow ? 62 : 34, bottom: 30 },
+  legend: { top: 0, left: 0, itemWidth: 12, itemHeight: 12, textStyle: { color: T.text, fontSize: 12 }, data: c3s.map((s) => ({ name: s.name, icon: s.type === 'bar' ? 'rect' : s.symbol })) },
+  xAxis: { type: 'category', data: classes, axisTick: { show: false }, axisLine: { lineStyle: { color: T.bs } }, axisLabel: { color: T.text, fontSize: 14 } },
+  yAxis: { type: 'value', axisLabel: { color: T.sec, fontSize: 12, formatter: (v) => '$' + v }, splitLine: { lineStyle: { color: T.grid } } },
+  series: c3s,
+});
+
+/* Figure D: C10. Today = solid horizontal references with end markers; InfraVana = step line, dashed because modelled. */
+const xs = [65, 70, 74, 78, 82, 86, 90];
+const inv = [16.8, 15.9, 14.6, 13.6, 12.2, 10.1, 9.0];
+const todayRefs = [['Typical buyer', 8.0, T.t1, 'circle'], ['Seats', 7.0, T.t2, 'rect'], ['Cloud platform', 9.2, T.t1, 'triangle'], ['Vendor 2, direct', 11.2, T.t2, 'diamond']];
+const c10s = [{ type: 'line', name: 'With InfraVana', step: 'end', data: xs.map((x, i) => [x, inv[i]]), lineStyle: { color: T.acs, width: 2, type: DASH.modelled }, symbol: 'circle', symbolSize: 6, itemStyle: { color: T.acs },
+  endLabel: { show: true, formatter: 'With InfraVana', color: T.acs, fontWeight: 700, fontSize: 12 } }];
+todayRefs.forEach(([n, y, c, m]) => c10s.push({ type: 'line', name: n, data: [[63, y], [92, y]], lineStyle: { color: c, width: 1.5, type: 'solid' }, symbol: (p) => m, showSymbol: true,
+  symbolSize: (v, p) => (p.dataIndex === 1 ? 10 : 0), itemStyle: { color: c, borderColor: T.surface, borderWidth: 1 },
+  endLabel: { show: true, formatter: n, color: T.text, fontSize: 12 } }));
+make('c10', {
+  grid: { left: 44, right: narrow ? 110 : 140, top: 12, bottom: 34 },
+  xAxis: { type: 'value', min: 63, max: 92, name: 'Quality floor', nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: T.sec, fontSize: 12 }, axisLabel: { color: T.sec, fontSize: 12, hideOverlap: true, showMinLabel: false, showMaxLabel: false }, splitLine: { show: false }, axisLine: { lineStyle: { color: T.bs } } },
+  yAxis: { type: 'value', min: 6, axisLabel: { color: T.sec, fontSize: 12, formatter: (v) => v + 'B' }, splitLine: { lineStyle: { color: T.grid } } },
+  series: c10s,
+  labelLayout: { moveOverlap: 'shiftY' },
+});
+document.fonts.ready.then(() => { opts.forEach((c) => c.resize()); document.body.dataset.ready = '1'; });
+</script>
+</body></html>

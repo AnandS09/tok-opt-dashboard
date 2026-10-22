@@ -8,9 +8,9 @@ interface HeadlineStripProps {
 }
 
 /**
- * The hero result (spec 4.1): the saving in money first, then the same fact
+ * The hero result (spec 4.2, 6.2): the saving in money first, then the same fact
  * as a percentage and as "more work for the same money". When the budget does
- * not cover the work (spec 5), how much of it the budget covers comes first
+ * not cover the work (spec 5, 10), how much of it the budget covers comes first
  * instead. Work is moved only to models that meet the quality and speed
  * asked for (spec 9).
  */

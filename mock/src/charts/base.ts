@@ -18,9 +18,12 @@ export function baseOption(t: Tokens, stage: boolean) {
 export function tooltipChrome(t: Tokens) {
   return {
     confine: true,
-    backgroundColor: t.surface,
-    borderColor: t.border,
+    // White on the paper, with a border that reads as an edge. ECharts adds a
+    // shadow and a 4px radius of its own, so both are reset here (spec 14.3).
+    backgroundColor: t.surfaceRaised,
+    borderColor: t.borderStrong,
     borderWidth: 1,
+    extraCssText: "box-shadow: none; border-radius: var(--radius-sm);",
     padding: [t.space2, t.space3],
     textStyle: { color: t.text, fontFamily: t.fontSans, fontSize: t.fontXs },
   };

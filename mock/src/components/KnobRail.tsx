@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import type { Scenario, Stage, Tables } from "../contract";
+import type { Scenario, Stage, Tables, WorkloadBasis } from "../contract";
+import { hasBasis, setCustomers } from "../store/intake";
 import { rebalance } from "../store/mix";
 import { fmtShare, hwLabel } from "../shared/format";
 import { STAGE_HINT, STAGE_LABEL } from "./format";
@@ -24,11 +25,30 @@ const TIER_LABEL: Record<(typeof TIERS)[number], string> = {
 
 /**
  * The fine-tuning inputs, collapsed under the sentence: how the team buys AI
- * today, the work and model mix, the hardware allowed, and the quality bar.
- * Team size, budget, main work and speed live in the sentence.
+ * today, the work of the team and of the customers and the model mix, the
+ * hardware allowed, and the quality bar. Company type, team size, customers,
+ * budget, main work and speed live in the sentence.
  */
 export function KnobRail({ openShare, tables, scenario, onEdit, onReset }: KnobRailProps) {
-  const workloadIds = tables.workloads.map((w) => w.workload_id);
+  const customerWork = hasBasis(scenario, tables, "customer");
+
+  // Shares sum to 100% within each basis, so each group rebalances on its own.
+  const workloadSliders = (basis: WorkloadBasis) => {
+    const group = tables.workloads.filter((w) => w.basis === basis);
+    const ids = group.map((w) => w.workload_id);
+    return (
+      <MixSliders
+        idPrefix={`knob-${basis}-share`}
+        items={group.map((w) => ({ key: w.workload_id, label: w.label, value: scenario.workload_mix[w.workload_id] ?? 0 }))}
+        onChange={(key, value) =>
+          onEdit((s) => {
+            const full = { ...s.workload_mix, ...rebalance(s.workload_mix, ids, key, value) };
+            return { ...s, workload_mix: Object.fromEntries(Object.entries(full).filter(([, v]) => v > 0)) };
+          })
+        }
+      />
+    );
+  };
 
   // Hardware grouped by vendor, only the tiers that have throughput data.
   const vendors = useMemo(() => {
@@ -83,20 +103,28 @@ export function KnobRail({ openShare, tables, scenario, onEdit, onReset }: KnobR
 
       <section className="knob" aria-labelledby="knob-workload">
         <h3 id="knob-workload" className="knob__title">What the team uses AI for</h3>
-        <MixSliders
-          idPrefix="knob-workload-share"
-          items={tables.workloads.map((w) => ({
-            key: w.workload_id,
-            label: w.label,
-            value: scenario.workload_mix[w.workload_id] ?? 0,
-          }))}
-          onChange={(key, value) =>
-            onEdit((s) => {
-              const full = rebalance(s.workload_mix, workloadIds, key, value);
-              return { ...s, workload_mix: Object.fromEntries(Object.entries(full).filter(([, v]) => v > 0)) };
-            })
-          }
-        />
+        {workloadSliders("employee")}
+      </section>
+
+      <section className="knob" aria-labelledby="knob-customer">
+        <h3 id="knob-customer" className="knob__title">What your customers use AI for</h3>
+        {workloadSliders("customer")}
+        {customerWork ? (
+          <div className="field">
+            <label className="field__label" htmlFor="knob-customers">
+              Customers or subscribers
+            </label>
+            <input
+              id="knob-customers"
+              className="input"
+              type="number"
+              min={0}
+              step={1000}
+              value={scenario.baseline.customers ?? 0}
+              onChange={(event) => onEdit((s) => setCustomers(s, Math.max(0, Number(event.target.value) || 0)))}
+            />
+          </div>
+        ) : null}
       </section>
 
       <section className="knob" aria-labelledby="knob-model">

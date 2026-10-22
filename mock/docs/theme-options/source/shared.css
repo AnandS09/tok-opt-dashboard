@@ -1,0 +1,24 @@
+/* Shared by every theme board: drop the page gradient (an AI tell) and the focus ring on
+   headings that only receive programmatic focus (tabIndex -1), which read as a broken box. */
+:root[data-theme] body {
+  background: var(--color-bg);
+}
+:root[data-theme] .intake__title:focus:not(:focus-visible),
+:root[data-theme] .intake__title:focus,
+:root[data-theme] .situation:focus {
+  outline: none;
+}
+:root[data-theme] .header__logo {
+  display: block;
+}
+/* Light grounds: multiply removes the JPEG's own off-white box without touching the logo file. */
+:root[data-theme="d1"] .header__logo,
+:root[data-theme="d3"] .header__logo,
+:root[data-theme="d4"] .header__logo,
+:root[data-theme="d5"] .header__logo {
+  mix-blend-mode: multiply; background: transparent; padding: 0; outline: 0;
+}
+:root[data-theme] .intake__title,
+:root[data-theme] .hero__figure,
+:root[data-theme] .chart-card__title,
+:root[data-theme] .cta__title { text-wrap: balance; }

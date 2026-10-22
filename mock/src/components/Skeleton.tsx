@@ -1,4 +1,4 @@
-/** Loading state: a skeleton of the dashboard (spec 10). */
+/** Loading state: a skeleton of the dashboard (spec A.5, the v0.2 prompt states of section 10). */
 export function Skeleton({ label }: { label: string }) {
   return (
     <div className="skeleton" role="status" aria-live="polite">

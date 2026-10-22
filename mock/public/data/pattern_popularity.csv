@@ -1,0 +1,18 @@
+pattern_id,stage,popularity_rank,popularity_source
+seats,seats,1,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor1_direct,seats,2,INVENTED PLACEHOLDER: not a survey or market-share figure
+api,seats,3,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor2_direct,seats,4,INVENTED PLACEHOLDER: not a survey or market-share figure
+platform,seats,5,INVENTED PLACEHOLDER: not a survey or market-share figure
+api,api,1,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor2_direct,api,2,INVENTED PLACEHOLDER: not a survey or market-share figure
+platform,api,3,INVENTED PLACEHOLDER: not a survey or market-share figure
+seats,api,4,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor1_direct,api,5,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor2_bedrock,api,6,INVENTED PLACEHOLDER: not a survey or market-share figure
+platform,platform,1,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor2_bedrock,platform,2,INVENTED PLACEHOLDER: not a survey or market-share figure
+api,platform,3,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor2_direct,platform,4,INVENTED PLACEHOLDER: not a survey or market-share figure
+seats,platform,5,INVENTED PLACEHOLDER: not a survey or market-share figure
+vendor1_direct,platform,6,INVENTED PLACEHOLDER: not a survey or market-share figure
