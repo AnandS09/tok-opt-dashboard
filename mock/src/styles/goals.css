@@ -125,3 +125,13 @@
   text-align: center;
   text-wrap: balance;
 }
+
+/* The benefit boxes keep their place and dim while the solve they depend on is on its way (spec 6.2, 6.4). */
+[data-slot="benefit-boxes"] {
+  transition: opacity var(--duration-fade) var(--ease-standard);
+}
+
+[data-slot="benefit-boxes"][data-stale="true"] {
+  opacity: 0.45;
+  transition: none;
+}
