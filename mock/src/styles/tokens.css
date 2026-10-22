@@ -49,12 +49,19 @@
   --color-chart-ground: var(--color-bg);   /* what a chart is drawn on: marks, separators and chips sit on it */
   --color-series-separator: var(--color-chart-ground);
   --color-budget-line: var(--color-text);
+  --color-pattern-on-fill: var(--color-surface);       /* decal colour on grey and accent fills (design-tokens 3.1) */
+  --color-pattern-on-saved: var(--color-positive);     /* decal colour on the hollow savings segments */
+  --color-provenance-on-fill: var(--color-surface);    /* dashed and dotted perimeter on a fill (3.3) */
+  --color-provenance-on-hollow: var(--color-positive); /* the same on a savings segment */
   --color-scrim: color-mix(in srgb, var(--color-text) 50%, transparent); /* drawer backdrop; panel edge >=3:1 */
 
   /* Chart strokes: read with getComputedStyle, parse numbers */
   --chart-separator-width: 1px;
   --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
   --chart-budget-line-width: 1.5px;
+  --chart-provenance-width: 2px;          /* modelled and vendor-reported perimeters */
+  --chart-dash-modelled: 6 3;             /* dash array: modelled */
+  --chart-dash-vendor: 2 3;               /* dash array: vendor-reported */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */

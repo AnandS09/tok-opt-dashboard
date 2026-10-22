@@ -11,7 +11,7 @@
 |---|---|---|
 | `--color-bg` | `#f6f4ef` | Warm paper: the page and every chart ground (figures sit on the paper, not in cards) |
 | `--color-bg-top` | `#f6f4ef` | Equal to `--color-bg`, so the base gradient is flat |
-| `--color-surface` | `#fbfaf6` | Inputs, option rows, drawer; pattern and separator colour on fills (3) |
+| `--color-surface` | `#fbfaf6` | Inputs, option rows, drawer; pattern, provenance dash and label-chip text colour on fills (3) |
 | `--color-surface-muted` | `#eeebe3` | Muted panels, table headers |
 | `--color-skeleton` | `#e6e2d8` | Loading blocks |
 | `--color-text` | `#1c1c1a` | Body text, rules above sections, focus ring, links (always underlined), budget line |
@@ -27,7 +27,8 @@
 | `--color-positive` / `--color-saved` | `#1f6b5e` / `#dcebe5` | Saved money only: hero figure; C1 savings outline, pattern and fill |
 | `--color-today-1` / `-4` | `#2a2a28` | Today grey T1 |
 | `--color-today-2` / `-3` | `#43413d` | Today grey T2. There are only two distinct greys, 1.41:1 apart, so patterns carry the difference (3). |
-| `--color-series-separator` | `var(--color-surface)` | 1px stroke between stacked segments |
+| `--color-chart-ground` | `var(--color-bg)` | What a chart is drawn on: the paper behind marks, under label chips and in the gaps of a dashed outline |
+| `--color-series-separator` | `var(--color-chart-ground)` | 1px stroke between stacked segments, so the paper shows between them |
 | `--color-budget-line` | `var(--color-text)` | C1 budget line, **solid** |
 | `--color-pattern-on-fill` | `var(--color-surface)` | **New.** Pattern colour on every grey and accent fill |
 | `--color-pattern-on-saved` | `var(--color-positive)` | **New.** Pattern colour on the hollow savings segments |
@@ -200,7 +201,7 @@ Every figure ends with a source line, under the canvas and the badges:
 | Pair | Ratio | Needs |
 |---|---|---|
 | T1 vs T2 | 1.41 | none; split by the separator and the pattern |
-| Separator `#fbfaf6` on T1 / T2 / accent | 13.77 / 9.75 / 5.93 | 3:1 |
+| Separator (the paper `#f6f4ef`) on T1 / T2 / accent | 13.08 / 9.26 / 5.64 | 3:1 |
 | Saved fill vs neighbouring accent segment | 5.03 | 3:1 |
 
 **Perimeters, labels and lines:**
@@ -210,7 +211,7 @@ Every figure ends with a source line, under the canvas and the badges:
 | Provenance dash `#fbfaf6` on T1 / T2 / accent | 13.77 / 9.75 / 5.93 | 3:1 |
 | Fill showing through the gaps, on page | 13.08 / 9.26 / 5.64 | 3:1 |
 | Provenance dash `#1f6b5e` on saved / page | 5.13 / 5.75 | 3:1 |
-| Label chip text on T1 / T2 / accent / saved | 13.77 / 9.75 / 5.93 / 13.86 | 4.5:1 |
+| Label chip text (`--color-surface` `#fbfaf6`) on T1 / T2 / accent; `--color-text` on saved | 13.77 / 9.75 / 5.93 / 13.86 | 4.5:1 |
 | Markers T1 / T2 on page | 13.08 / 9.26 | 3:1 |
 | C10 lines: T1 / T2 / accent-strong on page | 13.08 / 9.26 / 6.65 | 3:1 |
 | Budget line `#1c1c1a` on page | 15.53 | 3:1 |
@@ -288,7 +289,8 @@ Both fonts are self-hosted in the repo (BD-16, spec 14.2).
   --color-today-2: #43413d;
   --color-today-3: #43413d;
   --color-today-4: #2a2a28;
-  --color-series-separator: var(--color-surface);
+  --color-chart-ground: var(--color-bg);               /* what a chart is drawn on */
+  --color-series-separator: var(--color-chart-ground); /* 1px between segments: the paper */
 
   /* Chart-only aliases */
   --color-budget-line: var(--color-text);              /* solid: dashes mean provenance */
