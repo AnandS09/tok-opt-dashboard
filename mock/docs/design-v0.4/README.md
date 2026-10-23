@@ -11,19 +11,16 @@ All figures are invented placeholders, not quotes.
 | Ask | Board | What it shows | Reply |
 |---|---|---|---|
 | 2 | [`02-step-label.png`](02-step-label.png) | Step 1 reads "Step 1", with the rule already at 1/6. From step 2 it reads "Step n of N": 6 for a software company, 5 for an AI-first startup | one result |
-| 4 | [`04-customers.png`](04-customers.png) | 4B with colour-coded presets. Each button has a 5px top edge in its colour, and its tick on the slider matches. Drawn on the team, customers and budget steps, desktop and phone | one result |
+| 4 | [`04-customers.png`](04-customers.png) | 4B with four clearly different preset hues in the Azure palette. Each button has a 6px top edge in its hue, and its tick on the slider matches exactly. Drawn on the team, customers and budget steps, desktop and phone | one result |
 | 5 | [`05-sentence.png`](05-sentence.png) | 5B, balanced. 6 answers → 3 × 2. 5 answers → Company wide, then a row of 3. Phone: a one-column ruled list | one result |
 | 6 | [`06-goal-tabs.png`](06-goal-tabs.png) | Three browser-tab styles. **6B tab bar (recommended)**: four equal tabs with figures. 6A: folder tabs. 6C: Chrome-style tabs | 6A, 6B or 6C |
 | 8 | [`08-chart-tabs.png`](08-chart-tabs.png) | 8C contents column, refined, with ten charts. No numbers; a small glyph of each chart's form. Phone: one picker | one result |
 | 9 | [`09-grid-view.png`](09-grid-view.png) | The chart grid view for 4, 5, 6, 7, 9 and 10 charts, desktop and phone, with the balanced-grid rule written under it | one result |
 | 9 | [`09-other-grids.png`](09-other-grids.png) | The intake lists, answer grid, benefit boxes, fine-tune panel and goal tabs, all following the same rule | one result |
 
-**Colour logic for the ask 4 presets.**
-- **One hue, graded by size.** The presets are ordered sizes, so they use one violet ramp, light for small and dark for large: `#a575b4`, `#8a55af`, `#643e99`, `#412d7f`, with `#2e2160` kept for a fifth preset.
-- **No chart role uses violet.** The intake has no chart beside it, either.
-- **Contrast against the page:** 3.29, 4.78, 7.10 and 10.02.
-- **Greyscale:** neighbouring presets differ by 1.41 to 1.49:1.
-- **Not colour alone:** the value is always written on the button.
+**Colour logic for the ask 4 presets** (redrawn in the Azure palette after you rejected the violet shades):
+- Each preset and its tick on the slider share one of four different hues: green `#316a23`, coral `#cc675c`, periwinkle `#736dc3` and plum `#883871`. None is the InfraVana azure or the saved teal.
+- The pairs are at least 23.3 apart in normal vision and at least 13.2 under deuteranopia and protanopia (CIEDE2000). Every colour is at least 3.38:1 against the page, and the ink label on every button keeps the value readable.
 
 **The balanced-grid rule** (proposed for every grid):
 1. **Every row is full.**
