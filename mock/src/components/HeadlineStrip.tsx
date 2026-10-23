@@ -1,17 +1,25 @@
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { BRAND } from "../charts/labels";
 import { comparisonOf } from "../charts/comparison";
+import { chartRegistry } from "../charts/registry";
 import { COVERAGE_MESSAGE_ABOVE, g1Headline, solvedHeadline } from "../compute";
 import { ProvenanceNotes } from "../charts/ProvenanceNotes";
-import type { GoalId, GoalView, Results, Scenario, TradeoffView } from "../contract";
+import type { GoalId, GoalView, PatternId, Results, Scenario, TradeoffView } from "../contract";
 import { fmtMultiple, fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
 import { COVERAGE_MESSAGE, solvedNotice } from "../shared/goalNotice";
-import { GOAL_TABS } from "../store/goal";
+import { G3_PLACEHOLDER, GOAL_TABS, PLACEHOLDER_NOTE, PLACEHOLDER_TAG, timesText } from "../store/goal";
 import { floorsText, tradeoffFigures } from "../store/tradeoff";
+import { ComparatorLine, ComparatorSelect } from "./ComparatorSelect";
 import { fmtInt, LATENCY_LABEL } from "./format";
 import { Drawer } from "./Drawer";
 import { GOAL_PANEL_ID, goalTabId } from "./GoalTabs";
 import { TradeoffControls } from "./TradeoffControls";
+
+/** The comparator picker the headline holds (spec 15.7): the choice shown and how a pick is reported. */
+export interface HeadlineComparator {
+  value: PatternId;
+  onChange: (id: PatternId) => void;
+}
 
 interface HeadlineStripProps {
   goal: GoalId;
@@ -20,6 +28,10 @@ interface HeadlineStripProps {
   scenario: Scenario;
   /** The solve of the active tab (G2, G3); ignored in the other tabs. */
   goalView: GoalView;
+  /** The comparator picker drawn inside the headline, with the line under it. */
+  comparator: HeadlineComparator;
+  /** True in G3 when the mix has no team work: the hero shows the labelled placeholder figure (spec 6.2, 10). */
+  placeholder?: boolean;
   /** Moves a G4 step; only the G4 tab reads it. */
   onSteps: (steps: { qualityStep?: number; speedStep?: number }) => void;
   contactUrl: string;
@@ -28,11 +40,11 @@ interface HeadlineStripProps {
 /** What the hero shows for the active tab. */
 interface HeroContent {
   /** The italic line above the figure; null for none. */
-  lead: string | null;
+  lead: ReactNode;
   /** The headline, or what stands in for it. */
-  figure: string;
-  /** The end of the G1 sentence that names the Today it is measured against ("than <label>"). */
-  versus: string | null;
+  figure: ReactNode;
+  /** The end of the G1 sentence that names the Today it is measured against ("than <comparator picker>"). */
+  versus: ReactNode;
   stats: ReactNode[];
   /** An extra line under the stats (the spec 5.2 coverage message in G1). */
   note: string | null;
@@ -47,17 +59,21 @@ interface HeroContent {
   sides?: ReactNode;
   /** G4 only: the trade-off the hero is showing. */
   tradeoff?: TradeoffView;
+  /** G3 only: the figures are the labelled placeholder (spec 6.2, 10), not worked out from the answers. */
+  placeholder?: boolean;
 }
 
 const PENDING_FIGURE = "Working out your numbers";
 
-/** A multiple in words, "1.4 times": the hero says "times", the charts say "x". */
-function times(multiple: number): string {
-  return `${fmtMultiple(multiple).slice(0, -1)} times`;
-}
+/** The title of the chart whose "Saved" block is the G1 headline; a chart is named by its title, never by a number (spec 15.9). */
+const C1_TITLE = chartRegistry.find((def) => def.id === "C1")?.title ?? "Where the money goes";
 
-/** G1: the saving in money, at the visitor's own volume (spec 6.2). */
-function g1Content(results: Results, label: string): HeroContent {
+/**
+ * G1: the saving in money, at the visitor's own volume (spec 6.2). Its figure
+ * always names the Today it is measured against, so the comparator picker
+ * (`picker`, spec 15.7) stands in the figure in every G1 form.
+ */
+function g1Content(results: Results, picker: ReactNode): HeroContent {
   const g1 = g1Headline(results);
   const savedPct = Math.round(g1.saved_pct);
   // One rounding rule (nearest percent), so a shortfall that displays as 100% is not one.
@@ -66,17 +82,21 @@ function g1Content(results: Results, label: string): HeroContent {
   const infravanaPct = Math.min(100, Math.round((infravana_tokens / demand_tokens) * 100));
   const short = todayPct < 100;
 
-  let figure: string;
-  let versus: string | null = null;
+  let figure: ReactNode;
+  let versus: ReactNode = null;
   if (short) {
     const withUs = infravanaPct < 100 ? `${fmtPct(infravanaPct)} with ${BRAND}` : `all of it with ${BRAND}`;
-    figure = `Your ${fmtUsd(results.allocation.budget_usd)} covers ${fmtPct(todayPct)} of this work with ${label}, ${withUs}`;
+    figure = (
+      <>
+        Your {fmtUsd(results.allocation.budget_usd)} covers {fmtPct(todayPct)} of this work with {picker}, {withUs}
+      </>
+    );
   } else if (savedPct > 0) {
     figure = `${fmtUsdSig(g1.saved_usd)} less each quarter`;
-    versus = `than ${label}`;
+    versus = <>than {picker}</>;
   } else {
     figure = "About the same cost";
-    versus = `as ${label}`;
+    versus = <>as {picker}</>;
   }
 
   const stats: ReactNode[] = [];
@@ -107,9 +127,47 @@ function g1Content(results: Results, label: string): HeroContent {
 }
 
 /** G2 and G3: the solved multiple, or the sentence that stands in for it (spec 5.2, 6.2). */
-function solvedContent(goal: "G2" | "G3", scenario: Scenario, view: GoalView, label: string): HeroContent {
-  // The comparator is named in the lead line, so every state of the tab has the same lines.
-  const lead = `${GOAL_TABS[goal].lead}, measured against ${label}`;
+function solvedContent(
+  goal: "G2" | "G3",
+  scenario: Scenario,
+  view: GoalView,
+  label: string,
+  picker: ReactNode,
+  placeholder: boolean,
+): HeroContent {
+  // The comparator picker stands in the lead line, so every state of the tab has the same lines
+  // and the headline holds exactly one list control (spec 15.7).
+  const lead = (
+    <>
+      {GOAL_TABS[goal].lead}, measured against {picker}
+    </>
+  );
+  if (placeholder) {
+    // G3 with no team work: the labelled placeholder (spec 6.2, 10). Nothing here is worked out.
+    return {
+      lead,
+      figure: (
+        <>
+          {timesText(G3_PLACEHOLDER.multiple)} the people for your budget{" "}
+          <span className="hero__flag">{PLACEHOLDER_TAG}</span>
+        </>
+      ),
+      versus: null,
+      stats: [
+        <>
+          <strong>{fmtInt(G3_PLACEHOLDER.infravana_people)}</strong> people with {BRAND}
+        </>,
+        <>
+          <strong>{fmtInt(G3_PLACEHOLDER.today_people)}</strong> with {label}
+        </>,
+      ],
+      note: PLACEHOLDER_NOTE,
+      tone: "saving",
+      pending: false,
+      stale: false,
+      placeholder: true,
+    };
+  }
   if (view.solve === null) {
     // Same lines as the finished headline (the figure's box, the comparator line, the stats with
     // their words), so the figure arriving moves nothing below it.
@@ -168,7 +226,7 @@ function solvedContent(goal: "G2" | "G3", scenario: Scenario, view: GoalView, la
   }
   return {
     lead,
-    figure: `${times(headline.multiple)} the ${goal === "G2" ? "AI work" : "people"} for your budget`,
+    figure: `${timesText(headline.multiple)} the ${goal === "G2" ? "AI work" : "people"} for your budget`,
     versus: null,
     stats,
     note: null,
@@ -191,9 +249,10 @@ function giveUpWords(trade: TradeoffView): string {
  * with both sides' floors and speeds beside them. This is the one place the two
  * sides differ (spec 9), so it says so.
  */
-function g4Content(results: Results, scenario: Scenario, trade: TradeoffView): HeroContent {
+function g4Content(results: Results, scenario: Scenario, trade: TradeoffView, picker: ReactNode): HeroContent {
   const label = comparisonOf(trade.untraded).label;
-  const own = g1Content(trade.untraded, label);
+  // The picker stands in the G1 figure here, so the lead below names the comparator as plain text.
+  const own = g1Content(trade.untraded, picker);
   const relaxed = trade.error === null ? results : trade.untraded;
   const { extraSaving } = tradeoffFigures(trade.untraded, relaxed);
   const chosen = trade.qualityStep > 0 || trade.speedStep > 0;
@@ -237,11 +296,18 @@ function g4Content(results: Results, scenario: Scenario, trade: TradeoffView): H
   };
 }
 
-function contentFor(goal: GoalId, results: Results, scenario: Scenario, view: GoalView): HeroContent {
+function contentFor(
+  goal: GoalId,
+  results: Results,
+  scenario: Scenario,
+  view: GoalView,
+  picker: ReactNode,
+  placeholder: boolean,
+): HeroContent {
   const label = comparisonOf(results).label;
-  if (goal === "G2" || goal === "G3") return solvedContent(goal, scenario, view, label);
-  if (goal === "G4" && view.tradeoff) return g4Content(results, scenario, view.tradeoff);
-  return g1Content(results, label);
+  if (goal === "G2" || goal === "G3") return solvedContent(goal, scenario, view, label, picker, placeholder && goal === "G3");
+  if (goal === "G4" && view.tradeoff) return g4Content(results, scenario, view.tradeoff, picker);
+  return g1Content(results, picker);
 }
 
 /** The compute function and the plain account each tab's drawer gives (spec 6.2: every drawer names its function). */
@@ -279,7 +345,7 @@ function explanation(goal: GoalId, label: string): { fn: string; body: string[] 
       return {
         fn: "compute(scenario, tables)",
         body: [
-          `Both sides price the same work at the same minimum quality and response speed. The saving is the two "Saved" parts of Figure 1 added together, the better price through other channels and the cheaper place to run each model, measured against ${label}. The percentage is that saving over what ${label} costs.`,
+          `Both sides price the same work at the same minimum quality and response speed. The saving is what the chart "${C1_TITLE}" shows as "Saved", the better price through other channels and the cheaper place to run each model, measured against ${label}. The percentage is that saving over what ${label} costs.`,
           "It is one calculation in your browser, so it updates as you type.",
         ],
       };
@@ -295,10 +361,28 @@ function explanation(goal: GoalId, label: string): { fn: string; body: string[] 
  * worked out?" drawer names the compute function behind it. Work is moved only
  * to models that meet the quality and speed asked for (spec 9).
  */
-export function HeadlineStrip({ goal, results, scenario, goalView, onSteps, contactUrl }: HeadlineStripProps) {
+export function HeadlineStrip({
+  goal,
+  results,
+  scenario,
+  goalView,
+  comparator,
+  placeholder = false,
+  onSteps,
+  contactUrl,
+}: HeadlineStripProps) {
   const [how, setHow] = useState(false);
+  const compareLineId = useId();
   const label = comparisonOf(results).label;
-  const hero = contentFor(goal, results, scenario, goalView);
+  const picker = (
+    <ComparatorSelect
+      results={results}
+      value={comparator.value}
+      onChange={comparator.onChange}
+      describedBy={compareLineId}
+    />
+  );
+  const hero = contentFor(goal, results, scenario, goalView, picker, placeholder);
   const account = explanation(goal, label);
   const figureClass = [
     "hero__figure",
@@ -317,12 +401,14 @@ export function HeadlineStrip({ goal, results, scenario, goalView, onSteps, cont
       data-goal={goal}
       data-stale={hero.stale ? "true" : undefined}
       data-pending={hero.pending ? "true" : undefined}
+      data-placeholder={hero.placeholder ? "true" : undefined}
     >
       {hero.lead !== null ? <p className="hero__lead">{hero.lead}</p> : null}
       <p className={figureClass} aria-live="polite" aria-busy={hero.stale || hero.pending}>
         {hero.figure}
         {hero.versus !== null ? <span className="hero__than"> {hero.versus}</span> : null}
       </p>
+      <ComparatorLine results={results} value={comparator.value} id={compareLineId} />
       {hero.stats.length > 0 ? (
         <ul className="hero__stats">
           {hero.stats.map((stat, i) => (

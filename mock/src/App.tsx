@@ -3,20 +3,19 @@ import { chartRegistry } from "./charts/registry";
 import { AssumptionsPanel } from "./components/AssumptionsPanel";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
-import { HeadlineStrip } from "./components/HeadlineStrip";
 import { IntakeQuestions, IntakeSentence } from "./components/Intake";
 import { KnobRail } from "./components/KnobRail";
 import { Notice } from "./components/Notice";
 import { openShareOf, ResultNotices } from "./components/ResultNotices";
 import { Skeleton } from "./components/Skeleton";
 import { Stage } from "./components/Stage";
-import { ComparatorSlot, GoalTabsSlot } from "./components/StageSlots";
+import { GoalSlot } from "./components/StageSlots";
 import { speedUnavailableReason } from "./compute";
 import type { GoalId, GoalView, PatternId, Results, Scenario, ScenarioResponse, TradeoffView } from "./contract";
 import { loadScenario, loadTables } from "./data/load";
 import { appReducer, initialState } from "./store/appState";
 import { EXAMPLES, type Example } from "./store/examples";
-import { goalTabStates, useGoalSolve } from "./store/goal";
+import { useGoalSolve } from "./store/goal";
 import type { CompanyType } from "./store/intake";
 import {
   activeIndex,
@@ -156,13 +155,13 @@ export default function App() {
   );
   const liveScenario = useThrottledValue(viewedScenario, RECOMPUTE_MS);
   // G2 and G3 are solved on the worker, from the scenario as it is now (the solver's own debounce
-  // spaces the requests), so the previous value dims at once. A goal that cannot be chosen is not solved.
-  const tabStates = useMemo(() => (scenario && tables ? goalTabStates(scenario, tables) : null), [scenario, tables]);
+  // spaces the requests), so the previous value dims at once. G3 with no team work is not solved:
+  // its tab shows the labelled placeholder (spec 6.2, 10).
   const goalView = useGoalSolve({
     goal,
     scenario: viewedScenario,
     tables,
-    enabled: answered && response?.verdict === "ok" && tabStates !== null && !tabStates[goal].disabled,
+    enabled: answered && response?.verdict === "ok",
   });
   const computed = useMemo<{ results: Results | null; error: string | null; tradeoff: TradeoffView | null }>(() => {
     if (!tables || !liveScenario || response?.verdict !== "ok") return { results: null, error: null, tradeoff: null };
@@ -202,13 +201,6 @@ export default function App() {
   const stageShown = !!tables && !!scenario && response?.verdict === "ok" && answered && !!results && slides.length > 0;
   const active = activeIndex(slides, view.slide);
   useStageHash(view, stageShown ? slides[active].id : null, stageDispatch);
-
-  // A tab that cannot be chosen for these answers (G3 with no team work) cannot stay active,
-  // so a link or an edit that lands on one returns to G1.
-  const goalBlocked = tabStates?.[goal].disabled ?? false;
-  useEffect(() => {
-    if (stageShown && goalBlocked) stageDispatch({ type: "goal_set", goal: "G1" });
-  }, [stageShown, goalBlocked, stageDispatch]);
 
   // A step the control does not have (a link naming step 9) is rewritten to the nearest one it has.
   useEffect(() => {
@@ -350,16 +342,7 @@ export default function App() {
         ) : null}
         {results && slotContext ? (
           <>
-            <GoalTabsSlot ctx={slotContext} />
-            <HeadlineStrip
-              goal={goal}
-              results={results}
-              scenario={slotContext.scenario}
-              goalView={tabView}
-              onSteps={slotContext.setSteps}
-              contactUrl={CONTACT_URL}
-            />
-            <ComparatorSlot ctx={slotContext} />
+            <GoalSlot ctx={slotContext} contactUrl={CONTACT_URL} />
             <ResultNotices results={results} tables={tables} />
             <Stage
               slides={slides}

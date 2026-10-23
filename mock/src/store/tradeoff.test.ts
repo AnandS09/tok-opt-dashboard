@@ -62,6 +62,7 @@ function heroMarkup(scenario: Scenario, qualityStep: number, speedStep: number):
       results: traded,
       scenario: withView(scenario, view("G4", qualityStep, speedStep), tables),
       goalView,
+      comparator: { value: traded.comparator, onChange: () => {} },
       onSteps: () => {},
       contactUrl: "#contact",
     }),

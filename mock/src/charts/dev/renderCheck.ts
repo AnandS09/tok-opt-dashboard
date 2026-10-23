@@ -1010,20 +1010,21 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
 }
 
 /**
- * The "Compared with" selector (spec 6.1): a labelled select that lists every
- * comparator `today_alternatives` offers (the derived best single option
- * included), shows the one in effect as selected, marks the typical buyer, and
- * reports its choice through `onChange` and keeps no state of its own.
+ * The comparator picker in the headline (spec 6.1, 15.7): a select named
+ * "Compared with" that lists every comparator `today_alternatives` offers (the
+ * derived best single option included), shows the one in effect as selected
+ * with the label alone as its text, marks the typical buyer while another is
+ * chosen, draws the chosen name beside it, and reports its choice through
+ * `onChange` and keeps no state of its own.
  */
 export function selectorProblems(name: string, results: Results): string[] {
   const problems: string[] = [];
   const markup = renderToStaticMarkup(createElement(ComparatorSelect, { results, value: selectedComparator(results, null), onChange: () => undefined }));
   const where = `${name} comparator select`;
-  const id = /<select[^>]*\sid="([^"]+)"/.exec(markup)?.[1];
-  if (!id) return [`${where}: no select element`];
-  if (!new RegExp(`<label[^>]*for="${id.replace(/[:]/g, "\\$&")}"[^>]*>Compared with</label>`).test(markup)) {
-    problems.push(`${where}: the select is not labelled "Compared with" through for/id`);
-  }
+  if (!/<select[^>]*\saria-label="Compared with"/.test(markup)) return [`${where}: no select named "Compared with"`];
+  const chosen = results.today_alternatives.find((a) => a.pattern_id === results.comparator);
+  const drawn = /<span class="comparator__text">([^<]*)<\/span>/.exec(markup)?.[1];
+  if (chosen && drawn !== chosen.label) problems.push(`${where}: the headline name reads "${drawn}", not the comparator's label "${chosen.label}"`);
   const options = [...markup.matchAll(/<option value="([^"]*)"([^>]*)>([^<]*)<\/option>/g)];
   const offered = results.today_alternatives.map((a) => a.pattern_id);
   if (options.map((o) => o[1]).join("|") !== offered.join("|")) {
@@ -1036,7 +1037,10 @@ export function selectorProblems(name: string, results: Results): string[] {
   for (const alt of results.today_alternatives) {
     const opt = options.find((o) => o[1] === alt.pattern_id);
     if (opt && !opt[3].includes(alt.label)) problems.push(`${where}: option ${alt.pattern_id} reads "${opt[3]}", not its label "${alt.label}"`);
-    if (opt && alt.is_typical !== opt[3].includes("typical")) problems.push(`${where}: the typical-buyer mark is wrong on ${alt.pattern_id}`);
+    // The chosen option's text is its label alone; the typical buyer is marked while another is chosen.
+    const isChosen = alt.pattern_id === results.comparator;
+    if (opt && isChosen && opt[3] !== alt.label) problems.push(`${where}: the chosen option reads "${opt[3]}", not its label alone`);
+    if (opt && !isChosen && alt.is_typical !== opt[3].includes("typical")) problems.push(`${where}: the typical-buyer mark is wrong on ${alt.pattern_id}`);
   }
   if (!results.today_alternatives.some((a) => a.kind === "best_single")) problems.push(`${where}: no best single option to list`);
   // A stored choice is shown, a choice no longer offered falls back to the engine's, and the typical buyer is stored as no choice.

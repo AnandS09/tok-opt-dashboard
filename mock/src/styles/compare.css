@@ -1,6 +1,6 @@
 /*
  * The comparison set: the provenance badges and source line under a chart
- * (design-tokens 3.4, 3.5) and the "Compared with" selector (spec 6.1). The
+ * (design-tokens 3.4, 3.5) and the comparator picker in the headline (spec 6.1, 15.7). The
  * pattern and provenance tokens of design-tokens 3 are in tokens.css, with
  * every other token. Every colour here is an alias of one of them; this file
  * holds no hex.
@@ -143,40 +143,89 @@
   font-weight: 600;
 }
 
-/* ---- "Compared with" selector (spec 6.1) ---- */
+/* ---- The comparator picker inside the headline (spec 6.1, 15.7) ---- */
 
-.compare-select {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
+/*
+ * The name of the Today the headline measures against, drawn as headline text.
+ * The wrapper is an inline block, so a long name wraps inside it like other
+ * headline words; the select lies over the whole box and is transparent except
+ * for its own 3px bottom border, which is the underline.
+ */
+.comparator {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  padding-bottom: var(--space-1);
+  font-style: normal;
 }
 
-.compare-select__label {
+.comparator__text {
+  overflow-wrap: anywhere;
+}
+
+/* In the small "than ..." tail of the G1 headline the name still reads as the brand's picker. */
+.hero__than .comparator {
+  color: var(--color-accent-strong);
+}
+
+.comparator__caret {
+  width: 0.5em;
+  height: 0.5em;
+  margin-left: 0.2em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: 0.05em;
+}
+
+.comparator__control {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid var(--color-accent-strong);
+  border-radius: 0;
+  /* The name is drawn beneath; the control keeps only its underline and its focus ring. */
+  color: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.comparator:hover .comparator__control {
+  border-bottom-color: var(--color-accent-deep);
+}
+
+.comparator__control:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The open list is drawn by the browser from the options, which must not inherit the transparent colour. */
+.comparator__control option {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  font-style: normal;
+  font-weight: var(--font-weight-regular);
+}
+
+/* The one plain line under the headline that says what the comparator means. */
+.hero__compare {
+  max-width: 62ch;
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
-.compare-select__control {
-  min-height: 44px;
-  max-width: 100%;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
+.hero__compare strong {
   color: var(--color-text);
-  font: inherit;
-  font-size: var(--font-size-md);
-}
-
-.compare-select__control:hover {
-  background: var(--color-surface-raised);
-  border-color: var(--color-accent-strong);
-}
-
-.compare-select__hint {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
 }
