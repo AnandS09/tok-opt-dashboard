@@ -14,7 +14,7 @@ import type {
 import { fmtPct, fmtUsd, fmtUsdFull, fmtUsdSig } from "../shared/format";
 import { baseOption, tooltipChrome } from "./base";
 import { allocationBenefits } from "./benefits";
-import { isSavings, planBar } from "./c1Plan";
+import { foldSlivers, isSavings, planBar } from "./c1Plan";
 import type { PlannedSegment } from "./c1Plan";
 import { ChartFigure } from "./ChartFigure";
 import { BELOW_FLOOR, barRowsHeight, comparisonOf, qualityText } from "./comparison";
@@ -97,13 +97,13 @@ function labelOn(fill: string, t: Tokens): string {
  * acceptance 6). The InfraVana bar ends in one saving block, whatever the
  * number of sources behind it (spec 15.11).
  */
-function piecesOf(results: Results, cmp: Comparison, t: Tokens): Piece[] {
+function piecesOf(results: Results, cmp: Comparison, t: Tokens, pxPerUsd: number): Piece[] {
   const a = results.allocation;
   const pieces: Piece[] = [];
-  for (const seg of planBar(a.today, "today")) {
+  for (const seg of foldSlivers(planBar(a.today, "today"), pxPerUsd, MIN_BLOCK_PX)) {
     pieces.push({ row: 0, label: seg.label, usd: seg.usd, fill: t.today1, textColor: labelOn(t.today1, t), saved: false, seg, option: null });
   }
-  const planned = planBar(a.infravana, "infravana");
+  const planned = foldSlivers(planBar(a.infravana, "infravana"), pxPerUsd, MIN_BLOCK_PX);
   for (const seg of planned.filter((s) => s.tone === "spend")) {
     pieces.push({ row: 1, label: seg.label, usd: seg.usd, fill: t.accent, textColor: labelOn(t.accent, t), saved: false, seg, option: null });
   }
@@ -149,7 +149,9 @@ function explain(p: Piece): string {
   const seg = p.seg;
   if (!seg) return "";
   if (seg.kind === "other") return `Combined: ${seg.members.join(", ")}.`;
-  return seg.kind === "hardware" ? "Spent on hardware you run yourself." : "Spent with this provider or plan.";
+  const base = seg.kind === "hardware" ? "Spent on hardware you run yourself." : "Spent with this provider or plan.";
+  // A segment too narrow to draw as a block of its own is part of this one; its name is kept here.
+  return seg.members.length > 0 ? `${base} Includes ${seg.members.join(", ")}.` : base;
 }
 
 const GRID_THUMB = { left: 4, right: 4, top: 6, bottom: 6 };
@@ -183,22 +185,15 @@ export function optionLabelText(o: OptionBar): string {
   return `${p.quality} · ${p.cost}${p.mark}`;
 }
 
-/** The ECharts option for C1. Pure: tokens and pixel size in, option out. */
-export function buildAllocationOption(
-  results: Results,
-  size: "stage" | "thumb",
-  t: Tokens,
-  dims: Dims,
-): EChartsCoreOption {
+/** A block drawn narrower than this many pixels is folded into its neighbour: a sliver reads as a rendering fault. */
+export const MIN_BLOCK_PX = 8;
+
+/** Where the plot sits and how far a dollar goes in it, at one size. Shared by the drawing and by its check. */
+function plotScale(results: Results, size: "stage" | "thumb", t: Tokens, dims: Dims) {
   const stage = size === "stage";
-  const a: AllocationResult = results.allocation;
   const cmp = comparisonOf(results);
-  const rows = rowsOf(cmp);
-  const pieces = piecesOf(results, cmp, t);
   const narrow = dims.width < NARROW_WIDTH;
-  const saved = pieces.filter((p) => p.saved).reduce((sum, p) => sum + p.usd, 0);
-  const spent = a.total_usd - saved;
-  const extent = Math.max(a.total_usd, a.budget_usd, ...cmp.options.map((o) => o.alt.total_usd));
+  const extent = Math.max(results.allocation.total_usd, results.allocation.budget_usd, ...cmp.options.map((o) => o.alt.total_usd));
   const axisMax = niceCeil(extent);
   // On a phone the row name goes above its bar and the bar takes the full width (spec 15.11).
   const above = stage && narrow;
@@ -207,9 +202,35 @@ export function buildAllocationOption(
   // margin holds the longest of them: a label never moves between rows.
   const optionLabelPx = narrow ? 0 : Math.max(0, ...cmp.options.map((o) => textWidth(optionLabelText(o), t.fontXs, t.weightBold, t.fontSans)));
   const right = stage ? 24 + (optionLabelPx > 0 ? Math.ceil(optionLabelPx) + t.space2 : 0) : GRID_THUMB.right;
-  const grid = stage ? { left, right, top: 36, bottom: 28 } : GRID_THUMB;
   const plotWidth = Math.max(0, dims.width - left - right);
-  const pxPer = plotWidth / axisMax;
+  return { stage, narrow, above, axisMax, left, right, pxPer: plotWidth / axisMax };
+}
+
+/** The segments of the comparator's bar and of InfraVana's as drawn at this size: slivers folded into a neighbour. */
+export function drawnBars(results: Results, size: "stage" | "thumb", t: Tokens, dims: Dims): { today: PlannedSegment[]; infravana: PlannedSegment[] } {
+  const { pxPer } = plotScale(results, size, t, dims);
+  const a = results.allocation;
+  return {
+    today: foldSlivers(planBar(a.today, "today"), pxPer, MIN_BLOCK_PX),
+    infravana: foldSlivers(planBar(a.infravana, "infravana"), pxPer, MIN_BLOCK_PX),
+  };
+}
+
+/** The ECharts option for C1. Pure: tokens and pixel size in, option out. */
+export function buildAllocationOption(
+  results: Results,
+  size: "stage" | "thumb",
+  t: Tokens,
+  dims: Dims,
+): EChartsCoreOption {
+  const a: AllocationResult = results.allocation;
+  const cmp = comparisonOf(results);
+  const rows = rowsOf(cmp);
+  const { stage, narrow, above, axisMax, left, right, pxPer } = plotScale(results, size, t, dims);
+  const pieces = piecesOf(results, cmp, t, pxPer);
+  const saved = pieces.filter((p) => p.saved).reduce((sum, p) => sum + p.usd, 0);
+  const spent = a.total_usd - saved;
+  const grid = stage ? { left, right, top: 36, bottom: 28 } : GRID_THUMB;
 
   /** The longest label that fits inside a piece, on its chip: "Name $X", then "$X", then none. */
   const fit = (p: Piece): string => {

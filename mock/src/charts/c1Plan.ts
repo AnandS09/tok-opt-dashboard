@@ -98,3 +98,37 @@ export function planBar(segments: AllocationSegment[], side: Side): PlannedSegme
   }
   return planned;
 }
+
+/**
+ * Folds spend segments too narrow to read as a block into their neighbour, for drawing only. A sliver of a
+ * couple of pixels between two paper gaps reads as a rendering fault, so a spend segment drawn narrower than
+ * `minPx` joins the segment before it (the one after it when it is first) and the bar shows one block. The
+ * folded segment's name stays in `members`, so the tooltip, the screen-reader table and the sources still
+ * name it. Savings segments are never folded.
+ */
+export function foldSlivers(planned: PlannedSegment[], pxPerUsd: number, minPx: number): PlannedSegment[] {
+  const spend = planned.filter((p) => p.tone === "spend");
+  if (spend.length < 2 || !(pxPerUsd > 0)) return planned;
+  const joined = (into: PlannedSegment, sliver: PlannedSegment): PlannedSegment => ({
+    ...into,
+    usd: into.usd + sliver.usd,
+    provenance: worstProvenance([into.provenance, sliver.provenance]),
+    members: [...into.members, ...(sliver.members.length > 0 ? sliver.members : [sliver.label])],
+  });
+  const kept: PlannedSegment[] = [];
+  let carry: PlannedSegment | null = null;
+  for (const seg of spend) {
+    if (seg.usd * pxPerUsd >= minPx) {
+      kept.push(carry ? joined(seg, carry) : seg);
+      carry = null;
+    } else if (kept.length > 0) {
+      kept[kept.length - 1] = joined(kept[kept.length - 1] as PlannedSegment, seg);
+    } else {
+      carry = carry ? joined(carry, seg) : seg;
+    }
+  }
+  // Every segment was narrow: they make one block together rather than none.
+  if (kept.length === 0 && carry) kept.push(carry);
+  return [...kept, ...planned.filter((p) => p.tone !== "spend")];
+}
+

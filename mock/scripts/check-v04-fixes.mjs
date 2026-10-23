@@ -272,6 +272,60 @@ async function budgetLineOnPhone(page, base) {
   check(`F-4 390px: the budget line does not run through any row name (${r.worst.toFixed(2)} of a name's rows at worst, at most 0.60)`, r.worst <= 0.6, `worst share ${r.worst.toFixed(2)}; ${r.shares}`);
 }
 
+/** The runs of the InfraVana colour along the middle of its bar, read back from the chart canvas, and of the saving colour. */
+const BAR_RUNS = (accent, saved) => `(() => {
+  const canvas = document.querySelector('.stage__panel canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const { width, height } = canvas;
+  const data = ctx.getImageData(0, 0, width, height).data;
+  const near = (i, rgb) => Math.abs(data[i] - rgb[0]) <= 2 && Math.abs(data[i + 1] - rgb[1]) <= 2 && Math.abs(data[i + 2] - rgb[2]) <= 2 && data[i + 3] > 250;
+  const accent = ${JSON.stringify(accent)};
+  const saved = ${JSON.stringify(saved)};
+  let rowY = -1, most = 0;
+  for (let y = 0; y < height; y++) {
+    let n = 0;
+    for (let x = 0; x < width; x++) if (near((y * width + x) * 4, accent)) n++;
+    if (n > most) { most = n; rowY = y; }
+  }
+  const runs = (rgb) => {
+    const out = [];
+    let start = -1;
+    for (let x = 0; x <= width; x++) {
+      const on = x < width && near((rowY * width + x) * 4, rgb);
+      if (on && start < 0) start = x;
+      if (!on && start >= 0) { out.push(x - start); start = -1; }
+    }
+    return out;
+  };
+  // Between the first blue pixel and the last saved pixel, the stretches that are neither colour: the paper gaps.
+  const first = (() => { for (let x = 0; x < width; x++) if (near((rowY * width + x) * 4, accent)) return x; return -1; })();
+  const last = (() => { for (let x = width - 1; x >= 0; x--) if (near((rowY * width + x) * 4, saved)) return x; return -1; })();
+  const gaps = [];
+  let from = -1;
+  for (let x = first; x <= last; x++) {
+    const i = (rowY * width + x) * 4;
+    const other = !near(i, accent) && !near(i, saved);
+    if (other && from < 0) from = x;
+    if (!other && from >= 0) { gaps.push(x - from); from = -1; }
+  }
+  return { rowY, accent: runs(accent), saved: runs(saved), gaps };
+})()`;
+
+/** The InfraVana bar of the lead chart is one blue block and one saved block, with no sliver between two paper gaps. */
+async function noSliver(page, base) {
+  for (const width of [1280, 390]) {
+    await toFinal(page, base, width);
+    await sleep(600);
+    const accent = (await page.eval(TOKEN_RGB("--color-accent"))).split(",").map(Number);
+    const saved = (await page.eval(TOKEN_RGB("--color-saved"))).split(",").map(Number);
+    const r = await page.eval(BAR_RUNS(accent, saved));
+    check(`F-6 ${width}px: the InfraVana bar draws one blue block, no sliver (runs of blue: ${r.accent.join(", ")} px)`, r.accent.length === 1 && r.accent[0] >= 8, JSON.stringify(r));
+    check(`F-6 ${width}px: and one saved block (runs: ${r.saved.join(", ")} px)`, r.saved.length === 1 && r.saved[0] >= 8, JSON.stringify(r));
+    const sep = Number((await page.eval(`getComputedStyle(document.documentElement).getPropertyValue('--chart-separator-width')`)).replace("px", "")) || 2;
+    check(`F-6 ${width}px: the only break in the bar is one paper gap of ${sep}px (stretches between blue and saved: ${r.gaps.join(", ")} px)`, r.gaps.length === 1 && r.gaps[0] <= sep + 1.5, JSON.stringify(r));
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 let chrome;
@@ -289,6 +343,7 @@ try {
   await chartRule(page, base);
   await gridButton(page, base);
   await budgetLineOnPhone(page, base);
+  await noSliver(page, base);
   const errors = page.logs.filter((l) => /^EXC/.test(l));
   check("no script error during the run", errors.length === 0, errors.slice(0, 2).join(" | "));
   page.close();

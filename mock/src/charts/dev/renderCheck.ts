@@ -32,7 +32,7 @@ import type { ChartDef, ChartId, Provenance, Results, Scenario, SolveResult, Tab
 import { ComparatorSelect } from "../../components/ComparatorSelect";
 import { compute } from "../../compute";
 import { choiceFor, selectedComparator } from "../../store/comparator";
-import { allocationCsv, buildAllocationOption, planBar } from "../c1Allocation";
+import { allocationCsv, buildAllocationOption, drawnBars, planBar } from "../c1Allocation";
 import { isSavings, isSpend, spendLabel } from "../c1Plan";
 import { C3Key } from "../C3Key";
 import { BAR_MAX_PX, BAR_WIDTH_PCT, buildCostPerMtokOption } from "../c3CostPerMtok";
@@ -335,12 +335,14 @@ interface Expected {
 }
 
 /** The blocks C1 draws, in series order, from `Results` and the spec's role table. */
-function c1Expected(results: Results, t: Tokens): Expected[] {
+function c1Expected(results: Results, t: Tokens, size?: "stage" | "thumb", dims?: Dims): Expected[] {
   const a = results.allocation;
   const cmp = comparisonOf(results);
   const out: Expected[] = [];
-  for (const s of planBar(a.today, "today")) out.push({ row: 0, kind: "channel", fill: t.today1, usd: s.usd });
-  const planned = planBar(a.infravana, "infravana");
+  // A segment too narrow to read as a block is folded into its neighbour at this size (see `drawnBars`).
+  const bars = size && dims ? drawnBars(results, size, t, dims) : { today: planBar(a.today, "today"), infravana: planBar(a.infravana, "infravana") };
+  for (const s of bars.today) out.push({ row: 0, kind: "channel", fill: t.today1, usd: s.usd });
+  const planned = bars.infravana;
   for (const s of planned.filter((x) => x.tone === "spend")) out.push({ row: 1, kind: "infravana", fill: t.accent, usd: s.usd });
   const saved = planned.filter((x) => x.tone !== "spend" && x.usd > 0);
   if (saved.length > 0) out.push({ row: 1, kind: "saved", fill: t.saved, usd: saved.reduce((sum, s) => sum + s.usd, 0) });
@@ -370,10 +372,10 @@ function labelProblems(label: Obj | undefined, fill: string, where: string): str
 export function structureProblemsC1(results: Results, option: EChartsCoreOption, t: Tokens, where: string, dims?: Dims): string[] {
   const problems: string[] = [];
   const cmp = comparisonOf(results);
-  const expected = c1Expected(results, t);
   const series = seriesOf(option);
   const y = ((option as Obj).yAxis ?? {}) as Obj;
   const stage = y.show !== false;
+  const expected = c1Expected(results, t, stage ? "stage" : "thumb", dims);
   const narrow = stage && dims !== undefined && dims.width < 600;
   const pieces = series.filter((s) => s.type !== "custom");
   if (pieces.length !== expected.length) {
@@ -1123,7 +1125,7 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
   const c1 = buildAllocationOption(results, "stage", tokens, dims);
   const c1Clean = structureProblemsC1(results, c1, tokens, "c1", dims);
   const c1Series = seriesOf(c1);
-  const expected = c1Expected(results, tokens);
+  const expected = c1Expected(results, tokens, "stage", dims);
   const firstOption = expected.findIndex((e) => e.kind === "option");
   const savedAt = expected.findIndex((e) => e.kind === "saved");
   const c1Problems = (series: Obj[]) => structureProblemsC1(results, withSeries(c1, series), tokens, "c1", dims);
