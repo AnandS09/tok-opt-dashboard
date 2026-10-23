@@ -326,6 +326,33 @@ async function noSliver(page, base) {
   }
 }
 
+/** The G3 tab with the review's answers is not a dead end: its tab line and its hero say what is true and what to change. */
+async function g3Tab(page, base) {
+  for (const width of [1280, 390]) {
+    await toFinal(page, base, width);
+    await click(page, "#goal-tab-G3");
+    await page.waitFor("!document.querySelector('#goal-panel[data-pending], #goal-panel[data-stale]')", 15000);
+    await sleep(500);
+    const r = await page.eval(`(() => {
+      const hero = document.querySelector('#goal-panel');
+      const figure = hero.querySelector('.hero__figure')?.textContent.trim() ?? '';
+      return {
+        tab: document.querySelector('#goal-tab-G3 .goal-tabs__figure')?.textContent.trim() ?? null,
+        lead: hero.querySelector('.hero__lead')?.textContent.trim() ?? '',
+        figure,
+        stats: [...hero.querySelectorAll('.hero__stats li')].map((li) => li.textContent.trim()),
+        note: hero.querySelector('.hero__note')?.textContent.trim() ?? '',
+        page: document.body.innerText,
+      };
+    })()`);
+    check(`F-7 ${width}px: the hero keeps its lead line (${r.lead.slice(0, 30)}...) and a figure line`, r.lead.length > 0 && r.figure.length > 0, JSON.stringify(r));
+    check(`F-7 ${width}px: the figure line says what is true ("${r.figure}"), not "No volume fits"`, r.figure === "Fits your budget with InfraVana only", r.figure);
+    if (width === 1280) check(`F-7 1280px: the tab says the same words ("${r.tab}")`, r.tab === r.figure, String(r.tab));
+    check(`F-7 ${width}px: InfraVana's side has a figure and the comparator's side says none fits`, r.stats.length === 2 && /^\d+ people with InfraVana$/.test(r.stats[0]) && /^No team size fits with /.test(r.stats[1]), JSON.stringify(r.stats));
+    check(`F-7 ${width}px: the old dead-end wording is nowhere on the page`, !/No volume fits/.test(r.page) && !/below the fixed fees/.test(r.page), "");
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 let chrome;
@@ -344,6 +371,7 @@ try {
   await gridButton(page, base);
   await budgetLineOnPhone(page, base);
   await noSliver(page, base);
+  await g3Tab(page, base);
   const errors = page.logs.filter((l) => /^EXC/.test(l));
   check("no script error during the run", errors.length === 0, errors.slice(0, 2).join(" | "));
   page.close();

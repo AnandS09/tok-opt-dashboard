@@ -14,7 +14,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { g1Headline, goalAvailability, SolveClient, solvedHeadline, type SolveSnapshot } from "../compute";
 import type { GoalId, GoalView, Scenario, SolveAxis, SolveResult, Tables } from "../contract";
-import { USERS_RANGE } from "../data/ranges";
 import { fmtMultiple, fmtPct, fmtUsdSig } from "../shared/format";
 import { solvedNotice } from "../shared/goalNotice";
 import { computeForView, withView } from "./stage";
@@ -134,11 +133,7 @@ export function g4FigureText(extraSaving: number): string {
 /** G2's or G3's figure from a finished solve, the multiple the hero states ("1.8 times the AI work"), or a short form of the sentence that replaces it. */
 export function solvedFigureText(goal: "G2" | "G3", scenario: Scenario, solve: SolveResult): string {
   const notice = solvedNotice(solve, "");
-  if (notice !== null) {
-    if (notice.kind === "capped") return `More than ${USERS_RANGE.max.toLocaleString("en-US")} people`;
-    if (notice.kind === "no_volume") return "No volume fits the budget";
-    return "Budget over ten times the work";
-  }
+  if (notice !== null) return notice.short;
   const { multiple } = solvedHeadline(scenario, solve);
   return `${timesText(multiple)} the ${goal === "G2" ? "AI work" : "people"}`;
 }
@@ -303,22 +298,34 @@ function solvedFigure(goal: "G2" | "G3", scenario: Scenario, view: AxisSolve): T
   return shown(solvedFigureText(goal, scenario, view.solve), view.stale);
 }
 
+/** What the tabs are worked out from: the visitor's own plan (the stage's scenario without its goal and trade-off), its G1 and G4 figures, and G3's placeholder reason. */
+export function tabPlan(scenario: Scenario, tables: Tables): { own: Scenario; computed: ReturnType<typeof computedFigures>; placeholder: string | null } {
+  const own = ownScenario(scenario);
+  return { own, computed: computedFigures(own, tables), placeholder: g3PlaceholderReason(own, tables) };
+}
+
 /**
- * The figure under each of the four tabs (spec 15.6). G1 and G4 come from
- * `compute()`; G2 and G3 from their own solves, started whichever tab is
- * active, so every figure is there before its tab is chosen. G3 with no team
- * work is the labelled placeholder and is never solved.
+ * The axes the four tabs solve up front: G2's on intensity always, G3's on
+ * users unless G3 is the placeholder (no team work), which is never solved.
  */
-export function useGoalFigures({ scenario, tables, enabled }: GoalFiguresInput): Record<GoalId, TabFigure> {
-  // The tabs follow the visitor's own plan, so choosing a tab or moving a G4 step never restarts a solve.
-  const key = JSON.stringify(ownScenario(scenario));
-  const own = useMemo(() => ownScenario(scenario), [key]);
-  const computed = useMemo(() => computedFigures(own, tables), [own, tables]);
-  const placeholder = useMemo(() => g3PlaceholderReason(own, tables), [own, tables]);
+export function tabSolveAxes(placeholder: string | null): { intensity: SolveAxis; users: SolveAxis | null } {
+  return { intensity: "intensity", users: placeholder === null ? "users" : null };
+}
 
-  const intensity = useAxisSolve({ axis: "intensity", scenario: own, tables, enabled });
-  const users = useAxisSolve({ axis: placeholder === null ? "users" : null, scenario: own, tables, enabled });
-
+/**
+ * The four tab figures from what each source has produced: `computed` (G1 and
+ * G4), `intensity` (G2's solve) and `users` (G3's solve), for the visitor's
+ * own plan. Pure, so the same mapping the page uses can be run against real
+ * solves: each solved tab reads its own axis's solve, and G1 and G4 read the
+ * plan with its comparator.
+ */
+export function tabFigures(
+  own: Scenario,
+  computed: { g1: string | null; g4: string | null },
+  placeholder: string | null,
+  intensity: AxisSolve,
+  users: AxisSolve,
+): Record<GoalId, TabFigure> {
   return {
     G1: shown(computed.g1 ?? UNAVAILABLE),
     G2: solvedFigure("G2", own, intensity),
@@ -328,4 +335,22 @@ export function useGoalFigures({ scenario, tables, enabled }: GoalFiguresInput):
         : solvedFigure("G3", own, users),
     G4: shown(computed.g4 ?? UNAVAILABLE),
   };
+}
+
+/**
+ * The figure under each of the four tabs (spec 15.6). G1 and G4 come from
+ * `compute()`; G2 and G3 from their own solves, started whichever tab is
+ * active, so every figure is there before its tab is chosen. G3 with no team
+ * work is the labelled placeholder and is never solved.
+ */
+export function useGoalFigures({ scenario, tables, enabled }: GoalFiguresInput): Record<GoalId, TabFigure> {
+  // The tabs follow the visitor's own plan, so choosing a tab or moving a G4 step never restarts a solve.
+  const key = JSON.stringify(ownScenario(scenario));
+  const { own, computed, placeholder } = useMemo(() => tabPlan(scenario, tables), [key, tables]);
+  const axes = tabSolveAxes(placeholder);
+
+  const intensity = useAxisSolve({ axis: axes.intensity, scenario: own, tables, enabled });
+  const users = useAxisSolve({ axis: axes.users, scenario: own, tables, enabled });
+
+  return tabFigures(own, computed, placeholder, intensity, users);
 }

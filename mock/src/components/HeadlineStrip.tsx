@@ -188,6 +188,30 @@ function solvedContent(
     };
   }
   const notice = solvedNotice(view.solve, label);
+  if (notice !== null && notice.kind === "no_volume") {
+    // No volume fits one or both budgets. The hero keeps its layout: the lead, one line that says what to change
+    // (or that only InfraVana fits), what each side fits, and the reason underneath.
+    const { today_scale, infravana_scale } = view.solve;
+    const headline = solvedHeadline(scenario, view.solve);
+    const stats: ReactNode[] = [];
+    if (goal === "G2") {
+      if (infravana_scale > 0) stats.push(<><strong>{fmtMultiple(infravana_scale)}</strong> your current AI work with {BRAND}</>);
+      stats.push(today_scale > 0 ? <><strong>{fmtMultiple(today_scale)}</strong> with {label}</> : <>None of your current AI work with {label}</>);
+    } else {
+      if (infravana_scale > 0) stats.push(<><strong>{fmtInt(Math.round(headline.infravana_people ?? 0))}</strong> people with {BRAND}</>);
+      stats.push(today_scale > 0 ? <><strong>{fmtInt(Math.round(headline.today_people ?? 0))}</strong> with {label}</> : <>No team size fits with {label}</>);
+    }
+    return {
+      lead,
+      figure: notice.short,
+      versus: null,
+      stats,
+      note: notice.text,
+      tone: "quiet",
+      pending: false,
+      stale: view.stale,
+    };
+  }
   if (notice !== null) {
     return {
       lead,

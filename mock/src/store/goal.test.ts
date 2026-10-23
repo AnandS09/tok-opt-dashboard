@@ -14,6 +14,8 @@ import { GoalSlot } from "../components/StageSlots";
 import { compute, goalAvailability, solveAtBudget } from "../compute";
 import type { GoalId, GoalView, Results, Scenario, Tables } from "../contract";
 import { fmtPct, fmtUsdSig } from "../shared/format";
+import { FITS_WITH_US_ONLY, NEEDS_BUDGET } from "../shared/goalNotice";
+import { beginIntake, companyOf, setBudget, setCustomers, setSpeed, setUsers } from "./intake";
 import { loadFixtureScenario, loadFixtureTables, restoreFetch } from "../test/fixtures";
 import {
   computedFigures,
@@ -238,7 +240,42 @@ describe("R-6 acceptance (7): each tab's figure equals the headline figure of it
     const solve = solveAtBudget(scenarios.s1, tables, "users");
     expect(solvedFigureText("G3", scenarios.s1, { ...solve, capped_at_users_max: true })).toBe("More than 10,000 people");
     expect(solvedFigureText("G2", scenarios.s1, { ...solve, axis: "intensity", today_scale: 11 })).toBe("Budget over ten times the work");
-    expect(solvedFigureText("G2", scenarios.s1, { ...solve, axis: "intensity", today_scale: 0 })).toBe("No volume fits the budget");
+    expect(solvedFigureText("G2", scenarios.s1, { ...solve, axis: "intensity", today_scale: 0 })).toBe(FITS_WITH_US_ONLY);
+    expect(solvedFigureText("G2", scenarios.s1, { ...solve, axis: "intensity", today_scale: 0, infravana_scale: 0 })).toBe(NEEDS_BUDGET);
+  });
+});
+
+describe("G3 when no head count fits the comparator's budget (the review's answers: software company, 120 people, 200,000 customers, $150K)", () => {
+  let review: Scenario;
+  beforeAll(() => {
+    let s = beginIntake(scenarios.s1, companyOf("software"), tables);
+    s = setSpeed(setBudget(setCustomers(setUsers(s, 120), 200_000), 150_000), "standard");
+    review = s;
+  });
+
+  it("is a result that says what is true and what to change, with the hero's lead, figure and both sides", () => {
+    const solve = solveAtBudget(review, tables, "users");
+    expect(solve.today_scale).toBe(0);
+    expect(solve.infravana_scale).toBeGreaterThan(0);
+    const markup = slotMarkup(review, "G3");
+    const hero = heroOf(markup);
+    // The tab and the hero's figure line say the same words, and neither is a bare "no".
+    expect(solvedFigureText("G3", review, solve)).toBe(FITS_WITH_US_ONLY);
+    expect(hero).toContain('<p class="hero__lead">');
+    expect(/<p class="hero__figure[^"]*"[^>]*>(.*?)<\/p>/.exec(hero)?.[1]).toContain(FITS_WITH_US_ONLY);
+    // InfraVana's side has a figure (66 people of the 120 asked about); the comparator's side says none fits.
+    const people = Math.round(solve.infravana_scale * review.baseline.users);
+    expect(plain(hero)).toContain(`${people} people with InfraVana`);
+    expect(plain(hero)).toMatch(/No team size fits with .*Pay-as-you-go API/);
+    // The reason is the customers' work, not "fixed fees", and the old dead-end wording is gone from the page.
+    expect(plain(hero).replace(/&#x27;/g, "'")).toContain("the rest of this work (your customers' work and fixed fees) already costs more than your budget");
+    expect(markup).not.toContain("No volume fits");
+    expect(markup).not.toContain("below the fixed fees");
+  });
+
+  it("says Needs a larger budget when neither side fits", () => {
+    const solve = { ...solveAtBudget(review, tables, "users"), infravana_scale: 0 };
+    expect(solvedFigureText("G3", review, solve)).toBe(NEEDS_BUDGET);
   });
 });
 

@@ -15,8 +15,15 @@ export const PEOPLE_CAP_MESSAGE = `Your budget covers more than ${USERS_RANGE.ma
 
 export interface SolvedNotice {
   kind: "capped" | "no_volume" | "coverage";
+  /** The sentence in full: in the hero when it stands in for the figure, and in chart C5. */
   text: string;
+  /** The short form a tab shows under its name, and the hero's figure line, when there is no multiple. */
+  short: string;
 }
+
+/** What a tab says when no volume fits one side's budget: what to change, never a bare "no". */
+export const NEEDS_BUDGET = "Needs a larger budget";
+export const FITS_WITH_US_ONLY = "Fits your budget with InfraVana only";
 
 /**
  * The sentence a solved tab shows in place of its figure, or null when the
@@ -25,13 +32,22 @@ export interface SolvedNotice {
  * than ten times the work (spec 5.2).
  */
 export function solvedNotice(solve: SolveResult, comparatorLabel: string): SolvedNotice | null {
-  if (solve.axis === "users" && solve.capped_at_users_max) return { kind: "capped", text: PEOPLE_CAP_MESSAGE };
+  if (solve.axis === "users" && solve.capped_at_users_max) {
+    return { kind: "capped", text: PEOPLE_CAP_MESSAGE, short: `More than ${USERS_RANGE.max.toLocaleString("en-US")} people` };
+  }
   const today = solve.today_scale === 0;
   const infravana = solve.infravana_scale === 0;
   if (today || infravana) {
     const who = today && infravana ? "either side" : today ? comparatorLabel : "InfraVana";
-    return { kind: "no_volume", text: `Your budget is below the fixed fees of ${who}, so no AI work fits in it` };
+    // Only the comparator's side has none: the sentence says that InfraVana's side fits (the hero shows its figure).
+    const short = today && !infravana ? FITS_WITH_US_ONLY : NEEDS_BUDGET;
+    // The people axis keeps the customers' work fixed, so what stands in the way there is that work and the fixed fees, not the people.
+    const reason =
+      solve.axis === "users"
+        ? `With ${who}, the rest of this work (your customers' work and fixed fees) already costs more than your budget, so no number of people fits`
+        : `Your budget is below the fixed fees of ${who}, so no AI work fits in it`;
+    return { kind: "no_volume", text: reason, short };
   }
-  if (solve.today_scale > COVERAGE_MESSAGE_ABOVE) return { kind: "coverage", text: COVERAGE_MESSAGE };
+  if (solve.today_scale > COVERAGE_MESSAGE_ABOVE) return { kind: "coverage", text: COVERAGE_MESSAGE, short: "Budget over ten times the work" };
   return null;
 }
