@@ -94,6 +94,7 @@ export function paretoParts(results: Results, data: C10Data | null): ProvenanceP
             group: `${TODAY_LABEL}: ${cmp.label}`,
             part: "",
             provenance: today(cmp.comparator.provenance, marks[0] ?? { speed: null, alt: cmp.comparator }),
+            source_url: cmp.comparator.source_url,
           },
         ]
       : []),
@@ -102,6 +103,7 @@ export function paretoParts(results: Results, data: C10Data | null): ProvenanceP
       group: "Other Today options",
       part: o.alt.label,
       provenance: today(o.alt.provenance, marks[(cmp.comparator ? 1 : 0) + i] ?? { speed: null, alt: o.alt }),
+      source_url: o.alt.source_url,
     })),
   ];
 }

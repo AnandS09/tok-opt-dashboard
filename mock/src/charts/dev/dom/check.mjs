@@ -58,6 +58,8 @@ const IDS = ["C1", "C5", "C3", "C10"];
 /** The real-address run gives every offer row a real address in place of the placeholder one. */
 const REAL_PREFIX = "https://prices.example.test/real/";
 const REAL_FROM = "https://example.invalid/placeholder-invented-data/offers/";
+/** The C10 real-address run does the same for the buying patterns, whose addresses are the ones C10's Today lines carry. */
+const REAL_PATTERNS_FROM = "https://example.invalid/placeholder-invented-data/patterns/";
 /** The Azure colour table of spec 14.1, read from the generated palette file (block AZ), not typed here. */
 const AZURE_TOKENS = (() => {
   const css = fs.readFileSync(path.join(root, "docs/design-v0.4/palette/generated/tokens.css"), "utf8");
@@ -208,6 +210,13 @@ async function parent() {
         });
         outcomes.real = real;
         console.log(`--- one fixture row with a real address (exit ${real.status})\n${real.stdout}${real.stderr && !real.stdout ? real.stderr : ""}`);
+        // And C10, opened on its own address, with the buying patterns' addresses made real.
+        const realC10 = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--child", out, "--sources-real-c10"], {
+          env: { ...process.env, DOM_CHECK_JSDOM: jsdom, DOM_CHECK_HASH: "#slide=C10&goal=G1" },
+          encoding: "utf8",
+        });
+        outcomes.realC10 = realC10;
+        console.log(`--- C10 with real addresses on the patterns (exit ${realC10.status})\n${realC10.stdout}${realC10.stderr && !realC10.stdout ? realC10.stderr : ""}`);
         // The same build opened on the address of C10's speed view (spec 6.3, acceptance 5: a reload honours it).
         const reload = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--child", out, "--reload"], {
           env: { ...process.env, DOM_CHECK_JSDOM: jsdom, DOM_CHECK_HASH: "#slide=C10&goal=G1&c10=speed" },
@@ -217,7 +226,7 @@ async function parent() {
         console.log(`--- reload on #slide=C10&c10=speed (exit ${reload.status})\n${reload.stdout}${reload.stderr && !reload.stdout ? reload.stderr : ""}`);
       }
     }
-    const good = outcomes["as-is"].status === 0 && outcomes.reload.status === 0 && outcomes.real.status === 0;
+    const good = outcomes["as-is"].status === 0 && outcomes.reload.status === 0 && outcomes.real.status === 0 && outcomes.realC10.status === 0;
     const red = FAULTS.map((f) => [f.name, outcomes[f.name].status === 1]);
     const controlsRed = red.every(([, r]) => r);
     console.log(`as-is, reload and real-address runs pass: ${good ? "yes" : "NO"}; negative controls that fail: ${red.map(([n, r]) => `${n} ${r ? "yes" : "NO"}`).join(", ")}`);
@@ -305,6 +314,7 @@ async function child(bundle) {
     let body = fs.readFileSync(file, "utf8");
     // `--sources-real`: the first direct offer carries a real address, as a data update would give it.
     if (process.argv.includes("--sources-real") && file.endsWith("model_offers.csv")) body = body.split(REAL_FROM).join(REAL_PREFIX);
+    if (process.argv.includes("--sources-real-c10") && file.endsWith("buying_patterns.csv")) body = body.split(REAL_PATTERNS_FROM).join(REAL_PREFIX);
     return { ok: true, status: 200, statusText: "OK", text: async () => body, json: async () => JSON.parse(body), headers: { get: () => null } };
   };
 
@@ -469,6 +479,29 @@ async function child(bundle) {
     check(hrefs(comparator).length > 0 && hrefs(comparator).every((h) => h.startsWith(REAL_PREFIX)), `the comparator row's links follow the data: ${JSON.stringify(hrefs(comparator))}`);
     check(!(comparator?.cell?.textContent ?? "").includes("placeholder, no source yet"), "the comparator row drops \"placeholder, no source yet\" for a real address");
     check(hrefs(others).length > 0 && (others?.cell?.textContent ?? "").includes("placeholder, no source yet"), "a row whose addresses are still placeholders keeps the words");
+    const errs = logs.filter((l) => !/Not implemented/.test(l) && (l.startsWith("error:") || l.startsWith("window error:")));
+    check(errs.length === 0, `no console errors (${errs.length})`);
+    console.log(bad === 0 ? "ALL OK" : `FAILED: ${bad}`);
+    window.close();
+    process.exit(bad === 0 ? 0 : 1);
+  }
+  if (process.argv.includes("--sources-real-c10")) {
+    // The same for C10, opened on its own address: the comparator's and the other options' rows read their addresses from the data (spec 15.10 acceptance 5 and 6).
+    let bad = 0;
+    const check = (ok, what) => {
+      if (!ok) bad++;
+      console.log(`${ok ? "PASS" : "FAIL"} ${what}`);
+    };
+    check(/(?:^|[#&])slide=C10(?:&|$)/.test(window.location.hash), `C10 is in focus: ${window.location.hash}`);
+    doc.querySelector(".chart-card details.sources").open = true;
+    const rows = sourceRows();
+    const hrefs = (r) => [...(r?.cell?.querySelectorAll("a") ?? [])].map((a) => a.getAttribute("href"));
+    const comparator = rows.find((r) => r.group.startsWith("Today:"));
+    const others = rows.find((r) => r.group === "Other Today options");
+    check(rows.every((r) => !/No source address in the data/.test(r.cell?.textContent ?? "") || r.basis === "Modelled"), `no vendor-reported row of C10 says "No source address in the data": ${JSON.stringify(rows.map((r) => [r.group, r.basis, (r.cell?.textContent ?? "").slice(0, 40)]))}`);
+    check(hrefs(comparator).length > 0 && hrefs(comparator).every((h) => h.startsWith(REAL_PREFIX)), `the comparator row's links follow the data: ${JSON.stringify(hrefs(comparator))}`);
+    check(!(comparator?.cell?.textContent ?? "").includes("placeholder, no source yet"), "the comparator row drops \"placeholder, no source yet\" for a real address");
+    check(hrefs(others).length > 0 && hrefs(others).every((h) => h.startsWith(REAL_PREFIX)), `the other options' links follow the data: ${JSON.stringify(hrefs(others))}`);
     const errs = logs.filter((l) => !/Not implemented/.test(l) && (l.startsWith("error:") || l.startsWith("window error:")));
     check(errs.length === 0, `no console errors (${errs.length})`);
     console.log(bad === 0 ? "ALL OK" : `FAILED: ${bad}`);

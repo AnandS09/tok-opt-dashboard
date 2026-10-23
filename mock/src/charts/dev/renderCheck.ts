@@ -758,11 +758,13 @@ export function sourceTableRows(markup: string): TableRow[] {
 /** The addresses of the links in a Source cell. */
 const hrefsOf = (html: string): string[] => [...html.matchAll(/<a href="([^"]*)"/g)].map((m) => (m[1] as string).replace(/&amp;/g, "&"));
 
-interface WantRow {
+export interface WantRow {
   group: string;
   provenance: Provenance;
   covers: string[];
   urls: string[];
+  /** The Source cell's words, for a row that is not the ordinary modelled one (the invented-rows row of the speed view). */
+  source?: string;
 }
 
 /** The rows the table must hold, worked out from `Results` by a route of its own (spec 15.10: one per provenance and group, non-measured only). */
@@ -795,6 +797,11 @@ function expectedSourceRows(id: ChartId, results: Results): WantRow[] {
   }
   for (const o of cmp.options) parts.push({ group: "Other Today options", part: o.alt.label, provenance: o.alt.provenance, url: o.alt.source_url ?? null });
 
+  return wantRowsOf(parts);
+}
+
+/** One row per provenance (vendor-reported first, then modelled) and group, non-measured only, with the addresses the data holds for it (spec 15.10). */
+export function wantRowsOf(parts: { group: string; part: string; provenance: Provenance; url: string | null }[]): WantRow[] {
   const rows: WantRow[] = [];
   for (const provenance of ["vendor_reported", "modelled"] as const) {
     for (const group of [...new Set(parts.filter((p) => p.provenance === provenance).map((p) => p.group))]) {
@@ -847,7 +854,8 @@ export function sourcesProblems(stage: string, thumb: string, want: WantRow[] | 
       const covers = row.covers.split("; ");
       for (const c of w.covers) if (!covers.includes(c)) problems.push(`${where} row ${i + 1}: does not cover "${c}"`);
       if (w.provenance === "modelled") {
-        if (decode(row.sourceHtml) !== MODELLED_SOURCE) problems.push(`${where} row ${i + 1}: modelled source reads "${decode(row.sourceHtml)}"`);
+        const wantSource = w.source ?? MODELLED_SOURCE;
+        if (decode(row.sourceHtml) !== wantSource) problems.push(`${where} row ${i + 1}: modelled source reads "${decode(row.sourceHtml)}", expected "${wantSource}"`);
         if (hrefsOf(row.sourceHtml).length > 0) problems.push(`${where} row ${i + 1}: a modelled row carries a link`);
       } else {
         const hrefs = hrefsOf(row.sourceHtml);

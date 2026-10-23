@@ -29,7 +29,7 @@ import { fmtTokensSig } from "../../shared/format";
 import { parseHash, serialiseHash, DEFAULT_FIELDS } from "../../store/hash";
 import type { HashFields } from "../../store/hash";
 import { c10Data, speedViewReason } from "../c10Data";
-import type { C10View } from "../c10Data";
+import type { C10Data, C10View } from "../c10Data";
 import { C10Context } from "../c10Context";
 import { ParetoChart } from "../c10Pareto";
 import {
@@ -47,10 +47,12 @@ import {
 } from "../c10Option";
 import { comparisonOf } from "../comparison";
 import { INFRAVANA_LABEL } from "../labels";
+import { INVENTED_ROW, WHOLE_GROUP } from "../ProvenanceNotes";
 import { textWidth } from "../measure";
 import type { Tokens } from "../tokens";
 import type { Dims } from "../useEChart";
-import { STYLE_BLOCK, coloursOf, dataOf, noPatternOrDashProblems, renderSvg, seriesOf, textsOf } from "./renderCheck";
+import { STYLE_BLOCK, coloursOf, dataOf, noPatternOrDashProblems, renderSvg, seriesOf, sourcesProblems, textsOf, wantRowsOf } from "./renderCheck";
+import type { WantRow } from "./renderCheck";
 import { sourceTableRows } from "./renderCheck";
 import type { CheckReport, Obj } from "./renderCheck";
 
@@ -348,6 +350,24 @@ export function nameLabelProblems(svg: string, t: Tokens, where: string): string
   return chip ? [] : [`${where}: "${INFRAVANA_LABEL}" has ${[...new Set(hitsOf)].join(" and ")} through it`];
 }
 
+/**
+ * The rows C10's "Where these numbers come from" table must hold in one view (spec 15.10), worked out from the marks
+ * the chart draws and the addresses `Results` holds for them, by a route of its own: not from the parts the chart hands
+ * to the table. A Today mark with a speed is modelled in the speed view (its speed is invented); a vendor-reported row
+ * links to the addresses of the options it covers.
+ */
+export function expectedC10SourceRows(data: C10Data): WantRow[] {
+  const provenanceOf = (m: C10Data["today"][number]) => (data.view === "speed" && m.speed !== null ? "modelled" : m.alt.provenance);
+  const parts = [
+    ...data.today.filter((m) => m.rank === null).map((m) => ({ group: `Today: ${m.alt.label}`, part: "", provenance: provenanceOf(m), url: m.alt.source_url ?? null })),
+    { group: INFRAVANA_LABEL, part: "", provenance: data.provenance, url: null },
+    ...data.today.filter((m) => m.rank !== null).map((m) => ({ group: "Other Today options", part: m.alt.label, provenance: provenanceOf(m), url: m.alt.source_url ?? null })),
+  ];
+  const rows = wantRowsOf(parts.map((p) => ({ ...p, part: p.part === "" ? WHOLE_GROUP : p.part })));
+  // The speed view draws invented speed rows: one more modelled row, with its own words.
+  return data.view === "speed" ? [...rows, { group: INVENTED_ROW.group, provenance: "modelled", covers: [INVENTED_ROW.covers], urls: [], source: INVENTED_ROW.source }] : rows;
+}
+
 /** Texts and positions of an svg: the translate of each `<text>`. */
 function placedTexts(svg: string): { text: string; x: number; y: number }[] {
   return [...svg.matchAll(/<text([^>]*)>([^<]*)<\/text>/g)].flatMap((m) => {
@@ -497,6 +517,7 @@ export function runC10Checks(label: string, scenario: Scenario, tables: Tables, 
       problems.push(...c10OptionProblems(c, option, where, size === "stage" ? dims : undefined), ...c10SvgProblems(c, svg, size, dims, where));
     }
     problems.push(...c10MarkupProblems(c10Markup(c, view), view, reason === null, reason, `${label} C10 ${view} markup`));
+    problems.push(...sourcesProblems(c10Markup(c, view), c10Markup(c, view, "thumb"), expectedC10SourceRows(data), `${label} C10 ${view} sources`));
     problems.push(...c10BoxProblems(c, boxesOf(c), `${label} C10 ${view} boxes`));
     // Without a frontier there are no boxes, and the stage does not invent any.
     if (paretoBenefits(results, { scenario, goal: "G1", solve: null, frontier: null, headcount: null }).length !== 0) problems.push(`${label} C10 ${view}: boxes without a frontier`);
@@ -561,6 +582,14 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
     expect(v("the points are 8px"), c10OptionProblems(c, edit(option, dots, (s) => ({ ...s, symbolSize: 8 })), view));
     expect(v("the points carry a ring"), c10OptionProblems(c, edit(option, dots, (s) => ({ ...s, itemStyle: { ...(s.itemStyle as Obj), borderWidth: 2 } })), view));
     expect(v("the drawing holds a dashed stroke"), c10SvgProblems(c, `${renderSvg(option, dims)}<path stroke-dasharray="6 3"/>`, "stage", dims, view));
+    // The sources table: rows whose links are gone (the fault of the review) or point at another address are caught.
+    const stageMarkup = c10Markup(c, view);
+    const thumbMarkup = c10Markup(c, view, "thumb");
+    const wantRows = expectedC10SourceRows(data);
+    const cleanSources = sourcesProblems(stageMarkup, thumbMarkup, wantRows, view);
+    if (cleanSources.length > 0) problems.push(`C10 self-test ${view}: the unbroken sources table reports ${cleanSources[0]}`);
+    expect(v("the sources rows carry no address"), sourcesProblems(stageMarkup.replace(/<a href="[^"]*"[^>]*>[\s\S]*?<\/a>/g, ""), thumbMarkup, wantRows, view), cleanSources);
+    expect(v("a sources link points at another address"), sourcesProblems(stageMarkup.replace(/<a href="[^"]*"/, '<a href="https://elsewhere.test/x"'), thumbMarkup, wantRows, view), cleanSources);
     // The name label in the frontier's own way: the label's anchor moved onto a step of the line, drawn and measured in the svg.
     const nameSeries = seriesOf(option).find((x) => x.name === NAME_SERIES);
     const cleanName = nameLabelProblems(renderSvg(option, dims), tokens, view);
