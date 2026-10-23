@@ -279,7 +279,7 @@ function explanation(goal: GoalId, label: string): { fn: string; body: string[] 
       return {
         fn: "compute(scenario, tables)",
         body: [
-          `Both sides price the same work at the same minimum quality and response speed. The saving is the two "Saved" parts of Figure 1 added together, the better price through other channels and the cheaper place to run each model, measured against ${label}. The percentage is that saving over what ${label} costs.`,
+          `Both sides price the same work at the same minimum quality and response speed. The saving is the two "Saved" parts of the chart "Where the money goes" added together, the better price through other channels and the cheaper place to run each model, measured against ${label}. The percentage is that saving over what ${label} costs.`,
           "It is one calculation in your browser, so it updates as you type.",
         ],
       };
