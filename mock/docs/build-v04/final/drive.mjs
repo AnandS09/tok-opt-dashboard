@@ -323,7 +323,7 @@ async function run(browser) {
   // 15.6 (6): AI-first startup (no team work), choosing G3 selects it, puts goal=G3 in the address and labels the placeholder.
   {
     const page = await open(browser, 1280);
-    await page.selectOption('select[aria-label="Company type"]', "ai_first");
+    await page.selectOption(".answers select.answer__value >> nth=0", "ai_first");
     await settled(page);
     await page.click("#goal-tab-G3");
     await page.waitForTimeout(400);
@@ -433,7 +433,7 @@ async function shots(browser) {
     await page.close();
 
     const placeholder = await open(browser, width);
-    await placeholder.selectOption('select[aria-label="Company type"]', "ai_first");
+    await placeholder.selectOption(".answers select.answer__value >> nth=0", "ai_first");
     await settled(placeholder);
     await chooseGoal(placeholder, "G3");
     await placeholder.locator(".goal-section").screenshot({ path: path.join(here, `tabs-G3-placeholder-${name}.png`) });

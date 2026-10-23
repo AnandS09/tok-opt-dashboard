@@ -152,7 +152,8 @@ async function canvasSize(page) {
 
   // C1: bar thickness per row.
   const size = await canvasSize(page);
-  const cols = lines(250, size.w - 330, 3);
+  // With the contents column beside it the chart is about 760px wide, so the Saved block starts past size.w - 330: sample to size.w - 180, clear of the end labels.
+  const cols = lines(250, size.w - 180, 3);
   const thickness = {};
   for (const [name, token] of [["comparator", "--color-today-1"], ["InfraVana", "--color-accent"], ["saved", "--color-saved"], ["option 1", "--color-today-2"], ["option 2", "--color-today-3"], ["option 3", "--color-today-4"]]) {
     thickness[name] = await thickest(page, tok(token), "col", cols);
