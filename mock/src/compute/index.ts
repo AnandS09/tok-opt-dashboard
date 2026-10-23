@@ -18,6 +18,7 @@ import type {
   Tables,
   TodayAlternative,
 } from "../contract";
+import { offerLabel } from "../shared/format";
 import { runEngine } from "./core";
 import { type WorkloadDemand } from "./demand";
 import {
@@ -137,6 +138,14 @@ function describeOptions(
       detail:
         pattern.kind === "best_single" && bestSingle !== null
           ? `${bestSingle.offer.model_id} via ${bestSingle.offer.channel} (${bestSingle.offer.region})`
+          : null,
+      detail_label:
+        pattern.kind === "best_single" && bestSingle !== null
+          ? offerLabel(
+              tables.models.find((m) => m.model_id === bestSingle.offer.model_id)?.family ?? bestSingle.offer.model_id,
+              bestSingle.offer.channel,
+              bestSingle.offer.region,
+            )
           : null,
       is_typical: id === typical.pattern_id,
       is_grey: grey.has(id),

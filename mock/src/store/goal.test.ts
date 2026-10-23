@@ -488,6 +488,12 @@ describe("R-7 acceptance (1) to (3): the comparator is the one list control of t
     expect(picked).toContain(`>${typical.label} (typical for you)</option>`);
   });
 
+  it("says which offer the best single option is in a visitor's words, with no raw id (F-8)", () => {
+    const hero = plain(heroOf(slotMarkup(scenarios.s1, "G1", { comparator: "best_single" })));
+    expect(hero).toContain("is the cheapest single offer that meets your quality and speed: Mid-tier model A on AWS EC2 (US East).");
+    expect(hero).not.toMatch(/mid_a|useast| via ec2|[a-z]+_[a-z0-9]+ via /);
+  });
+
   it("writes the line under the headline with the comparator in bold, as the control's description", () => {
     for (const goal of GOAL_ORDER) {
       const markup = slotMarkup(scenarios.s1, goal);

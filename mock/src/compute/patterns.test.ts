@@ -7,6 +7,7 @@ import {
   loadFixtureTables,
   restoreFetch,
 } from "../test/fixtures";
+import { offerLabel } from "../shared/format";
 import { compute } from "./index";
 
 /**
@@ -338,6 +339,16 @@ describe("the best single option (spec 6.1)", () => {
     expect(b?.total_usd).toBeCloseTo(16_562.07, 2);
     expect(b?.kind).toBe("best_single");
     expect(b?.is_typical).toBe(false);
+  });
+
+  it("names the offer for a visitor in display words: the model's family, the channel and the region, with no id", () => {
+    const b = best(compute(s1, base));
+    expect(b?.detail_label).toBe("Mid-tier model A on AWS EC2 (US East)");
+    expect(b?.detail_label).not.toMatch(/[a-z]+_[a-z0-9]+|\bvia\b|useast|ec2/);
+    // An offer tied to no region leaves the region out, and every other kind has no label.
+    expect(offerLabel("Frontier model A", "direct", "global")).toBe("Frontier model A on Direct from the model maker");
+    expect(offerLabel("Frontier model B", "bedrock", "euwest")).toBe("Frontier model B on AWS Bedrock (EU West)");
+    expect(compute(s1, base).today_alternatives.filter((a) => a.kind !== "best_single").every((a) => a.detail_label === null)).toBe(true);
   });
 
   it("InfraVana against it is 14,613.02 (spec 6.1)", () => {

@@ -715,8 +715,15 @@ export interface TodayAlternative {
   /**
    * For the derived `best_single` option, the offer it picked in plain
    * ids (for example "mid_a via ec2 (useast)"); null for every other kind.
+   * For the data and the tests; a visitor is shown `detail_label`.
    */
   detail: string | null;
+  /**
+   * The same offer in the words a visitor reads, from the model's family and
+   * the channel and region names (for example "Mid-tier model A on AWS EC2
+   * (US East)"); null for every other kind.
+   */
+  detail_label: string | null;
   /** True for the typical buyer for `stage_today`, listed once. */
   is_typical: boolean;
   /** True when this option is a grey bar by default or by being the comparator. */

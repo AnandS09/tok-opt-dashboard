@@ -353,6 +353,18 @@ async function g3Tab(page, base) {
   }
 }
 
+/** The line under the headline for the best single option names the offer in words, with no id. */
+async function bestSingleLine(page, base) {
+  for (const width of [1280, 390]) {
+    await toFinal(page, base, width);
+    await page.eval(`(() => { const s = document.querySelector('.hero .comparator__control'); s.value = 'best_single'; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+    await sleep(900);
+    const line = await page.eval("document.querySelector('.hero__compare')?.textContent.trim() ?? ''");
+    check(`F-8 ${width}px: the best single line names the offer in words ("${line.slice(0, 95)}...")`, /cheapest single offer that meets your quality and speed: Mid-tier model A on AWS EC2 \(US East\)\./.test(line), line);
+    check(`F-8 ${width}px: no raw id on the line (no underscore name, no "via", no "useast")`, !/\b[a-z]+_[a-z0-9]+\b| via |useast/.test(line), line);
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 let chrome;
@@ -372,6 +384,7 @@ try {
   await budgetLineOnPhone(page, base);
   await noSliver(page, base);
   await g3Tab(page, base);
+  await bestSingleLine(page, base);
   const errors = page.logs.filter((l) => /^EXC/.test(l));
   check("no script error during the run", errors.length === 0, errors.slice(0, 2).join(" | "));
   page.close();

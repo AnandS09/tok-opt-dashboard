@@ -47,6 +47,24 @@ export function channelLabel(name: string): string {
   return CHANNEL_NAMES[name] ?? (name.length === 0 ? name : name[0].toUpperCase() + name.slice(1));
 }
 
+/** Plain names for the regions in model_offers.csv; "global" and "any" name no place worth stating. */
+const REGION_NAMES: Record<string, string> = {
+  useast: "US East",
+  euwest: "EU West",
+};
+
+/** A region for display ("US East"), or null for an offer that is not tied to one ("global", "any", empty). */
+export function regionLabel(region: string): string | null {
+  if (region === "" || region === "global" || region === "any") return null;
+  return REGION_NAMES[region] ?? region.replace(/_/g, " ");
+}
+
+/** The words for one offer: "Mid-tier model A on AWS EC2 (US East)", from the model's family and the channel and region names. */
+export function offerLabel(family: string, channel: string, region: string): string {
+  const where = regionLabel(region);
+  return `${family} on ${channelLabel(channel)}${where === null ? "" : ` (${where})`}`;
+}
+
 /** Label of a self-hosted hardware segment: "Own hardware (MI355X)". */
 export function selfHostLabel(hwId: string): string {
   return `Own hardware (${hwLabel(hwId)})`;

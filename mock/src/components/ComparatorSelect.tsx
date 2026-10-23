@@ -53,7 +53,7 @@ export function ComparatorSelect({ results, value, onChange, describedBy }: Comp
 /** The plain statement of what the picked comparator is, the first sentence of the line under the headline. */
 function whatItIs(picked: TodayAlternative, typical: TodayAlternative | undefined): string {
   if (picked.kind === "best_single") {
-    return `is the cheapest single offer that meets your quality and speed${picked.detail ? `: ${picked.detail}` : ""}.`;
+    return `is the cheapest single offer that meets your quality and speed${picked.detail_label ? `: ${picked.detail_label}` : ""}.`;
   }
   if (picked.is_typical) return "is the way a company like yours most often buys AI today.";
   return `is not the way a company like yours most often buys AI today${typical ? `; that is ${typical.label}` : ""}.`;
