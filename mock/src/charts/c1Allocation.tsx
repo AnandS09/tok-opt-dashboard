@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { BarChart } from "echarts/charts";
-import type { BarSeriesOption } from "echarts/charts";
+import { BarChart, CustomChart } from "echarts/charts";
+import type { BarSeriesOption, CustomSeriesOption } from "echarts/charts";
 import { GridComponent, MarkLineComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
@@ -8,7 +8,6 @@ import type {
   AllocationResult,
   ChartDef,
   ChartProps,
-  Provenance,
   Results,
   SavingsSegment,
 } from "../contract";
@@ -20,27 +19,24 @@ import type { PlannedSegment } from "./c1Plan";
 import { ChartFigure } from "./ChartFigure";
 import { BELOW_FLOOR, barRowsHeight, comparisonOf, qualityText } from "./comparison";
 import type { Comparison, OptionBar } from "./comparison";
+import { labelColourOn } from "./contrast";
 import { esc, fmtBudget, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import { textWidth } from "./measure";
-import {
-  CHANNEL_PATTERNS,
-  INFRAVANA_PATTERNS,
-  SAVINGS_PATTERNS,
-  TODAY_FILL_ALTERNATION,
-  decalOf,
-  optionDecal,
-  optionStyle,
-} from "./patterns";
-import type { Decal } from "./patterns";
+import { optionStyle } from "./patterns";
 import type { ProvenancePart } from "./ProvenanceNotes";
-import { PROVENANCE_TEXT, outlineOf } from "./provenanceStyle";
-import type { Outline } from "./provenanceStyle";
+import { comparatorBar, infravanaParts, optionParts, todayParts } from "./sourceParts";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
 import { wrapText } from "./wrap";
 
-use([BarChart, GridComponent, MarkLineComponent, TooltipComponent]);
+use([BarChart, CustomChart, GridComponent, MarkLineComponent, TooltipComponent]);
+
+/** A bar's share of its row in a thumbnail, which is too small for a bar of fixed thickness. */
+const THUMB_BAR_SHARE = 0.58;
+
+/** The name of the series that draws the paper gaps between neighbouring segments. */
+export const GAP_SERIES = "Segment gaps";
 
 export { planBar } from "./c1Plan";
 export type { PlannedSegment } from "./c1Plan";
@@ -67,71 +63,62 @@ function rowsOf(cmp: Comparison): Row[] {
   ];
 }
 
-/** One drawn block: a channel segment, a savings segment or a whole option bar. */
+/** The name of the one saving block (spec 15.11): "Saved", with its figure. */
+export const SAVED_LABEL = "Saved";
+
+/** One drawn block: a channel segment, the one saving block or a whole option bar. */
 interface Piece {
   row: number;
   label: string;
   usd: number;
   fill: string;
   textColor: string;
-  decal: Decal | undefined;
-  outline: Outline;
-  hollow: boolean;
-  provenance: Provenance;
+  /** True for the saving block, which is money not spent. */
+  saved: boolean;
   seg: PlannedSegment | null;
   option: OptionBar | null;
+  /** The tooltip sentence of the saving block, which names its two sources. */
+  note?: string;
 }
 
+/** The paper label on a fill where paper reaches 4.5:1, else the ink (spec 15.11). */
+function labelOn(fill: string, t: Tokens): string {
+  return labelColourOn(fill, t.labelPaper, t.text);
+}
+
+/**
+ * The blocks, in drawing order. Every segment of the comparator takes
+ * `today1` and every InfraVana spend segment takes `accent`: segments of one
+ * bar are told apart by their direct labels and the paper gap between them,
+ * and no fill of a comparator segment appears on an option bar (spec 6.1
+ * acceptance 6). The InfraVana bar ends in one saving block, whatever the
+ * number of sources behind it (spec 15.11).
+ */
 function piecesOf(results: Results, cmp: Comparison, t: Tokens): Piece[] {
   const a = results.allocation;
   const pieces: Piece[] = [];
-  planBar(a.today, "today").forEach((seg, i) => {
-    pieces.push({
-      row: 0,
-      label: seg.label,
-      usd: seg.usd,
-      fill: t[TODAY_FILL_ALTERNATION[i % 2]],
-      textColor: t.patternOnFill,
-      decal: decalOf(CHANNEL_PATTERNS[Math.min(i, CHANNEL_PATTERNS.length - 1)], t.patternOnFill),
-      outline: outlineOf(seg.provenance, false, t),
-      hollow: false,
-      provenance: seg.provenance,
-      seg,
-      option: null,
-    });
-  });
+  for (const seg of planBar(a.today, "today")) {
+    pieces.push({ row: 0, label: seg.label, usd: seg.usd, fill: t.today1, textColor: labelOn(t.today1, t), saved: false, seg, option: null });
+  }
   const planned = planBar(a.infravana, "infravana");
-  planned
-    .filter((seg) => seg.tone === "spend")
-    .forEach((seg, i) => {
-      pieces.push({
-        row: 1,
-        label: seg.label,
-        usd: seg.usd,
-        fill: t.accent,
-        textColor: t.patternOnFill,
-        decal: decalOf(INFRAVANA_PATTERNS[Math.min(i, INFRAVANA_PATTERNS.length - 1)], t.patternOnFill),
-        outline: outlineOf(seg.provenance, false, t),
-        hollow: false,
-        provenance: seg.provenance,
-        seg,
-        option: null,
-      });
-    });
-  // The savings segments are hollow: a pale fill needs its outline for an edge (1.12:1 against the paper).
-  for (const seg of planned.filter((s) => s.tone !== "spend" && s.usd > 0)) {
+  for (const seg of planned.filter((s) => s.tone === "spend")) {
+    pieces.push({ row: 1, label: seg.label, usd: seg.usd, fill: t.accent, textColor: labelOn(t.accent, t), saved: false, seg, option: null });
+  }
+  const savings = planned.filter((s) => s.tone !== "spend" && s.usd > 0);
+  if (savings.length > 0) {
+    const parts = savings.map(
+      (s) => `${fmtUsdSig(s.usd)} ${s.tone === "arbitrage" ? "from better prices for the same models" : "from moving work to cheaper models and hardware"}`,
+    );
     pieces.push({
       row: 1,
-      label: seg.label,
-      usd: seg.usd,
+      label: SAVED_LABEL,
+      usd: savings.reduce((sum, s) => sum + s.usd, 0),
       fill: t.saved,
-      textColor: t.text,
-      decal: decalOf(SAVINGS_PATTERNS[seg.tone === "arbitrage" ? "arbitrage" : "routing"], t.patternOnSaved),
-      outline: outlineOf(seg.provenance, true, t),
-      hollow: true,
-      provenance: seg.provenance,
-      seg,
+      textColor: labelOn(t.saved, t),
+      saved: true,
+      seg: savings[0] ?? null,
       option: null,
+      note: `Not spent: ${parts.join(" and ")}.`,
     });
   }
   cmp.options.forEach((o, i) => {
@@ -140,11 +127,8 @@ function piecesOf(results: Results, cmp: Comparison, t: Tokens): Piece[] {
       label: o.alt.label,
       usd: o.alt.total_usd,
       fill: t[optionStyle(o.rank).fill],
-      textColor: t.patternOnFill,
-      decal: optionDecal(o.rank, t),
-      outline: outlineOf(o.alt.provenance, false, t),
-      hollow: false,
-      provenance: o.alt.provenance,
+      textColor: labelOn(t[optionStyle(o.rank).fill], t),
+      saved: false,
       seg: null,
       option: o,
     });
@@ -157,18 +141,12 @@ function piecesOf(results: Results, cmp: Comparison, t: Tokens): Piece[] {
 // ---------------------------------------------------------------------------
 
 function explain(p: Piece): string {
+  if (p.note) return p.note;
   if (p.option) return "Another way to buy the same work today, shown for comparison.";
   const seg = p.seg;
   if (!seg) return "";
-  switch (seg.tone) {
-    case "arbitrage":
-      return "Not spent: the same model bought from a seller with a better price.";
-    case "routing":
-      return "Not spent: some work moved to cheaper models or hardware that are still good enough.";
-    default:
-      if (seg.kind === "other") return `Combined: ${seg.members.join(", ")}.`;
-      return seg.kind === "hardware" ? "Spent on hardware you run yourself." : "Spent with this provider or plan.";
-  }
+  if (seg.kind === "other") return `Combined: ${seg.members.join(", ")}.`;
+  return seg.kind === "hardware" ? "Spent on hardware you run yourself." : "Spent with this provider or plan.";
 }
 
 const GRID_THUMB = { left: 4, right: 4, top: 6, bottom: 6 };
@@ -181,23 +159,25 @@ function niceCeil(x: number): number {
   return step * p;
 }
 
-/** Horizontal room of a chip around its text: 4px each side (design-tokens 3.6). */
-const CHIP_PAD_X = 4;
-const CHIP_PAD_Y = 2;
-const CHIP_RADIUS = 2;
-
 /** Left margin of the plot, which holds the row names. */
 function labelColumn(width: number): number {
   const narrow = width < NARROW_WIDTH;
   return Math.round(Math.min(narrow ? 128 : 220, Math.max(narrow ? 96 : 150, width * (narrow ? 0.34 : 0.26))));
 }
 
-/** The text of an option bar's end label: quality, cost and the floor mark. */
-function optionLabels(o: OptionBar): string[] {
-  const q = qualityText(o.alt);
-  const usd = fmtUsd(o.alt.total_usd);
-  const mark = o.alt.meets_floors ? "" : " · below floor";
-  return [`${q} · ${usd}${mark}`];
+/** The parts of an option bar's end label: quality, cost and the floor mark. */
+function optionLabelParts(o: OptionBar): { quality: string; cost: string; mark: string } {
+  return {
+    quality: qualityText(o.alt),
+    cost: fmtUsd(o.alt.total_usd),
+    mark: o.alt.meets_floors ? "" : " · below floor",
+  };
+}
+
+/** The end label of an option bar as plain text, for measuring and for the check. */
+export function optionLabelText(o: OptionBar): string {
+  const p = optionLabelParts(o);
+  return `${p.quality} · ${p.cost}${p.mark}`;
 }
 
 /** The ECharts option for C1. Pure: tokens and pixel size in, option out. */
@@ -213,14 +193,16 @@ export function buildAllocationOption(
   const rows = rowsOf(cmp);
   const pieces = piecesOf(results, cmp, t);
   const narrow = dims.width < NARROW_WIDTH;
-  const saved = pieces.filter((p) => p.hollow).reduce((sum, p) => sum + p.usd, 0);
+  const saved = pieces.filter((p) => p.saved).reduce((sum, p) => sum + p.usd, 0);
   const spent = a.total_usd - saved;
   const extent = Math.max(a.total_usd, a.budget_usd, ...cmp.options.map((o) => o.alt.total_usd));
   const axisMax = niceCeil(extent);
-  const left = stage ? labelColumn(dims.width) + t.space3 : GRID_THUMB.left;
+  // On a phone the row name goes above its bar and the bar takes the full width (spec 15.11).
+  const above = stage && narrow;
+  const left = above ? t.space2 : stage ? labelColumn(dims.width) + t.space3 : GRID_THUMB.left;
   // Option labels sit right of their bar, or right of the budget line when the line is in the way, so the
   // margin holds the longest of them: a label never moves between rows.
-  const optionLabelPx = narrow ? 0 : Math.max(0, ...cmp.options.map((o) => textWidth(optionLabels(o)[0], t.fontXs, t.weightBold, t.fontSans)));
+  const optionLabelPx = narrow ? 0 : Math.max(0, ...cmp.options.map((o) => textWidth(optionLabelText(o), t.fontXs, t.weightBold, t.fontSans)));
   const right = stage ? 24 + (optionLabelPx > 0 ? Math.ceil(optionLabelPx) + t.space2 : 0) : GRID_THUMB.right;
   const grid = stage ? { left, right, top: 36, bottom: 28 } : GRID_THUMB;
   const plotWidth = Math.max(0, dims.width - left - right);
@@ -229,7 +211,7 @@ export function buildAllocationOption(
   /** The longest label that fits inside a piece, on its chip: "Name $X", then "$X", then none. */
   const fit = (p: Piece): string => {
     if (narrow) return "";
-    const room = p.usd * pxPer - 2 * t.space1 - 2 * CHIP_PAD_X;
+    const room = p.usd * pxPer - 2 * t.space1;
     const money = fmtUsdSig(p.usd);
     const tries = [`${p.label} ${money}`, `${p.label.replace(/^Saved: /, "")} ${money}`, money];
     return tries.find((text) => textWidth(text, t.fontXs, t.weightBold, t.fontSans) <= room) ?? "";
@@ -244,28 +226,26 @@ export function buildAllocationOption(
   };
 
   const budgetText = `Budget ${fmtBudget(a.budget_usd)}`;
-  const budgetClips =
-    left + a.budget_usd * pxPer + textWidth(budgetText, t.fontXs, t.weightRegular, t.fontSans) / 2 > dims.width - t.space1;
+  const budgetHalf = textWidth(budgetText, t.fontXs, t.weightRegular, t.fontSans) / 2;
+  const budgetClips = left + a.budget_usd * pxPer + budgetHalf > dims.width - t.space1;
+  // With the row names above the bars the plot starts at the left edge, so a small budget puts the line there.
+  const budgetClipsLeft = left + a.budget_usd * pxPer - budgetHalf < t.space1;
 
   const series: BarSeriesOption[] = pieces.map((p, index) => {
     const item: BarSeriesOption = {
       type: "bar",
       name: p.label,
       stack: "total",
-      barWidth: "58%",
+      // A bar of fixed weight at stage size, so five rows read as lines with air between them, not a wall (spec 15.11).
+      barWidth: stage ? t.barThickness : `${THUMB_BAR_SHARE * 100}%`,
       silent: !stage,
       emphasis: { disabled: true },
       data: rows.map((_, r) =>
         r === p.row
           ? {
               value: p.usd,
-              itemStyle: {
-                color: p.fill,
-                decal: p.decal,
-                borderColor: p.outline.borderColor,
-                borderWidth: p.outline.borderWidth,
-                borderType: p.outline.borderType,
-              },
+              // No outline: the gap between neighbours is painted over the bars below (spec 15.11).
+              itemStyle: { color: p.fill },
             }
           : null,
       ),
@@ -273,20 +253,22 @@ export function buildAllocationOption(
     if (stage && p.option) {
       // An option bar is one block: its quality and cost sit right of it, beside the bar rather than in a legend.
       // Right of the bar; when the budget line is in the way it starts right of the line, still in its own row.
-      const [full] = optionLabels(p.option);
+      const parts = optionLabelParts(p.option);
       item.label = {
         // On a narrow chart the cost and quality go under the row name instead, where there is room for both.
         show: !narrow,
         position: "right",
-        offset: [pastBudgetLine(p.usd, full), 0],
-        formatter: full,
-        color: t.text,
-        fontSize: t.fontXs,
-        fontWeight: t.weightBold,
+        offset: [pastBudgetLine(p.usd, optionLabelText(p.option)), 0],
+        // The quality is in secondary ink, the cost bold (spec 15.11).
+        formatter: `{q|${parts.quality} \u00b7 }{v|${parts.cost}}{q|${parts.mark}}`,
+        rich: {
+          q: { color: t.textSecondary, fontSize: t.fontXs, fontWeight: t.weightRegular },
+          v: { color: t.text, fontSize: t.fontXs, fontWeight: t.weightBold },
+        },
         backgroundColor: t.surface,
       };
     } else {
-      // Inside a patterned block the name sits on a chip of the block's own fill, so text never crosses a pattern.
+      // A solid fill needs no chip: the label sits straight on it, in the colour that reads on that fill.
       const text = stage ? fit(p) : "";
       item.label = {
         show: text !== "",
@@ -295,9 +277,6 @@ export function buildAllocationOption(
         color: p.textColor,
         fontSize: t.fontXs,
         fontWeight: t.weightBold,
-        backgroundColor: p.fill,
-        padding: [CHIP_PAD_Y, CHIP_PAD_X],
-        borderRadius: CHIP_RADIUS,
       };
     }
     if (index === 0 && stage) {
@@ -310,13 +289,12 @@ export function buildAllocationOption(
         data: [
           {
             xAxis: a.budget_usd,
-            // Solid: a dash in a chart means provenance (design-tokens 3.6).
             lineStyle: { color: t.budgetLine, width: t.budgetLineWidth, type: "solid" },
             label: {
               show: true,
               position: "start",
-              // Centred on the line, but ending at it when centring would run past the right edge of the chart.
-              align: budgetClips ? "right" : "center",
+              // Centred on the line, but ending at it when centring would run past the right edge of the chart, and starting at it past the left edge.
+              align: budgetClips ? "right" : budgetClipsLeft ? "left" : "center",
               formatter: budgetText,
               color: t.textSecondary,
               fontSize: t.fontXs,
@@ -337,7 +315,9 @@ export function buildAllocationOption(
     const subLines = (text: string) =>
       wrapText(text, columnPx, t.fontXs, t.weightRegular, t.fontSans).map((l) => `{sub|${l}}`);
     if (row.kind === "infravana") {
-      return `{inf|${INFRAVANA_LABEL}}\n{sub|${fmtUsdSig(spent)} cost}`;
+      // The saving is named on the row, in the saving colour, whatever the width of its block (spec 15.11).
+      const cost = `${fmtUsdSig(spent)} cost`;
+      return saved > 0 ? `{inf|${INFRAVANA_LABEL}}\n{sub|${cost} \u00b7 }{sav|${fmtUsdSig(saved)} saved}` : `{inf|${INFRAVANA_LABEL}}\n{sub|${cost}}`;
     }
     if (row.kind === "comparator") {
       const mark = cmp.comparator && !cmp.comparator.meets_floors ? ", below floor" : "";
@@ -354,12 +334,90 @@ export function buildAllocationOption(
     return name.join("\n");
   };
 
-  const rich = (color: string) => ({
+  /** Bold for the two bars that are compared (spec 15.11), regular for the other options. */
+  const rich = (color: string, weight: number = t.weightBold) => ({
     color,
     fontSize: t.fontSm,
-    fontWeight: t.weightBold,
+    fontWeight: weight,
     lineHeight: t.lineSm,
   });
+  const richText = {
+    today: rich(t.text),
+    inf: rich(t.accentStrong),
+    opt: rich(t.text, t.weightRegular),
+    sub: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
+    sav: { color: t.positive, fontSize: t.fontXs, fontWeight: t.weightBold, lineHeight: t.lineXs },
+  };
+
+  // Phones: each row's name and figures sit above a full-width bar, on the label of the row's first block (spec 15.11).
+  if (above) {
+    const aboveText = (row: Row): string => {
+      if (row.kind === "infravana") {
+        const cost = `${fmtUsdSig(spent)} cost`;
+        return saved > 0 ? `{inf|${INFRAVANA_LABEL}}\n{sub|${cost} \u00b7 }{sav|${fmtUsdSig(saved)} saved}` : `{inf|${INFRAVANA_LABEL}}\n{sub|${cost}}`;
+      }
+      if (row.kind === "comparator") {
+        const quality = cmp.comparator ? ` \u00b7 ${qualityText(cmp.comparator)}${cmp.comparator.meets_floors ? "" : ", below floor"}` : "";
+        return `{today|${TODAY_LABEL}: ${cmp.label}}\n{sub|${fmtUsdSig(a.total_usd)} cost${quality}}`;
+      }
+      const alt = row.option?.alt;
+      return alt ? `{opt|${alt.label}}\n{sub|${fmtUsdSig(alt.total_usd)} cost \u00b7 ${qualityText(alt)}${alt.meets_floors ? "" : ", below floor"}}` : "";
+    };
+    rows.forEach((row, r) => {
+      const first = pieces.findIndex((p) => p.row === r);
+      const item = series[first];
+      if (!item) return;
+      item.label = {
+        show: true,
+        position: [0, -4],
+        align: "left",
+        verticalAlign: "bottom",
+        formatter: aboveText(row),
+        rich: richText,
+      };
+    });
+  }
+
+  /**
+   * Neighbouring segments of one bar are parted by a gap of the separator width in the paper colour, 2px by
+   * default (spec 15.11): a rectangle drawn on each boundary, over the bars and centred on the boundary, so every
+   * segment keeps its exact value and the bar its exact length, and nothing is outlined.
+   */
+  const boundaries: [number, number][] = [];
+  rows.forEach((_, r) => {
+    let at = 0;
+    const inRow = pieces.filter((q) => q.row === r);
+    inRow.forEach((q, k) => {
+      at += q.usd;
+      if (k < inRow.length - 1) boundaries.push([at, r]);
+    });
+  });
+  const gaps: CustomSeriesOption[] =
+    boundaries.length === 0
+      ? []
+      : [
+          {
+            type: "custom",
+            name: GAP_SERIES,
+            silent: true,
+            z: 3,
+            animation: false,
+            data: boundaries,
+            encode: { x: 0, y: 1 },
+            renderItem: (_params, api) => {
+              const [x, y] = api.coord([Number(api.value(0)), Number(api.value(1))]) as [number, number];
+              const band = (api.size?.([0, 1]) as number[])[1] as number;
+              // The bar's thickness: the token at stage size, a share of the row in a thumbnail (as the bars are).
+              const bar = stage ? t.barThickness : band * THUMB_BAR_SHARE;
+              return {
+                type: "rect",
+                shape: { x: x - t.separatorWidth / 2, y: y - bar / 2, width: t.separatorWidth, height: bar },
+                style: { fill: t.separator },
+                silent: true,
+              };
+            },
+          },
+        ];
 
   return {
     ...baseOption(t, stage),
@@ -378,7 +436,6 @@ export function buildAllocationOption(
               if (!p.option.alt.meets_floors) lines.push(`Misses ${BELOW_FLOOR}`);
             }
             lines.push(esc(explain(p)));
-            lines.push(`Source: ${PROVENANCE_TEXT[p.provenance].toLowerCase()}`);
             return lines.join("<br/>");
           },
         }
@@ -404,20 +461,17 @@ export function buildAllocationOption(
       data: rows.map((r) => r.key),
       show: stage,
       axisTick: { show: false },
-      axisLine: { lineStyle: { color: t.borderStrong } },
+      // No y axis rule: the bars start on one edge and need no fence (spec 15.11).
+      axisLine: { show: false },
       axisLabel: {
+        show: !above,
         margin: t.space3,
         interval: 0,
         formatter: (_value: string, index: number) => rowLabel(index),
-        rich: {
-          today: rich(t.text),
-          inf: rich(t.accentStrong),
-          opt: rich(t.text),
-          sub: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
-        },
+        rich: richText,
       },
     },
-    series,
+    series: [...series, ...gaps],
   };
 }
 
@@ -458,9 +512,10 @@ export function allocationCaption(results: Results): string {
 const ALLOCATION_HOW_COMPUTED =
   "Every bar covers the same work: what all your AI use costs in a quarter. " +
   "The top bar is the way of buying that the page compares against, split by who you pay: a seat plan, a pay-as-you-go provider, a cloud platform, or hardware you run yourself. " +
-  `The ${BRAND} bar buys the same work for less, and the two pale blocks at its end are the money you no longer spend. ` +
-  "One comes from buying the same model at a better price. " +
-  "The other comes from moving some work to cheaper open models or hardware, only where they meet your minimum quality and response speed. " +
+  `The ${BRAND} bar buys the same work for less, and the green block at its end, "Saved", is the money you no longer spend. ` +
+  "Part of it comes from buying the same model at a better price. " +
+  "The rest comes from moving some work to cheaper open models or hardware, only where they meet your minimum quality and response speed. " +
+  "Hover a block to see the two parts. " +
   "Each bar below is another way companies buy the same work today, with a quality score beside its cost, because a cheaper way may buy weaker models. " +
   "The line is your budget. All prices here are illustrative.";
 
@@ -497,26 +552,11 @@ export function allocationCsv(results: Results): string {
   );
 }
 
-/** The name of the comparator's bar: "Today: Pay-as-you-go API". */
-export function comparatorBar(cmp: Comparison): string {
-  return `${TODAY_LABEL}: ${cmp.label}`;
-}
+export { comparatorBar } from "./sourceParts";
 
-/** Where each drawn part comes from, for the badges under the chart. */
+/** Where each drawn part comes from, for the "Where these numbers come from" table. */
 export function allocationParts(results: Results): ProvenancePart[] {
-  const a = results.allocation;
-  const cmp = comparisonOf(results);
-  const parts: ProvenancePart[] = [];
-  for (const s of planBar(a.today, "today")) {
-    parts.push({ group: comparatorBar(cmp), part: s.label, provenance: s.provenance });
-  }
-  for (const s of planBar(a.infravana, "infravana")) {
-    parts.push({ group: INFRAVANA_LABEL, part: s.label, provenance: s.provenance });
-  }
-  for (const o of cmp.options) {
-    parts.push({ group: "Other Today options", part: o.alt.label, provenance: o.alt.provenance });
-  }
-  return parts;
+  return [...todayParts(results), ...infravanaParts(results), ...optionParts(results)];
 }
 
 // ---------------------------------------------------------------------------

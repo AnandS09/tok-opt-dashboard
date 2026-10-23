@@ -112,11 +112,11 @@ export type ChartId =
  * or `modelled` (spec 7.3, see CurveProvenance); `vendor_reported` exists for
  * result series built from vendor price pages (spec 9).
  *
- * Badge rule: every series whose provenance is not `measured` is badged, with
- * the text "modelled" or "vendor-reported". Only a `measured` series is
- * unbadged. This follows spec 9 (a badge for each value) over spec 7.3 ("no
- * badge means measured", which would let a vendor-reported series read as
- * measured). It is a bootstrap default to be revisited.
+ * Table rule (spec 9, 15.10): every series whose provenance is not `measured`
+ * has a row, "Modelled" or "Vendor-reported", in its chart's closed "Where
+ * these numbers come from" table. Only a `measured` series has none, so a
+ * non-measured series is never left out and can never read as measured. No
+ * badge, outline or line style carries provenance.
  *
  * Reducing several provenances to one ("worst of the parts"): `modelled`
  * beats `vendor_reported`, which beats `measured`. So a series is `measured`
@@ -501,11 +501,11 @@ export interface ScenarioResponse {
 // ---------------------------------------------------------------------------
 
 /**
- * Provenance of the two sides of a comparison, so a modelled series can be
- * badged (spec 9). A side's value is the worst of the provenances of its
- * parts (see `Provenance`). Chart code badges a side whenever it is not
- * `measured`. Parts carry their own `provenance` where a side is made of
- * segments or rows, so a mixed side can badge each part.
+ * Provenance of the two sides of a comparison, so a modelled series is listed
+ * in the sources table (spec 9, 15.10). A side's value is the worst of the
+ * provenances of its parts (see `Provenance`). Parts carry their own
+ * `provenance` where a side is made of segments or rows, so a mixed side can
+ * list each part.
  */
 export interface SideProvenance {
   today: Provenance;
@@ -584,7 +584,7 @@ export interface CostPerMtokRow {
   /** USD per million tokens; null if the scenario uses no model of this class. */
   today_usd_per_mtok: number | null;
   infravana_usd_per_mtok: number | null;
-  /** Provenance of today's value. `measured` when the value is null (nothing to badge). */
+  /** Provenance of today's value. `measured` when the value is null (nothing to list). */
   today_provenance: Provenance;
   /** Provenance of Infravana's value. `measured` when the value is null. */
   infravana_provenance: Provenance;

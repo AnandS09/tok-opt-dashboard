@@ -1,9 +1,10 @@
 /**
- * The ECharts option of C10 (spec 6.3, design-tokens 3.2 "C10"): the
- * InfraVana frontier as a step line in the accent, every grey Today option as
- * a solid reference line in its rank's grey that ends in its rank's marker (or,
- * in the speed view, as a marker at its own speed), and a ring at the visitor's
- * own setting. Pure: it reads `C10Data` and `Results`, never the page.
+ * The ECharts option of C10 (spec 6.3, 15.11): the InfraVana frontier as a 3px
+ * step line in the accent with a pale wash down to the best Today line, every
+ * Today option as a 2px reference line in its own hue that ends in its own
+ * marker and carries a colour swatch in its end label (or, in the speed view,
+ * as a marker at its own speed), and a ring at the visitor's own setting.
+ * Pure: it reads `C10Data` and `Results`, never the page.
  */
 import { LineChart, ScatterChart } from "echarts/charts";
 import type { LineSeriesOption, ScatterSeriesOption } from "echarts/charts";
@@ -18,7 +19,6 @@ import { esc, fmtBudget } from "./format";
 import { INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import { textWidth } from "./measure";
 import { optionStyle } from "./patterns";
-import { PROVENANCE_TEXT, dashOf } from "./provenanceStyle";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
 import { wrapText } from "./wrap";
@@ -29,7 +29,12 @@ use([LineChart, ScatterChart, GridComponent, TooltipComponent]);
 export const MARKER_SIZE = 10;
 /** The comparator's marker: a thin vertical tick, a shape no option uses, echoing its bar in C1, C3 and C5. */
 export const TICK_SIZE: [number, number] = [4, 14];
-export const POINT_SIZE = 8;
+/** Points on the frontier: 6px, without a ring (spec 15.11). */
+export const POINT_SIZE = 6;
+/** The wash under the frontier: this share of the accent, down to the best Today line. */
+export const WASH_OPACITY = 0.1;
+/** The name of the series that draws it. */
+export const WASH_SERIES = `${INFRAVANA_LABEL} (wash)`;
 export const RING_SIZE = 14;
 
 /** Below this chart width the end labels give way to the key. */
@@ -66,7 +71,7 @@ function markerWidthOf(mark: TodayMark): number {
   return typeof size === "number" ? size : size[0];
 }
 
-/** Grey of a Today mark: the first grey for the comparator, the rank's grey for an option. */
+/** Colour of a Today mark: the comparator's wine, the rank's hue for an option. */
 export function greyOf(mark: TodayMark, t: Tokens): string {
   return mark.rank === null ? t.today1 : t[optionStyle(mark.rank).fill];
 }
@@ -151,14 +156,17 @@ function todayTip(mark: TodayMark, data: C10Data): string {
   if (data.view === "speed") {
     lines.push(mark.speed === null ? "No speed data for this option" : `${Math.round(mark.speed)} tokens a second per user, the slowest offer it buys`);
   }
-  lines.push(`Source: ${PROVENANCE_TEXT[data.view === "speed" && mark.speed !== null ? "modelled" : mark.alt.provenance].toLowerCase()}`);
   return lines.join("<br/>");
 }
 
-/** The end label of a reference line: its name, then what it buys. */
+/** Width of the swatch that keys an end label to its line, and the gap after it. */
+export const SWATCH = 10;
+export const SWATCH_GAP = 4;
+
+/** The end label of a reference line: its name, then what it buys. Every line stands past the swatch. */
 export function endLabelLines(mark: TodayMark, column: number, t: Tokens): { text: string; style: "v" | "sub" }[] {
   return [
-    ...wrapText(markName(mark), column, t.fontSm, t.weightBold, t.fontSans).map((text) => ({ text, style: "v" as const })),
+    ...wrapText(markName(mark), column - SWATCH - SWATCH_GAP, t.fontSm, t.weightBold, t.fontSans).map((text) => ({ text, style: "v" as const })),
     { text: `${fmtTokensSig(mark.tokens)} tokens`, style: "sub" as const },
   ];
 }
@@ -201,12 +209,12 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       name: `${CURRENT_LABEL} (drop line)`,
       symbol: "none",
       z: 1,
-      lineStyle: { color: t.borderStrong, width: t.separatorWidth, type: "solid" },
+      lineStyle: { color: t.borderStrong, width: t.budgetLineWidth, type: "solid" },
       data: [[cx, 0], [cx, ymax]],
     } as LineSeriesOption);
   }
 
-  // Today as reference lines: solid, because a dash means provenance.
+  // Today as 2px reference lines in each option's own hue; each ends in its own marker.
   lines.forEach((mark, i) => {
     const colour = greyOf(mark, t);
     const end: Tipped = {
@@ -216,7 +224,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       symbolSize: markerSizeOf(mark),
       // Lines close in height would stack their markers at the right edge, so each stands a marker's width further in.
       symbolOffset: [-i * (MARKER_SIZE + 4), 0],
-      itemStyle: { color: colour, borderColor: t.surface, borderWidth: t.savingsOutlineWidth, opacity: 1 },
+      itemStyle: { color: colour, opacity: 1 },
       label: {
         show: labelled,
         position: "right",
@@ -225,8 +233,14 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
         // The label follows its marker, so it is moved back to the shared column.
         // A narrower marker (the comparator's tick) puts the label's start closer: add the difference back.
         offset: [i * (MARKER_SIZE + 4) + (MARKER_SIZE - markerWidthOf(mark)) / 2, offsets[i]],
-        formatter: () => labelLines[i].map((l) => `{${l.style}|${l.text}}`).join("\n"),
-        rich,
+        // A swatch of the line's colour starts the label, and the lines under it stand indented past it: the key from label to line.
+        formatter: () => labelLines[i].map((l, j) => `${j === 0 ? "{sw|}{gap| }" : "{ind| }"}{${l.style}|${l.text}}`).join("\n"),
+        rich: {
+          ...rich,
+          sw: { width: SWATCH, height: SWATCH, backgroundColor: colour, borderRadius: 1, color: t.text },
+          gap: { width: SWATCH_GAP, fontSize: t.fontXs, color: t.text },
+          ind: { width: SWATCH + SWATCH_GAP, fontSize: t.fontXs, color: t.text },
+        },
       },
     };
     series.push({
@@ -251,7 +265,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       symbolSize: markerSizeOf(mark),
       symbolKeepAspect: true,
       z: 4,
-      itemStyle: { color: colour, borderColor: t.surface, borderWidth: t.savingsOutlineWidth, opacity: 1 },
+      itemStyle: { color: colour, opacity: 1 },
       data: [{ value: [mark.speed as number, mark.tokens], tip: todayTip(mark, data) }],
     } as unknown as ScatterSeriesOption);
   }
@@ -259,7 +273,8 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
   // InfraVana: the step line of the non-dominated points. A step at the start of each run drops after a
   // point, so a point is the last setting at which the line is that high.
   const points = data.frontier.points;
-  const dash = dashOf(data.provenance, t);
+  // The wash runs from the frontier down to the best Today line: the area is the gain, not the total.
+  const bestToday = Math.max(0, ...data.today.map((m) => m.tokens));
   // The line's name goes beside the first point, on the side where no Today line runs within the label's height:
   // below by default, above when a reference line runs just below the point; when both sides are crowded,
   // on the side with the larger gap to the nearest line.
@@ -270,6 +285,21 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
   const gapAbove = Math.min(firstY, ...linesPx.filter((y) => y < firstY - 2).map((y) => firstY - y));
   const infravanaLabelAbove = gapBelow < labelHeight + 2 && gapAbove > gapBelow;
   if (points.length > 0) {
+    const frontier = [[x.min, points[0].infravana_tokens], ...points.map((p) => [p.threshold, p.infravana_tokens])];
+    // The wash is a series of its own, behind every line: the frontier lifted to the best Today line where it dips below it,
+    // so the shading is the gain over Today and is empty wherever there is none.
+    series.push({
+      ...base,
+      type: "line",
+      name: WASH_SERIES,
+      step: "start",
+      symbol: "none",
+      z: 1,
+      lineStyle: { width: 0, color: t.accent },
+      itemStyle: { color: t.accent },
+      areaStyle: { color: t.accent, opacity: WASH_OPACITY, origin: bestToday },
+      data: frontier.map(([px, py]) => [px, Math.max(py as number, bestToday)]),
+    } as LineSeriesOption);
     series.push({
       ...base,
       type: "line",
@@ -277,8 +307,8 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       step: "start",
       symbol: "none",
       z: 3,
-      lineStyle: { color: t.accentStrong, width: t.frontierLineWidth, type: dash ?? "solid" },
-      data: [[x.min, points[0].infravana_tokens], ...points.map((p) => [p.threshold, p.infravana_tokens])],
+      lineStyle: { color: t.accentStrong, width: t.frontierLineWidth, type: "solid" },
+      data: frontier,
     } as LineSeriesOption);
     series.push({
       ...base,
@@ -287,7 +317,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       symbol: "circle",
       symbolSize: POINT_SIZE,
       z: 5,
-      itemStyle: { color: t.accentStrong, borderColor: t.surface, borderWidth: t.separatorWidth, opacity: 1 },
+      itemStyle: { color: t.accentStrong, opacity: 1 },
       label: {
         show: stage,
         position: infravanaLabelAbove ? "top" : "bottom",
@@ -296,8 +326,8 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
         color: t.accentStrong,
         fontSize: t.fontSm,
         fontWeight: t.weightBold,
-        // On the chart's ground, so a Today line behind the text does not strike it through.
-        backgroundColor: t.surface,
+        // On the wash, so the area under the line is not broken by a chip of paper.
+        backgroundColor: "transparent",
         padding: [1, 3],
         formatter: (p: { dataIndex: number }) => (p.dataIndex === 0 ? INFRAVANA_LABEL : ""),
       },
@@ -307,7 +337,6 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
           `<strong>${esc(INFRAVANA_LABEL)}</strong>`,
           `${fmtTokensSig(p.infravana_tokens)} tokens a quarter for ${fmtBudget(data.budget_usd)}`,
           `${data.view === "quality" ? "Quality floor" : "Speed"} ${Math.round(p.threshold)}${data.view === "quality" ? "" : " tokens a second per user"} or better`,
-          `Source: ${PROVENANCE_TEXT[data.provenance].toLowerCase()}`,
         ].join("<br/>"),
       })),
     } as unknown as ScatterSeriesOption);
@@ -322,7 +351,7 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       symbol: "circle",
       symbolSize: RING_SIZE,
       z: 6,
-      itemStyle: { color: t.surface, borderColor: t.text, borderWidth: t.provenanceWidth, opacity: 1 },
+      itemStyle: { color: t.surface, borderColor: t.text, borderWidth: t.ringWidth, opacity: 1 },
       // The name sits at the top of the setting's rule, above the plot, not on a data line: the label is lifted
       // from the ring by the ring's own distance from the top of the plot.
       label: {
@@ -396,7 +425,7 @@ export function widestEndLabel(data: C10Data, t: Tokens, column: number): number
   return Math.max(
     0,
     ...lineMarks(data).flatMap((m) =>
-      endLabelLines(m, column, t).map((l) => textWidth(l.text, l.style === "v" ? t.fontSm : t.fontXs, t.weightBold, t.fontSans)),
+      endLabelLines(m, column, t).map((l) => SWATCH + SWATCH_GAP + textWidth(l.text, l.style === "v" ? t.fontSm : t.fontXs, t.weightBold, t.fontSans)),
     ),
   );
 }

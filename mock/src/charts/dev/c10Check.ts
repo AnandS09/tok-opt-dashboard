@@ -7,13 +7,15 @@
  *   (2) the height never rises as the threshold tightens;
  *   (3) the marker for the current setting sits at the lowest of the visitor's
  *       workload floors (78 on S1 at defaults), at the height the engine gives there;
- *   (4) the speed view carries the provenance badge and the invented-data source line;
+ *   (4) the speed view's "Where these numbers come from" table lists the invented rows as modelled, and the invented-data source line is present;
  *   (5) the switch state is in the address (`c10=speed`);
  *   (6) with no proprietary speed rows the speed switch is disabled and says why.
  *
- * and the drawing rules of design-tokens 3.2 (Today as solid reference lines
- * ending in the rank's marker, InfraVana as a step line whose dash is its
- * provenance) and that the end labels do not overlap or leave the canvas.
+ * and the drawing rules of spec 15.11 (Today as 2px reference lines in their
+ * own hue, each ending in its own marker and keyed by a swatch in its end label;
+ * InfraVana as a 3px step line with 6px points and a wash down to the best Today
+ * line; nothing dashed, dotted or patterned) and that the end labels do not
+ * overlap or leave the canvas.
  * `runC10SelfTests` breaks each rule on purpose and requires a check to say so.
  */
 import { createElement } from "react";
@@ -33,6 +35,9 @@ import { ParetoChart } from "../c10Pareto";
 import {
   CURRENT_LABEL,
   MARKER_SIZE,
+  POINT_SIZE,
+  WASH_OPACITY,
+  WASH_SERIES,
   buildParetoOption,
   endLabelLines,
   lineMarks,
@@ -41,10 +46,10 @@ import {
 } from "../c10Option";
 import { comparisonOf } from "../comparison";
 import { INFRAVANA_LABEL } from "../labels";
-import { dashOf } from "../provenanceStyle";
 import type { Tokens } from "../tokens";
 import type { Dims } from "../useEChart";
-import { STYLE_BLOCK, coloursOf, dataOf, renderSvg, sameDash, seriesOf, textsOf } from "./renderCheck";
+import { STYLE_BLOCK, coloursOf, dataOf, noPatternOrDashProblems, renderSvg, seriesOf, textsOf } from "./renderCheck";
+import { sourceTableRows } from "./renderCheck";
 import type { CheckReport, Obj } from "./renderCheck";
 
 /** Sizes C10 is drawn at: a phone, a narrow desktop, the wide stage, and a thumbnail. */
@@ -178,23 +183,38 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
     if (!near(ring[0][1], at)) problems.push(`${where}: (3) the marker is at height ${ring[0][1]}, a direct run at ${current} gives ${at}`);
   } else if (ring.length !== 0) problems.push(`${where}: (3) a marker is drawn where no point is as strict as the setting`);
 
-  // Line style: the dash of the InfraVana line is its provenance; Today lines are solid.
-  const provenance = c.view === "speed" ? "modelled" : c.results.tokens_bought.provenance.infravana;
-  const dash = dashOf(provenance, t);
+  // Nothing is dashed, dotted or patterned, whatever the provenance (spec 15.10, 15.11).
+  problems.push(...noPatternOrDashProblems(option, null, where));
+  // The InfraVana line: a solid 3px step line in the strong accent, with points of 6px and no ring, and the wash down to the best Today line.
   const style = ((line as Obj | undefined)?.lineStyle ?? {}) as Obj;
-  if (dash === null ? style.type !== "solid" : !sameDash(style.type, dash))
-    problems.push(`${where}: the InfraVana line is drawn ${JSON.stringify(style.type)} for ${provenance} data`);
+  if (style.type !== "solid") problems.push(`${where}: the InfraVana line is drawn ${JSON.stringify(style.type)}`);
   if (style.color !== t.accentStrong || style.width !== t.frontierLineWidth) problems.push(`${where}: the InfraVana line is not ${t.accentStrong} at ${t.frontierLineWidth}px`);
+  if (t.frontierLineWidth !== 3 || t.todayLineWidth !== 2) problems.push(`${where}: the line widths are ${t.frontierLineWidth} and ${t.todayLineWidth}, the spec says 3 and 2`);
+  const dotSeries0 = seriesOf(option).find((x) => x.name === `${INFRAVANA_LABEL} (points)`);
+  if (dotSeries0?.symbolSize !== POINT_SIZE || POINT_SIZE !== 6) problems.push(`${where}: the points are ${String(dotSeries0?.symbolSize)}px, the spec says 6`);
+  if (((dotSeries0?.itemStyle ?? {}) as Obj).borderWidth) problems.push(`${where}: the frontier points carry a ring`);
+  // The wash: a series of its own, the accent at 10%, from the frontier down to the best Today line and nowhere the frontier is below it.
+  const washSeries = seriesOf(option).find((s) => s.name === WASH_SERIES);
+  const wash = ((washSeries?.areaStyle ?? undefined) as Obj | undefined);
+  const bestToday = Math.max(0, ...c.results.today_alternatives.filter((a) => a.is_grey).map((a) => a.tokens_at_budget));
+  if (!wash) problems.push(`${where}: no wash under the frontier`);
+  else {
+    if (wash.color !== t.accent || wash.opacity !== WASH_OPACITY) problems.push(`${where}: the wash is ${String(wash.color)} at ${String(wash.opacity)}, the spec says the accent at ${WASH_OPACITY}`);
+    if (typeof wash.origin !== "number" || !near(wash.origin, bestToday)) problems.push(`${where}: the wash runs down to ${String(wash.origin)}, the best Today line is ${bestToday}`);
+    const edge = pointsOf(option, WASH_SERIES);
+    if (edge.length !== linePts.length || edge.some((p, i) => !near(p[0], linePts[i]?.[0] ?? NaN) || !near(p[1], Math.max(linePts[i]?.[1] ?? NaN, bestToday))))
+      problems.push(`${where}: the wash is not the frontier lifted to the best Today line, so it shades where Today is ahead`);
+  }
 
   // Today: one reference line per grey in the quality view; in the speed view a marker at its own speed.
   const cmp = comparisonOf(c.results);
   const greys = [...(cmp.comparator ? [{ alt: cmp.comparator, rank: null as number | null }] : []), ...cmp.options.map((o) => ({ alt: o.alt, rank: o.rank as number | null }))];
-  if (greys.length > 4 + 1) problems.push(`${where}: ${greys.length} greys`);
+  if (greys.length > 4) problems.push(`${where}: ${greys.length} Today lines, at most four`);
+  // Written out here on purpose: the comparator is today1, option k is today(k+1) (spec 15.11).
   const design = [
     { fill: t.today2, marker: "circle" },
-    { fill: t.today1, marker: "rect" },
-    { fill: t.today2, marker: "triangle" },
-    { fill: t.today1, marker: "diamond" },
+    { fill: t.today3, marker: "rect" },
+    { fill: t.today4, marker: "triangle" },
   ];
   for (const g of greys) {
     const name = g.rank === null ? `Today: ${g.alt.label}` : g.alt.label;
@@ -216,7 +236,8 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
         problems.push(`${where}: ${name} is at (${pts[0][0]}, ${pts[0][1]}), expected (${speed}, ${g.alt.tokens_at_budget})`);
       if (s[0].symbol !== wantMarker) problems.push(`${where}: ${name} marker is ${String(s[0].symbol)}, design says ${wantMarker}`);
       if (JSON.stringify(s[0].symbolSize) !== JSON.stringify(wantSize)) problems.push(`${where}: ${name} marker size is ${JSON.stringify(s[0].symbolSize)}, design says ${JSON.stringify(wantSize)}`);
-      if (((s[0].itemStyle ?? {}) as Obj).color !== wantFill) problems.push(`${where}: ${name} is not its rank's grey`);
+      if (((s[0].itemStyle ?? {}) as Obj).color !== wantFill) problems.push(`${where}: ${name} is not its rank's colour`);
+      if (((s[0].itemStyle ?? {}) as Obj).borderWidth) problems.push(`${where}: ${name} carries a ring`);
       continue;
     }
     if (c.view === "speed" && speed === undefined && pts.length === 1) continue; // best single option: its speed is derived, not read here
@@ -227,10 +248,18 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
         problems.push(`${where}: ${name} is drawn at ${pts[0][1]} to ${pts[1][1]}, it buys ${g.alt.tokens_at_budget}`);
       if (pts[0][0] === pts[1][0]) problems.push(`${where}: ${name} has no length`);
     }
-    if (ls.type !== "solid") problems.push(`${where}: ${name} is drawn ${JSON.stringify(ls.type)}; a dash means provenance, so Today lines are solid`);
+    if (ls.type !== "solid") problems.push(`${where}: ${name} is drawn ${JSON.stringify(ls.type)}; every line is solid`);
     if (ls.color !== wantFill || ls.width !== t.todayLineWidth) problems.push(`${where}: ${name} is not ${wantFill} at ${t.todayLineWidth}px`);
     const end = dataOf(s[0])[1] as Obj | null;
     if (!end || end.symbol !== wantMarker || JSON.stringify(end.symbolSize) !== JSON.stringify(wantSize)) problems.push(`${where}: ${name} does not end in a ${wantMarker} marker of ${JSON.stringify(wantSize)}px`);
+    if (((end?.itemStyle ?? {}) as Obj).borderWidth) problems.push(`${where}: the marker of ${name} carries a ring`);
+    // The end label carries a swatch of the line's colour, so the key runs from the label to its line.
+    const endLabel = (end?.label ?? {}) as Obj;
+    if (endLabel.show === true) {
+      const text = typeof endLabel.formatter === "function" ? String((endLabel.formatter as () => string)()) : "";
+      const sw = (((endLabel.rich ?? {}) as Obj).sw ?? {}) as Obj;
+      if (!text.startsWith("{sw|}") || sw.backgroundColor !== wantFill) problems.push(`${where}: the end label of ${name} carries no swatch in ${wantFill}`);
+    }
   }
 
   // Marker identity: no two Today marks share a shape and size (the comparator's thin tick is not an option's square).
@@ -282,14 +311,16 @@ export function c10SvgProblems(c: C10Case, svg: string, size: "stage" | "thumb",
   const allowed = new Set(Object.values(t).filter((v): v is string => typeof v === "string").map((v) => v.toLowerCase()));
   // A clip path is a rectangle that hides, never a drawn colour.
   for (const colour of coloursOf(svg.replace(/<clipPath[\s\S]*?<\/clipPath>/g, "")).drawn) if (!allowed.has(colour)) problems.push(`${where}: colour ${colour} is not a token value`);
+  // The one translucent shape is the wash under the frontier, at its own opacity.
   for (const m of svg.replace(STYLE_BLOCK, "").matchAll(/\s(?:fill-|stroke-)?opacity="([\d.]+)"/g)) {
-    if (Number(m[1]) < 1) problems.push(`${where}: a shape is drawn with opacity ${m[1]}`);
+    if (Number(m[1]) < 1 && Number(m[1]) !== WASH_OPACITY) problems.push(`${where}: a shape is drawn with opacity ${m[1]}`);
   }
   const texts = textsOf(svg);
   if (size === "thumb" && texts.length > 0) problems.push(`${where}: thumb draws ${texts.length} text nodes, expected none`);
   if (size === "stage" && texts.length === 0) problems.push(`${where}: stage draws no text`);
   if (size === "stage" && !texts.includes(INFRAVANA_LABEL)) problems.push(`${where}: the InfraVana line is not labelled`);
 
+  problems.push(...noPatternOrDashProblems({}, svg, where));
   // The setting's name is drawn above the plot (the top margin of the stage grid is 28px), not on a data line.
   if (size === "stage" && c10Data(c.results, c.scenario, c.tables, c.view).current_tokens !== null) {
     const name = placedTexts(svg).filter((p) => p.text === CURRENT_LABEL);
@@ -349,15 +380,18 @@ export function c10MarkupProblems(markup: string, view: C10View, hasSpeed: boole
     if (/\sdisabled/.test(speed)) problems.push(`${where}: the speed option is disabled although speed data exists`);
     if (reason !== null) problems.push(`${where}: a reason is shown although speed data exists`);
   }
-  // (4) The speed view carries the provenance badge and the invented-data source line.
-  const invented = markup.includes("prov-badge--invented");
+  // (4) The speed view's table lists the invented rows as modelled, and the invented-data source line is present.
+  const rows = sourceTableRows(markup);
+  const inventedRow = rows.find((r) => r.covers.includes("Invented speeds and batch or flex prices"));
   const inventedSource = markup.includes("<b>Source:</b> invented placeholder data.");
+  if (!markup.includes("<summary>Where these numbers come from</summary>")) problems.push(`${where}: no "Where these numbers come from" disclosure`);
+  if (/<details class="sources"[^>]*\sopen/.test(markup)) problems.push(`${where}: the disclosure is open on load`);
+  if (/prov-badge/.test(markup)) problems.push(`${where}: a provenance badge`);
   if (shown === "speed") {
-    if (!markup.includes("prov-badge--modelled")) problems.push(`${where}: (4) the speed view has no modelled badge`);
-    if (!invented) problems.push(`${where}: (4) the speed view has no invented-placeholder badge`);
+    if (!inventedRow || inventedRow.basis !== "Modelled") problems.push(`${where}: (4) the speed view's table does not list the invented rows as modelled`);
     if (!inventedSource) problems.push(`${where}: (4) the speed view does not say "Source: invented placeholder data."`);
   } else {
-    if (invented || inventedSource) problems.push(`${where}: the quality view claims invented data`);
+    if (inventedRow || inventedSource) problems.push(`${where}: the quality view claims invented data`);
     if (!markup.includes("<b>Source:</b>")) problems.push(`${where}: no source line`);
   }
   return problems;
@@ -461,7 +495,15 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
     expect(v("(3) the marker is at the highest threshold"), c10OptionProblems(c, edit(option, CURRENT_LABEL, (s) => mapData(s, (d) => withValue(d, [data.frontier.points[last].threshold, valueOf(d)[1]]))), view));
     expect(v("(3) the marker is at the wrong height"), c10OptionProblems(c, edit(option, CURRENT_LABEL, (s) => mapData(s, (d) => withValue(d, [valueOf(d)[0], valueOf(d)[1] * 0.97]))), view));
     expect(v("(3) there is no marker"), c10OptionProblems(c, edit(option, CURRENT_LABEL, (s) => ({ ...s, data: [] })), view));
-    expect(v("the InfraVana line is solid whatever its provenance"), c10OptionProblems(c, edit(option, INFRAVANA_LABEL, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), type: "solid" } })), view));
+    expect(v("the InfraVana line is dashed"), c10OptionProblems(c, edit(option, INFRAVANA_LABEL, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), type: [6, 3] } })), view));
+    expect(v("the InfraVana line is 2px"), c10OptionProblems(c, edit(option, INFRAVANA_LABEL, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), width: 2 } })), view));
+    expect(v("the wash is gone"), c10OptionProblems(c, { ...(option as Obj), series: seriesOf(option).filter((s) => s.name !== WASH_SERIES) } as EChartsCoreOption, view));
+    expect(v("the wash runs to zero"), c10OptionProblems(c, edit(option, WASH_SERIES, (s) => ({ ...s, areaStyle: { ...(s.areaStyle as Obj), origin: 0 } })), view));
+    expect(v("the wash is 30%"), c10OptionProblems(c, edit(option, WASH_SERIES, (s) => ({ ...s, areaStyle: { ...(s.areaStyle as Obj), opacity: 0.3 } })), view));
+    expect(v("the wash is the frontier itself, shading where Today is ahead"), c10OptionProblems(c, edit(option, WASH_SERIES, (s) => ({ ...s, data: pointsOf(option, INFRAVANA_LABEL) })), view));
+    expect(v("the points are 8px"), c10OptionProblems(c, edit(option, dots, (s) => ({ ...s, symbolSize: 8 })), view));
+    expect(v("the points carry a ring"), c10OptionProblems(c, edit(option, dots, (s) => ({ ...s, itemStyle: { ...(s.itemStyle as Obj), borderWidth: 2 } })), view));
+    expect(v("the drawing holds a dashed stroke"), c10SvgProblems(c, `${renderSvg(option, dims)}<path stroke-dasharray="6 3"/>`, "stage", dims, view));
     const flipped = (position: string) => edit(option, dots, (s) => ({ ...s, label: { ...(s.label as Obj), position } }));
     if (view === "quality") {
       // The label on either side where a Today line runs within its height: caught (S1: the 13.4B line above the frontier).
@@ -484,6 +526,13 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
     const someName = some.alt.label;
     if (view === "quality") {
       expect(v("a Today line is dashed"), c10OptionProblems(c, edit(option, someName, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), type: [6, 3] } })), view));
+      expect(v("a Today line is 1.5px"), c10OptionProblems(c, edit(option, someName, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), width: 1.5 } })), view));
+      expect(v("a Today line takes the comparator's colour"), c10OptionProblems(c, edit(option, someName, (s) => ({ ...s, lineStyle: { ...(s.lineStyle as Obj), color: tokens.today1 } })), view));
+      expect(
+        v("an end label loses its swatch"),
+        c10OptionProblems(c, edit(option, someName, (s) => mapData(s, (d, i) => (i === 1 ? { ...(d as Obj), label: { ...((d as Obj).label as Obj), formatter: () => "label" } } : d))), view),
+      );
+      expect(v("an end marker carries a ring"), c10OptionProblems(c, edit(option, someName, (s) => mapData(s, (d, i) => (i === 1 ? { ...(d as Obj), itemStyle: { ...((d as Obj).itemStyle as Obj), borderWidth: 1.5 } } : d))), view));
       expect(v("a Today line is at the wrong height"), c10OptionProblems(c, edit(option, someName, (s) => mapData(s, (d) => withValue(d, [valueOf(d)[0], valueOf(d)[1] * 1.1]))), view));
       expect(v("a Today line has the wrong marker"), c10OptionProblems(c, edit(option, someName, (s) => mapData(s, (d, i) => (i === 1 ? { ...(d as Obj), symbol: "pin" } : d))), view));
       // A line dropped from the chart.
@@ -512,7 +561,7 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
         expect(v("end labels sit on top of each other"), c10SvgProblems(c, squashed, "stage", dims, view), cleanSvg);
       }
       expect(v("the setting's name sits inside the plot"), c10SvgProblems(c, svg.replace(/(<text[^>]*transform="translate\([\d.-]+ )[\d.-]+(\)"[^>]*>Your setting<\/text>)/, "$1200$2"), "stage", dims, view), cleanSvg);
-      expect(v("a colour that is not a token"), c10SvgProblems(c, svg.replace(new RegExp(tokens.accentStrong.replace("#", "#?"), "gi"), "#123456"), "stage", dims, view));
+      expect(v("a colour that is not a token"), c10SvgProblems(c, svg.replace(new RegExp(tokens.accentStrong.replace("#", "#?"), "gi"), `#${(0x123456).toString(16)}`), "stage", dims, view));
     }
   }
 
@@ -525,10 +574,13 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
   expect("quality markup", [...c10MarkupProblems(qualityMarkup.replace(/<input[^>]*value="quality"[^>]*>/, (tag) => tag.replace(/\schecked=""/, "")), "quality", hasSpeed, reason, "q")], cleanQ);
   if (hasSpeed) {
     const cleanS = c10MarkupProblems(speedMarkup, "speed", hasSpeed, reason, "s");
-    expect("(4) the speed view has no invented badge", c10MarkupProblems(speedMarkup.replace(/prov-badge--invented/g, "prov-badge--x"), "speed", hasSpeed, reason, "s"), cleanS);
+    expect("(4) the speed view's table has no invented row", c10MarkupProblems(speedMarkup.replace(/Invented speeds and batch or flex prices/g, "Speeds"), "speed", hasSpeed, reason, "s"), cleanS);
     expect("(4) the speed view has the default source line", c10MarkupProblems(speedMarkup.replace("invented placeholder data.", "InfraVana cost model on illustrative price tables."), "speed", hasSpeed, reason, "s"));
-    expect("(4) the speed view has no modelled badge", c10MarkupProblems(speedMarkup.replace(/prov-badge--modelled/g, "prov-badge--x"), "speed", hasSpeed, reason, "s"));
+    expect("(4) the invented row is listed as measured", c10MarkupProblems(speedMarkup.replace(/(Invented speeds and batch or flex prices<\/td><td>)Modelled/, "$1Measured"), "speed", hasSpeed, reason, "s"));
+    expect("the disclosure is open on load", c10MarkupProblems(speedMarkup.replace('<details class="sources">', '<details class="sources" open="">'), "speed", hasSpeed, reason, "s"));
+    expect("a badge in the speed view", c10MarkupProblems(speedMarkup.replace('<div class="chart-notes">', '<div class="chart-notes"><span class="prov-badge"></span>'), "speed", hasSpeed, reason, "s"));
     expect("the quality view claims invented data", c10MarkupProblems(qualityMarkup.replace("<b>Source:</b>", "<b>Source:</b> invented placeholder data."), "quality", hasSpeed, reason, "q"));
+    expect("the quality view lists the invented rows", c10MarkupProblems(qualityMarkup.replace('<tr><td class="sources__group">', '<tr><td>x</td><td>Invented speeds and batch or flex prices</td><td>Modelled</td><td>x</td></tr><tr><td class="sources__group">'), "quality", hasSpeed, reason, "q"));
     expect("the speed option is disabled with speed data", c10MarkupProblems(speedMarkup.replace(/<input([^>]*value="speed")/, "<input disabled=\"\"$1"), "speed", hasSpeed, reason, "s"));
   }
   const bare: Tables = { ...tables, model_offers: tables.model_offers.map((o) => ({ ...o, tok_s_per_user: null, p95_ttft_ms: null })) };

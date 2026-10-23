@@ -65,16 +65,6 @@
   --chart-bar-thickness: 24px;            /* horizontal bars of C1 and C5 */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
-  /* Bridge for the chart code of the previous commit, which still reads these: removed with that code. */
-  --color-pattern-on-fill: var(--color-surface);
-  --color-pattern-on-saved: var(--color-positive);
-  --color-provenance-on-fill: var(--color-surface);
-  --color-provenance-on-hollow: var(--color-positive);
-  --chart-savings-outline-width: 1.5px;
-  --chart-provenance-width: 2px;
-  --chart-dash-modelled: 6 3;
-  --chart-dash-vendor: 2 3;
-
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */
   --color-notice-bg: #fdf3d9;
   --color-notice-text: #584503;
