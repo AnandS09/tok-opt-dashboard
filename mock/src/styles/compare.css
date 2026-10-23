@@ -1,9 +1,8 @@
 /*
- * The comparison set: the provenance badges and source line under a chart
- * (design-tokens 3.4, 3.5) and the "Compared with" selector (spec 6.1). The
- * pattern and provenance tokens of design-tokens 3 are in tokens.css, with
- * every other token. Every colour here is an alias of one of them; this file
- * holds no hex.
+ * The comparison set: the key of C3, the "Where these numbers come from"
+ * disclosure and the source line under a chart (spec 15.10), and the "Compared
+ * with" selector (spec 6.1). Every colour here is an alias of a token in
+ * tokens.css; this file holds no hex.
  */
 
 /* A chart with its own stage height (more rows, or a wrapping legend on a phone). */
@@ -17,7 +16,7 @@
   }
 }
 
-/* ---- Key of C3: a wide swatch for a bar, the marker's own shape for a marker ---- */
+/* ---- Keys of C3 (bar swatches) and C10 (the marker's own shape) ---- */
 
 .chart-key {
   display: flex;
@@ -63,7 +62,7 @@
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 
-/* ---- Provenance badges and source line (design-tokens 3.4, 3.5) ---- */
+/* ---- "Where these numbers come from" and the source line (spec 15.10) ---- */
 
 .chart-notes {
   display: flex;
@@ -72,52 +71,100 @@
   margin-top: var(--space-2);
 }
 
-.chart-notes__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Built like "Fine-tune the assumptions": a closed disclosure whose summary is a quiet line of secondary text. */
+.sources > summary {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
 }
 
-.prov-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text);
+.sources[open] > summary {
+  margin-bottom: var(--space-3);
+}
+
+.sources__empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.sources__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-tight);
+  text-align: left;
+}
+
+.sources__table th {
+  padding: 0 var(--space-3) var(--space-1) 0;
+  border-bottom: 1px solid var(--color-text);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
 }
 
-.prov-badge--measured {
-  border-style: solid;
-  border-color: var(--color-text);
+.sources__table td {
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
 }
 
-.prov-badge--modelled {
-  border-style: dashed;
+.sources__table td:last-child,
+.sources__table th:last-child {
+  padding-right: 0;
 }
 
-.prov-badge--vendor_reported {
-  border-style: dotted;
-  border-width: 2px;
+.sources__table a {
+  color: var(--color-accent-strong);
 }
 
-.prov-badge--invented {
-  background: var(--color-notice-bg);
-  border: 1px solid var(--color-notice-border);
-  color: var(--color-notice-text);
+/* The basis is one short phrase: it stays on one line and the other columns give way. */
+@media (min-width: 601px) {
+  .sources__table td:nth-child(3) {
+    white-space: nowrap;
+  }
 }
 
-.prov-badge a {
-  color: inherit;
+.sources__note {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* Phones: each row is a stacked block (the bar or group, what it covers, the basis, then the source), never a table wider than the screen. */
+@media (max-width: 600px) {
+  .sources__table,
+  .sources__table tbody,
+  .sources__table tr,
+  .sources__table td {
+    display: block;
+    width: auto;
+  }
+
+  .sources__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .sources__table tr {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sources__table td {
+    padding: 0;
+    border-bottom: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .sources__group {
+    font-weight: var(--font-weight-bold);
+  }
 }
 
 /*

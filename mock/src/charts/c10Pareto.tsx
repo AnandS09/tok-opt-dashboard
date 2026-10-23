@@ -80,7 +80,7 @@ export function c10Csv(data: C10Data): string {
   return toCsvText(["series", "axis", "threshold", "measure", "value", "provenance"], rows);
 }
 
-/** Where each drawn series comes from, for the badges. */
+/** Where each drawn series comes from, for the "Where these numbers come from" table. */
 export function paretoParts(results: Results, data: C10Data | null): ProvenancePart[] {
   const cmp = comparisonOf(results);
   const speed = data?.view === "speed";
@@ -151,7 +151,12 @@ export function C10Switch({ view, reason, onChange }: SwitchProps) {
   );
 }
 
-const FILL_VAR: Record<string, string> = { today1: "var(--color-today-1)", today2: "var(--color-today-2)" };
+const FILL_VAR: Record<string, string> = {
+  today1: "var(--color-today-1)",
+  today2: "var(--color-today-2)",
+  today3: "var(--color-today-3)",
+  today4: "var(--color-today-4)",
+};
 
 /** The key: each Today option's marker and name, shown where the chart has no room for end labels. */
 function C10Key({ data }: { data: C10Data }) {
@@ -249,7 +254,7 @@ export function ParetoChart({ results, size }: ChartProps) {
       : [],
   };
 
-  // The speed view draws the invented speed rows (BD-11), so it carries the invented badge and source line.
+  // The speed view draws the invented speed rows (BD-11), so its table lists them as modelled and it carries the invented source line.
   return (
     <div ref={box}>
     <ChartFigure

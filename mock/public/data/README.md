@@ -8,11 +8,11 @@ Files follow the column contracts of spec section 7.3. Empty cells mean "no valu
 
 | File | Rows | Columns (exactly the header row) |
 |---|---|---|
-| `hardware.csv` | 9 | `hw_id, vendor, class, usd_per_hr, hr_price_source, power_kw` |
+| `hardware.csv` | 9 | `hw_id, vendor, class, usd_per_hr, hr_price_source, power_kw, source_url` (`source_url` optional) |
 | `throughput_curves.csv` | 216 | `model_id, hw_id, precision, concurrency, tok_s_per_user, tok_s_per_gpu, p95_ttft_ms, p95_tok_latency_ms, provenance, run_url` |
 | `models.csv` | 7 | `model_id, family, tier, license, vendor` |
 | `model_offers.csv` | 32 | `offer_id, model_id, channel, region, usd_per_mtok_in, usd_per_mtok_out, commit_discount_pct, min_commit_usd, provisioned_usd_per_hr, source_url, as_of, price_tier, provenance, tok_s_per_user, p95_ttft_ms` |
-| `seat_plans.csv` | 2 | `plan_id, vendor, usd_per_user_month, included_usage_note, overage_model_id` |
+| `seat_plans.csv` | 2 | `plan_id, vendor, usd_per_user_month, included_usage_note, overage_model_id, source_url` (`source_url` optional) |
 | `quality.csv` | 77 | `model_id, benchmark, score, source_url` |
 | `workloads.csv` | 8 | `workload_id, label, tok_in_per_user_day, tok_out_per_user_day, quality_floor, default_model_mix, basis` |
 | `buying_patterns.csv` | 7 | `pattern_id, label, kind, stage, vendor, pricing_rule, source_url, as_of` |
@@ -23,6 +23,8 @@ Files follow the column contracts of spec section 7.3. Empty cells mean "no valu
 | `scenarios/s1.json`, `scenarios/s2.json`, `scenarios/hardware_heavy.json` | n/a | The whole stage-2 response of spec A.2 (the parked language-model call; 7.1 is its stub) (`verdict, reason_for_user, scenario, charts, missing, narrative`). `s1` and `s2` are the two prompts in `intent.md`. `hardware_heavy` is a third example for the prompt "We are a 50-person chip design company with a budget of $100K per quarter. Most of our AI work, about 80 percent, is hardware design, with some software tooling. Show me how to spend it." (the prompt text lives in `mock/src/store/examples.ts`; the envelope has no prompt field). Brand spelling in the narratives is "InfraVana", the UI-copy default. |
 
 Spec 7.3 lists `offer_id or plan_id` as one column of `baseline_providers.csv`. It is split into two columns, `offer_id` and `plan_id`, and exactly one of them is filled per row: `plan_id` for the `seats` pattern on employee workloads, `offer_id` for every other pattern and for customer workloads in every pattern (nobody buys seats for customers, so the seats pattern's customer rows repeat the api offer). Spec 7.4 replaces the v0.2 `stage` column with `pattern_id`, a foreign key to `buying_patterns.csv`; the pattern ids `seats`, `api` and `platform` carry the three v0.2 stages unchanged. The `(...)` value lists in the spec's column names (for example `class (gpu/accelerator)`) are the allowed values, not part of the column name.
+
+Source addresses (spec 7.3, 15.10): every series a chart draws can point at the page its numbers come from, and the "Where these numbers come from" table under each chart links to it. The address is read from the `source_url` column of the row that feeds the series (`hardware.csv`, `seat_plans.csv`, `model_offers.csv`, `buying_patterns.csv`; `throughput_curves.csv` keeps `run_url`). `source_url` in `hardware.csv` and `seat_plans.csv` is an optional column: the loader accepts a file with it or without it, and an empty cell means "no address". Every address in these fixtures is the invented placeholder address `https://example.invalid/placeholder-invented-data/...`, so the table says "placeholder, no source yet" beside each link. Replacing one with a real address changes that link and drops the words, with no code change.
 
 ## Foreign keys
 

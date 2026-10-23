@@ -209,3 +209,51 @@ describe("manifest.json (spec 7.3)", () => {
     );
   });
 });
+
+describe("the optional source_url column of hardware.csv and seat_plans.csv (spec 7.3, 15.10)", () => {
+  /** The file's text with its `source_url` column cut out of every line. */
+  const without = (file: string): string =>
+    fixtureText(file)
+      .trimEnd()
+      .split("\n")
+      .map((line) => line.split(",").slice(0, -1).join(","))
+      .join("\n") + "\n";
+
+  it("the fixtures hold the column, and every address is the invented placeholder", async () => {
+    const tables = await loadFixtureTables();
+    for (const row of tables.hardware) expect(row.source_url).toBe(`https://example.invalid/placeholder-invented-data/hardware/${row.hw_id}`);
+    for (const row of tables.seat_plans) expect(row.source_url).toBe(`https://example.invalid/placeholder-invented-data/seat_plans/${row.plan_id}`);
+  });
+
+  it.each([
+    ["hardware.csv", "hardware"],
+    ["seat_plans.csv", "seat_plans"],
+  ] as const)("%s loads without the column, every row reading as no address", async (file, key) => {
+    const text = without(file);
+    expect(text.split("\n")[0]).not.toContain("source_url");
+    const tables = await loadFixtureTables({ [file]: text });
+    expect(tables[key].length).toBeGreaterThan(0);
+    for (const row of tables[key]) expect(row.source_url).toBeNull();
+  });
+
+  it.each(["hardware.csv", "seat_plans.csv"])("%s loads with an empty cell, that row reading as no address", async (file) => {
+    const lines = fixtureText(file).trimEnd().split("\n");
+    lines[1] = (lines[1] as string).split(",").slice(0, -1).join(",") + ",";
+    const key = file === "hardware.csv" ? "hardware" : "seat_plans";
+    const tables = await loadFixtureTables({ [file]: `${lines.join("\n")}\n` });
+    expect(tables[key][0]?.source_url).toBeNull();
+    expect(tables[key][1]?.source_url).toContain("placeholder-invented-data");
+  });
+
+  it("a column the contract does not list is still refused, so the exception is only the optional column", async () => {
+    const lines = fixtureText("hardware.csv").trimEnd().split("\n");
+    const text = lines.map((line, i) => `${line},${i === 0 ? "surprise" : "x"}`).join("\n");
+    expect(await failure({ "hardware.csv": text })).toBe('hardware.csv: column "surprise" is not part of the expected columns');
+  });
+
+  it("another file's required column is still required: model_offers.csv without source_url fails", async () => {
+    const lines = fixtureText("model_offers.csv").trimEnd().split("\n");
+    const cut = lines.map((line) => line.split(",").filter((_, i) => i !== 9).join(","));
+    expect(await failure({ "model_offers.csv": `${cut.join("\n")}\n` })).toBe('model_offers.csv: column "source_url" is missing from the header row');
+  });
+});

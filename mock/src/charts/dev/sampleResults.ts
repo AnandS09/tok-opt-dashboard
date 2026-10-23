@@ -96,7 +96,7 @@ export const sampleResults: Results = {
  * Stress case: seven spend channels on the Today bar (folding into "Other"),
  * a narrow segment, a class the scenario does not use, one class present on
  * one side only, a label that needs CSV quoting, and measured provenance
- * (so no badge is expected).
+ * (so no row is expected in the sources table).
  */
 export const sampleResultsEdge: Results = {
   headline: { tokens_multiple: 1.04, cost_savings_pct: 3.2 },

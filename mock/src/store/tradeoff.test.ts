@@ -217,11 +217,14 @@ describe("spec 6.2 acceptance (6): the G4 hero shows both sides' floors and spee
     expect(figures.extraSaving).toBeCloseTo(g1Headline(calls.traded as Results).saved_usd - figures.ownSaving, 6);
   });
 
-  it("marks the G4 hero with the invented-data source line and badge", () => {
+  it("marks the G4 hero with the invented-data source line and lists the invented rows as modelled in the sources table (spec 9 acceptance 2)", () => {
     const markup = heroMarkup(s1, 1, 1);
     expect(markup).toContain("Source:");
     expect(markup).toContain("invented placeholder data");
-    expect(markup).toContain("prov-badge--invented");
+    expect(markup).toContain("Where these numbers come from");
+    expect(markup).toContain("Invented speeds and batch or flex prices");
+    expect(markup).toContain("Modelled");
+    expect(markup).not.toContain("prov-badge");
   });
 });
 

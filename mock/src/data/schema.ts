@@ -27,6 +27,12 @@ export type ColumnKind = "string" | "number" | "string?" | "number?";
 export interface TableSpec {
   file: string;
   columns: Readonly<Record<string, ColumnKind>>;
+  /**
+   * Columns that may be missing from the header row altogether (spec 7.3): a
+   * file without one loads as if the column were empty on every row. Each must
+   * also be declared in `columns`, with a `?` kind.
+   */
+  optionalColumns?: readonly string[];
   /** Allowed values for enumerated text columns. */
   enums?: Readonly<Record<string, readonly string[]>>;
 }
@@ -74,7 +80,9 @@ export const HARDWARE: TableSpec = {
     usd_per_hr: "number",
     hr_price_source: "string",
     power_kw: "number",
+    source_url: "string?",
   },
+  optionalColumns: ["source_url"],
   enums: { class: HARDWARE_CLASSES },
 };
 
@@ -137,7 +145,9 @@ export const SEAT_PLANS: TableSpec = {
     usd_per_user_month: "number",
     included_usage_note: "string",
     overage_model_id: "string?",
+    source_url: "string?",
   },
+  optionalColumns: ["source_url"],
 };
 
 export const QUALITY: TableSpec = {

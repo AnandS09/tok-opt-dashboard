@@ -51,10 +51,16 @@ export function qualityLine(alt: TodayAlternative): string {
 
 /**
  * Height of the stage for a chart drawn as horizontal bars: the default for
- * two, room for each further bar. On a phone the row names wrap to three or
- * four lines, so each row is taller.
+ * two, room for each further bar. On a phone the row name sits above a
+ * full-width bar (two lines of text over a bar 24px thick), so each row is
+ * 84px (spec 15.11). `plotMargins` is the chart's own top and bottom margin on
+ * a phone, which the 84px rows are added to.
  */
-export function barRowsHeight(results: Results, phone = false): number {
+export function barRowsHeight(results: Results, phone = false, plotMargins = 70): number {
   const rows = 2 + comparisonOf(results).options.length;
-  return Math.max(320, 70 + (phone ? 80 : 54) * rows);
+  // On a phone the height is the chart's own top and bottom margins plus 84px a row, so each row is exactly 84px.
+  return Math.max(320, phone ? plotMargins + PHONE_ROW_PX * rows : 70 + 54 * rows);
 }
+
+/** Height of one bar row on a phone (spec 15.11). */
+export const PHONE_ROW_PX = 84;

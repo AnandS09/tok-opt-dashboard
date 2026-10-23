@@ -4,7 +4,7 @@ import type { BarSeriesOption } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
-import type { ChartDef, ChartProps, GoalView, Provenance, Results } from "../contract";
+import type { ChartDef, ChartProps, GoalView, Results } from "../contract";
 import { baseOption, tooltipChrome } from "./base";
 import { c5Figures, COVERAGE_MESSAGE_ABOVE } from "../compute/goals";
 import { tokensBoughtBenefits } from "./benefits";
@@ -18,9 +18,9 @@ import "../styles/goals.css";
 import { esc, fmtBudget, toCsvText } from "./format";
 import { BRAND, INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
 import { textWidth } from "./measure";
-import { decalOf, optionDecal, optionStyle } from "./patterns";
+import { optionStyle } from "./patterns";
 import type { ProvenancePart } from "./ProvenanceNotes";
-import { PROVENANCE_TEXT, outlineOf } from "./provenanceStyle";
+import { infravanaParts, optionParts, todayParts } from "./sourceParts";
 import type { Tokens } from "./tokens";
 import type { Dims } from "./useEChart";
 import { wrapText } from "./wrap";
@@ -52,19 +52,16 @@ interface Bar {
   kind: "comparator" | "infravana" | "option";
   name: string;
   tokens: number;
-  provenance: Provenance;
   option: OptionBar | null;
 }
 
-function barsOf(results: Results, cmp: Comparison, figures: C5Figures): Bar[] {
-  const b = results.tokens_bought;
+function barsOf(cmp: Comparison, figures: C5Figures): Bar[] {
   return [
     {
       key: "comparator",
       kind: "comparator",
       name: `${TODAY_LABEL}: ${cmp.label}`,
       tokens: figures.today_tokens,
-      provenance: b.provenance.today,
       option: null,
     },
     {
@@ -72,7 +69,6 @@ function barsOf(results: Results, cmp: Comparison, figures: C5Figures): Bar[] {
       kind: "infravana",
       name: INFRAVANA_LABEL,
       tokens: figures.infravana_tokens,
-      provenance: b.provenance.infravana,
       option: null,
     },
     // Other grey options are never solved: their bars are the budget over their average price.
@@ -81,11 +77,13 @@ function barsOf(results: Results, cmp: Comparison, figures: C5Figures): Bar[] {
       kind: "option" as const,
       name: o.alt.label,
       tokens: o.alt.tokens_at_budget,
-      provenance: o.alt.provenance,
       option: o,
     })),
   ];
 }
+
+/** The plot's top and bottom margins in the stage grid. */
+const C5_PHONE_MARGINS = 12 + 28;
 
 /** Width of the row-name column. */
 function labelColumn(width: number): number {
@@ -108,8 +106,10 @@ export function buildTokensBoughtOption(
   const stage = size === "stage";
   const b = results.tokens_bought;
   const cmp = comparisonOf(results);
-  const bars = barsOf(results, cmp, figures);
+  const bars = barsOf(cmp, figures);
   const narrow = dims.width < 600;
+  // On a phone the row name and its figures sit above a full-width bar (spec 15.11).
+  const above = stage && narrow;
   const column = labelColumn(dims.width);
 
   /** The quality line of a grey bar and the multiple line of InfraVana's: beside the bar when there is room, under its name when not. */
@@ -139,48 +139,56 @@ export function buildTokensBoughtOption(
       labelLines(bar).map((l) => textWidth(l.text, l.style === "sub" ? t.fontXs : t.fontSm, t.weightBold, t.fontSans)),
     ),
   );
-  const left = stage ? column + t.space3 : 4;
-  const right = stage ? Math.ceil(labelWidth) + t.space3 : 4;
+  const left = above ? t.space2 : stage ? column + t.space3 : 4;
+  const right = above ? 24 : stage ? Math.ceil(labelWidth) + t.space3 : 4;
   const grid = stage ? { left, right, top: 12, bottom: 28 } : { left: 4, right: 4, top: 6, bottom: 6 };
 
   const rich = {
     v: { color: t.text, fontSize: t.fontSm, lineHeight: t.lineSm, fontWeight: t.weightBold },
     inf: { color: t.accentStrong, fontSize: t.fontSm, lineHeight: t.lineSm, fontWeight: t.weightBold },
     sub: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
+    // The other options are plain: only the compared pair is bold (spec 15.11).
+    o: { color: t.text, fontSize: t.fontSm, lineHeight: t.lineSm, fontWeight: t.weightRegular },
   };
   const richLabel = (bar: Bar) =>
     labelLines(bar)
       .map((l) => `{${l.style}|${l.text}}`)
       .join("\n");
 
-  const data = bars.map((bar) => {
-    const o = outlineOf(bar.provenance, false, t);
-    const style =
-      bar.kind === "comparator"
-        ? { color: t.today1, decal: undefined }
-        : bar.kind === "infravana"
-          ? { color: t.accent, decal: decalOf("P1", t.patternOnFill) }
-          : bar.option
-            ? { color: t[optionStyle(bar.option.rank).fill], decal: optionDecal(bar.option.rank, t) }
-            : { color: t.today2, decal: undefined };
-    return {
-      value: bar.tokens,
-      itemStyle: { ...style, borderColor: o.borderColor, borderWidth: o.borderWidth, borderType: o.borderType },
-    };
-  });
+  // Solid fills, no outline: the comparator wine, InfraVana the azure, each option its own hue (spec 15.11).
+  const fillOf = (bar: Bar): string =>
+    bar.kind === "comparator" ? t.today1 : bar.kind === "infravana" ? t.accent : bar.option ? t[optionStyle(bar.option.rank).fill] : t.today2;
+  const data = bars.map((bar) => ({ value: bar.tokens, itemStyle: { color: fillOf(bar) } }));
+
+  /** The row name and figures above the bar on a phone: the name, then the tokens and what goes with them. */
+  const aboveText = (bar: Bar): string => {
+    const name = `{${bar.kind === "infravana" ? "inf" : bar.kind === "option" ? "o" : "v"}|${bar.name}}`;
+    const figure = `${fmtTokensSig(bar.tokens)} tokens`;
+    const extra = [...detailLines(bar), ...(isEstimated(figures, bar) ? [ESTIMATED_LABEL] : [])];
+    return `${name}\n{sub|${[figure, ...extra].join(" \u00b7 ")}}`;
+  };
 
   const series: BarSeriesOption = {
     type: "bar",
-    barWidth: "58%",
+    barWidth: stage ? t.barThickness : "58%",
     silent: !stage,
     emphasis: { disabled: true },
     data,
-    label: {
-      show: stage,
-      position: "right",
-      formatter: (p) => richLabel(bars[p.dataIndex]),
-      rich,
-    },
+    label: above
+      ? {
+          show: true,
+          position: [0, -4],
+          align: "left",
+          verticalAlign: "bottom",
+          formatter: (p) => aboveText(bars[p.dataIndex] as Bar),
+          rich,
+        }
+      : {
+          show: stage,
+          position: "right",
+          formatter: (p) => richLabel(bars[p.dataIndex] as Bar),
+          rich,
+        },
   };
 
   return {
@@ -204,7 +212,6 @@ export function buildTokensBoughtOption(
             }
             if (isEstimated(figures, bar)) lines.push(ESTIMATED_LABEL);
             if (bar.kind === "infravana" && figures.at_tradeoff) lines.push(TRADEOFF_NOTE);
-            lines.push(`Source: ${PROVENANCE_TEXT[bar.provenance].toLowerCase()}`);
             return lines.join("<br/>");
           },
         }
@@ -224,14 +231,16 @@ export function buildTokensBoughtOption(
       data: bars.map((x) => x.key),
       show: stage,
       axisTick: { show: false },
-      axisLine: { lineStyle: { color: t.borderStrong } },
+      // No y axis rule: the bars start on one edge and need no fence (spec 15.11).
+      axisLine: { show: false },
       axisLabel: {
+        show: !above,
         interval: 0,
         margin: t.space3,
         formatter: (_value: string, index: number) => {
           const bar = bars[index];
           if (!bar) return "";
-          const style = bar.kind === "infravana" ? "inf" : "v";
+          const style = bar.kind === "infravana" ? "inf" : bar.kind === "option" ? "o" : "v";
           const lines = wrapText(bar.name, column, t.fontSm, t.weightBold, t.fontSans).map((l) => `{${style}|${l}}`);
           const sub = [
             ...(narrow ? detailLines(bar) : []),
@@ -353,15 +362,13 @@ export function tokensBoughtCsv(results: Results): string {
   return toCsvText(["series", "measure", "value", "provenance", "quality_score"], rows);
 }
 
-/** Where each drawn bar comes from, for the badges under the chart. */
+/**
+ * Where each drawn bar comes from, for the "Where these numbers come from"
+ * table: a bar buys tokens at the prices of the segments the C1 bar spends on,
+ * so its parts are those segments, with their addresses.
+ */
 export function tokensBoughtParts(results: Results): ProvenancePart[] {
-  const b = results.tokens_bought;
-  const cmp = comparisonOf(results);
-  return [
-    { group: `${TODAY_LABEL}: ${cmp.label}`, part: "", provenance: b.provenance.today },
-    { group: INFRAVANA_LABEL, part: "", provenance: b.provenance.infravana },
-    ...cmp.options.map((o) => ({ group: "Other Today options", part: o.alt.label, provenance: o.alt.provenance })),
-  ];
+  return [...todayParts(results), ...infravanaParts(results), ...optionParts(results)];
 }
 
 export function TokensBoughtChart({ results, size, goalView }: ChartProps) {
@@ -374,12 +381,12 @@ export function TokensBoughtChart({ results, size, goalView }: ChartProps) {
   );
   const b = results.tokens_bought;
   const cmp = comparisonOf(results);
-  const bars = barsOf(results, cmp, figures);
+  const bars = barsOf(cmp, figures);
   const height = barRowsHeight(results);
   // The "Estimated at its average price" line wraps to two more lines under a row name on a phone: give those rows room.
   // Counted from the goal, not the figures, so the box is the same before the solve answers.
   const estimatedRows = goalView?.goal === "G2" || goalView?.goal === "G3" ? figures.options.length : 0;
-  const phoneHeight = barRowsHeight(results, true) + estimatedRows * 44;
+  const phoneHeight = barRowsHeight(results, true, C5_PHONE_MARGINS) + estimatedRows * 16;
   const covered = state.notice !== null;
   return (
     // The same box in every state, so a solve in progress never moves the page: the notice sits over the chart's own area.

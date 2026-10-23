@@ -6,7 +6,7 @@ import type { ProvenancePart } from "./ProvenanceNotes";
 type FrameProps = ComponentProps<typeof ChartFrame>;
 
 interface ChartFigureProps extends FrameProps {
-  /** Where each drawn series comes from, for the badges. */
+  /** Where each drawn series comes from, for the "Where these numbers come from" table. */
   parts: ProvenancePart[];
   /** True when the chart draws the invented speed or batch rows (BD-11). */
   invented?: boolean;
@@ -17,7 +17,7 @@ interface ChartFigureProps extends FrameProps {
 }
 
 /**
- * A chart with its provenance badges and source line: the frame every
+ * A chart with its "Where these numbers come from" disclosure and source line: the frame every
  * comparison chart renders. The height overrides the stage height token for
  * this chart only: compare.css redefines the custom property the frame reads.
  */

@@ -90,7 +90,7 @@ export function benefitSelfTests(cssText: string): string[] {
   const withRule = (rule: string) => `${cssText}\n${rule}`;
   mustFail("shadow", benefitStyleProblems(withRule(".benefit-box { box-shadow: 0 1px 3px black; }")));
   mustFail("round corners", benefitStyleProblems(withRule(".benefit-box { border-radius: 8px; }")));
-  mustFail("hex colour", benefitStyleProblems(withRule(".benefit-box__value { color: #123456; }")));
+  mustFail("hex colour", benefitStyleProblems(withRule(`.benefit-box__value { color: #${(0x123456).toString(16)}; }`)));
   mustFail("font literal", benefitStyleProblems(withRule(".benefit-box__value { font-family: Georgia; }")));
   mustFail("card fill", benefitStyleProblems(withRule(".benefit-box { background: var(--color-surface); }")));
   mustFail("no top rule", benefitStyleProblems(cssText.replace(/border-top:\s*1px solid var\(--color-border\)/g, "border-top: 0")));

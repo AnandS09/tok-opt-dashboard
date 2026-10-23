@@ -26,19 +26,16 @@ export type ColourKey =
   | "today3"
   | "today4"
   | "budgetLine"
-  | "patternOnFill"
-  | "patternOnSaved"
-  | "provenanceOnFill"
-  | "provenanceOnHollow";
+  | "labelPaper";
 
 /** Single-number tokens: pixel sizes, weights, milliseconds and counts. */
 export type NumberKey =
   | "separatorWidth"
-  | "savingsOutlineWidth"
   | "budgetLineWidth"
-  | "provenanceWidth"
   | "todayLineWidth"
   | "frontierLineWidth"
+  | "ringWidth"
+  | "barThickness"
   | "fontXs"
   | "fontSm"
   | "weightRegular"
@@ -49,12 +46,8 @@ export type NumberKey =
   | "space2"
   | "space3";
 
-/** Dash-array tokens ("6 3"), read as numbers: the outline dashes that mean provenance. */
-export type DashKey = "dashModelled" | "dashVendor";
-
 export type Tokens = Record<ColourKey, string> &
-  Record<NumberKey, number> &
-  Record<DashKey, number[]> & {
+  Record<NumberKey, number> & {
     fontSans: string;
     /** Line height in pixels of the two chart text sizes: ceil(size x line-height-tight). */
     lineXs: number;
@@ -85,20 +78,17 @@ export const COLOUR_VARS: Record<ColourKey, string> = {
   today3: "--color-today-3",
   today4: "--color-today-4",
   budgetLine: "--color-budget-line",
-  patternOnFill: "--color-pattern-on-fill",
-  patternOnSaved: "--color-pattern-on-saved",
-  provenanceOnFill: "--color-provenance-on-fill",
-  provenanceOnHollow: "--color-provenance-on-hollow",
+  labelPaper: "--color-label-on-comparator",
 };
 
 /** Custom property behind each number token. */
 export const NUMBER_VARS: Record<NumberKey, string> = {
   separatorWidth: "--chart-separator-width",
-  savingsOutlineWidth: "--chart-savings-outline-width",
   budgetLineWidth: "--chart-budget-line-width",
-  provenanceWidth: "--chart-provenance-width",
   todayLineWidth: "--chart-today-line-width",
   frontierLineWidth: "--chart-frontier-line-width",
+  ringWidth: "--chart-ring-width",
+  barThickness: "--chart-bar-thickness",
   fontXs: "--font-size-xs",
   fontSm: "--font-size-sm",
   weightRegular: "--font-weight-regular",
@@ -110,12 +100,6 @@ export const NUMBER_VARS: Record<NumberKey, string> = {
   space3: "--space-3",
 };
 
-/** Custom property behind each dash-array token. */
-export const DASH_VARS: Record<DashKey, string> = {
-  dashModelled: "--chart-dash-modelled",
-  dashVendor: "--chart-dash-vendor",
-};
-
 const OTHER_VARS = {
   fontSans: "--font-sans",
 };
@@ -124,7 +108,6 @@ const OTHER_VARS = {
 export const TOKEN_PROPERTIES: string[] = [
   ...Object.values(COLOUR_VARS),
   ...Object.values(NUMBER_VARS),
-  ...Object.values(DASH_VARS),
   ...Object.values(OTHER_VARS),
 ];
 
@@ -139,15 +122,6 @@ function parseNumber(property: string, text: string, rootFontPx: number): number
   if (m[2] === "rem") return value * rootFontPx;
   if (m[2] === "s") return value * 1000;
   return value;
-}
-
-/** Parses a dash array: "6 3" -> [6, 3]. */
-function parseDash(property: string, text: string): number[] {
-  const parts = text.trim().split(/[\s,]+/).map(Number);
-  if (parts.length === 0 || parts.some((n) => !Number.isFinite(n) || n < 0)) {
-    throw new Error(`Design token ${property} is not a dash array: "${text}"`);
-  }
-  return parts;
 }
 
 /**
@@ -167,12 +141,9 @@ export function tokensFrom(lookup: (property: string) => string, rootFontPx = 16
   for (const key of Object.keys(NUMBER_VARS) as NumberKey[]) {
     numbers[key] = parseNumber(NUMBER_VARS[key], get(NUMBER_VARS[key]), rootFontPx);
   }
-  const dashes = {} as Record<DashKey, number[]>;
-  for (const key of Object.keys(DASH_VARS) as DashKey[]) dashes[key] = parseDash(DASH_VARS[key], get(DASH_VARS[key]));
   return {
     ...colours,
     ...numbers,
-    ...dashes,
     fontSans: get(OTHER_VARS.fontSans),
     lineXs: Math.ceil(numbers.fontXs * numbers.lineHeightTight),
     lineSm: Math.ceil(numbers.fontSm * numbers.lineHeightTight),

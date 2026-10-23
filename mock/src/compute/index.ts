@@ -28,7 +28,7 @@ import {
   popularityRanks,
   typicalPattern,
 } from "./patterns";
-import { TOKENS_PER_MTOK, worstProvenance } from "./pricing";
+import { TOKENS_PER_MTOK, withSource, worstProvenance } from "./pricing";
 import { addToClass, computeToday, emptyClassTotals, type TodayResult } from "./today";
 
 export { computeCore, type CoreResults } from "./core";
@@ -145,6 +145,7 @@ function describeOptions(
       quality_score: scored > 0 ? weighted / scored : null,
       meets_floors: meetsFloors,
       provenance: worstProvenance(...today.segments.map((s) => s.provenance)),
+      ...withSource(pattern.source_url),
       usd_per_mtok_by_class: {
         frontier: pricePerMtok("frontier"),
         mid: pricePerMtok("mid"),
