@@ -4,7 +4,7 @@ import { AssumptionsPanel } from "./components/AssumptionsPanel";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { HeadlineStrip } from "./components/HeadlineStrip";
-import { IntakeQuestions, IntakeSentence } from "./components/Intake";
+import { IntakeAnswers, IntakeQuestions } from "./components/Intake";
 import { KnobRail } from "./components/KnobRail";
 import { Notice } from "./components/Notice";
 import { openShareOf, ResultNotices } from "./components/ResultNotices";
@@ -296,7 +296,6 @@ export default function App() {
         <IntakeQuestions
           tables={tables}
           scenario={scenario}
-          results={results}
           company={company}
           contactUrl={CONTACT_URL}
           onCompany={setCompany}
@@ -319,7 +318,7 @@ export default function App() {
       <>
         <section className="situation card" aria-label="Your situation" ref={situationRef} tabIndex={-1}>
           {company ? (
-            <IntakeSentence tables={tables} scenario={scenario} company={company} onCompany={setCompany} onEdit={answer} />
+            <IntakeAnswers tables={tables} scenario={scenario} company={company} onCompany={setCompany} onEdit={answer} />
           ) : null}
           <details className="finetune">
             <summary>Fine-tune the assumptions</summary>

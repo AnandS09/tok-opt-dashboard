@@ -448,27 +448,6 @@ a {
   padding-top: 0;
 }
 
-.sentence {
-  font-family: var(--font-display);
-  font-size: var(--font-size-sentence);
-  line-height: 1.7;
-}
-
-/* A blank of the sentence: serif, underlined in the accent. */
-.blank {
-  max-width: 100%;
-  padding: 0 var(--space-1);
-  background: transparent;
-  color: var(--color-accent-strong);
-  border: 0;
-  border-bottom: 1px solid var(--color-accent-strong);
-  border-radius: 0;
-  font: inherit;
-  font-weight: var(--font-weight-semibold);
-  text-align: left;
-  cursor: pointer;
-}
-
 .popover {
   min-width: 240px;
   padding: var(--space-4);
