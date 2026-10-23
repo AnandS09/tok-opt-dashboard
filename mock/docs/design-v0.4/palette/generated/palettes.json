@@ -1,0 +1,3767 @@
+{
+ "P1": {
+  "name": "Complementary",
+  "scheme": "complementary, with the saving on the base's analogous neighbour",
+  "colours": {
+   "bg": "#f7f4ef",
+   "surface": "#fcfaf6",
+   "surface_muted": "#ece9e2",
+   "grid": "#e3dfd7",
+   "border": "#d6d2ca",
+   "border_strong": "#89867e",
+   "text": "#1d1c19",
+   "text_secondary": "#5c5b57",
+   "text_disabled": "#888682",
+   "section": "#7f5a43",
+   "infravana": "#006c93",
+   "infravana_text": "#005d7f",
+   "infravana_deep": "#004964",
+   "infravana_hover": "#003347",
+   "soft": "#dcedf6",
+   "saved": "#319379",
+   "saved_text": "#1e6250",
+   "comparator": "#5d1534",
+   "option1": "#8f2526",
+   "option2": "#a1592a",
+   "option3": "#b28439"
+  },
+  "spec": {
+   "bg": {
+    "L": 0.968,
+    "C_asked": 0.007,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#f7f4ef",
+    "C_actual": 0.0074
+   },
+   "surface": {
+    "L": 0.985,
+    "C_asked": 0.0049,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#fcfaf6",
+    "C_actual": 0.0057
+   },
+   "surface_muted": {
+    "L": 0.935,
+    "C_asked": 0.0098,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#ece9e2",
+    "C_actual": 0.0099
+   },
+   "grid": {
+    "L": 0.905,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#e3dfd7",
+    "C_actual": 0.0116
+   },
+   "border": {
+    "L": 0.865,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#d6d2ca",
+    "C_actual": 0.0118
+   },
+   "border_strong": {
+    "L": 0.62,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#89867e",
+    "C_actual": 0.0123
+   },
+   "text": {
+    "L": 0.225,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#1d1c19",
+    "C_actual": 0.0059
+   },
+   "text_secondary": {
+    "L": 0.47,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#5c5b57",
+    "C_actual": 0.0065
+   },
+   "text_disabled": {
+    "L": 0.62,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 85.0,
+    "hex": "#888682",
+    "C_actual": 0.0064
+   },
+   "section": {
+    "L": 0.5,
+    "C_asked": 0.06,
+    "rel": null,
+    "h": 52.0,
+    "hex": "#7f5a43",
+    "C_actual": 0.06
+   },
+   "infravana": {
+    "L": 0.5,
+    "C_asked": 0.102,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#006c93",
+    "C_actual": 0.1022
+   },
+   "infravana_text": {
+    "L": 0.45,
+    "C_asked": 0.0918,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#005d7f",
+    "C_actual": 0.0918
+   },
+   "infravana_deep": {
+    "L": 0.38,
+    "C_asked": 0.0775,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#004964",
+    "C_actual": 0.0771
+   },
+   "infravana_hover": {
+    "L": 0.3,
+    "C_asked": 0.0612,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#003347",
+    "C_actual": 0.0609
+   },
+   "soft": {
+    "L": 0.935,
+    "C_asked": 0.022,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#dcedf6",
+    "C_actual": 0.0218
+   },
+   "saved": {
+    "L": 0.6,
+    "C_asked": 0.0989,
+    "rel": 0.85,
+    "h": 172.0,
+    "hex": "#319379",
+    "C_actual": 0.099
+   },
+   "saved_text": {
+    "L": 0.45,
+    "C_asked": 0.0742,
+    "rel": 0.85,
+    "h": 172.0,
+    "hex": "#1e6250",
+    "C_actual": 0.0739
+   },
+   "comparator": {
+    "L": 0.33,
+    "C_asked": 0.1073,
+    "rel": 0.8,
+    "h": 359.0,
+    "hex": "#5d1534",
+    "C_actual": 0.1073
+   },
+   "option1": {
+    "L": 0.435,
+    "C_asked": 0.1411,
+    "rel": 0.8,
+    "h": 25.0,
+    "hex": "#8f2526",
+    "C_actual": 0.1416
+   },
+   "option2": {
+    "L": 0.54,
+    "C_asked": 0.1126,
+    "rel": 0.8,
+    "h": 51.0,
+    "hex": "#a1592a",
+    "C_actual": 0.1124
+   },
+   "option3": {
+    "L": 0.645,
+    "C_asked": 0.108,
+    "rel": 0.8,
+    "h": 77.0,
+    "hex": "#b28439",
+    "C_actual": 0.1075
+   }
+  },
+  "pairs": [
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1d1c19",
+    "fg_role": "text",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 15.53,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5b57",
+    "fg_role": "text_secondary",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 6.2,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1d1c19",
+    "fg_role": "text",
+    "bg": "#fcfaf6",
+    "bg_role": "surface",
+    "ratio": 16.35,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5b57",
+    "fg_role": "text_secondary",
+    "bg": "#fcfaf6",
+    "bg_role": "surface",
+    "ratio": 6.52,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1d1c19",
+    "fg_role": "text",
+    "bg": "#ece9e2",
+    "bg_role": "surface_muted",
+    "ratio": 14.05,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5b57",
+    "fg_role": "text_secondary",
+    "bg": "#ece9e2",
+    "bg_role": "surface_muted",
+    "ratio": 5.61,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1d1c19",
+    "fg_role": "text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 14.19,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5b57",
+    "fg_role": "text_secondary",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 5.66,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 6.66,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#fcfaf6",
+    "bg_role": "surface",
+    "ratio": 7.01,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#1e6250",
+    "fg_role": "saved_text",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 6.56,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#7f5a43",
+    "fg_role": "section",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 5.55,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#1e6250",
+    "fg_role": "saved_text",
+    "bg": "#fcfaf6",
+    "bg_role": "surface",
+    "ratio": 6.9,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#7f5a43",
+    "fg_role": "section",
+    "bg": "#fcfaf6",
+    "bg_role": "surface",
+    "ratio": 5.85,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "C10 'With InfraVana' label on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dee6e6",
+    "bg_role": "wash",
+    "ratio": 5.77,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on primary button",
+    "fg": "#fcfaf6",
+    "fg_role": "surface",
+    "bg": "#004964",
+    "bg_role": "infravana_deep",
+    "ratio": 9.43,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on hovered primary button",
+    "fg": "#fcfaf6",
+    "fg_role": "surface",
+    "bg": "#003347",
+    "bg_role": "infravana_hover",
+    "ratio": 12.88,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside comparator bar",
+    "fg": "#fcfaf6",
+    "fg_role": "@label",
+    "bg": "#5d1534",
+    "bg_role": "comparator",
+    "ratio": 12.42,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside infravana bar",
+    "fg": "#fcfaf6",
+    "fg_role": "@label",
+    "bg": "#006c93",
+    "bg_role": "infravana",
+    "ratio": 5.65,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside saved bar",
+    "fg": "#1d1c19",
+    "fg_role": "@label",
+    "bg": "#319379",
+    "bg_role": "saved",
+    "ratio": 4.53,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "infravana fill on the chart ground",
+    "fg": "#006c93",
+    "fg_role": "infravana",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 5.37,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "saved fill on the chart ground",
+    "fg": "#319379",
+    "fg_role": "saved",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 3.43,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "comparator fill on the chart ground",
+    "fg": "#5d1534",
+    "fg_role": "comparator",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 11.8,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option1 fill on the chart ground",
+    "fg": "#8f2526",
+    "fg_role": "option1",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 7.78,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option2 fill on the chart ground",
+    "fg": "#a1592a",
+    "fg_role": "option2",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 4.81,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option3 fill on the chart ground",
+    "fg": "#b28439",
+    "fg_role": "option3",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 3.06,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "InfraVana frontier line and points",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 6.66,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "budget line",
+    "fg": "#5c5b57",
+    "fg_role": "text_secondary",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 6.2,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#89867e",
+    "fg_role": "border_strong",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 3.31,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#7f5a43",
+    "fg_role": "section",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 5.55,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#89867e",
+    "fg_role": "border_strong",
+    "bg": "#fcfaf6",
+    "bg_role": "surface",
+    "ratio": 3.49,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#7f5a43",
+    "fg_role": "section",
+    "bg": "#fcfaf6",
+    "bg_role": "surface",
+    "ratio": 5.85,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "selected-row edge",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "chosen tab and primary button",
+    "fg": "#004964",
+    "fg_role": "infravana_deep",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 8.96,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "focus ring",
+    "fg": "#1d1c19",
+    "fg_role": "text",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 15.53,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 frontier line on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dee6e6",
+    "bg_role": "wash",
+    "ratio": 5.77,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 lightest Today line (2px) on the ground",
+    "fg": "#b28439",
+    "fg_role": "option3",
+    "bg": "#f7f4ef",
+    "bg_role": "bg",
+    "ratio": 3.06,
+    "needs": 3.0,
+    "pass": true
+   }
+  ],
+  "distances": [
+   {
+    "a": "comparator",
+    "b": "infravana",
+    "normal": 46.5,
+    "deuteranopia": 26.2,
+    "protanopia": 24.4,
+    "tritanopia": 57.8
+   },
+   {
+    "a": "comparator",
+    "b": "saved",
+    "normal": 61.8,
+    "deuteranopia": 26.2,
+    "protanopia": 37.8,
+    "tritanopia": 61.0
+   },
+   {
+    "a": "comparator",
+    "b": "option1",
+    "normal": 17.5,
+    "deuteranopia": 19.0,
+    "protanopia": 21.4,
+    "tritanopia": 11.9
+   },
+   {
+    "a": "comparator",
+    "b": "option2",
+    "normal": 33.1,
+    "deuteranopia": 28.5,
+    "protanopia": 34.4,
+    "tritanopia": 20.1
+   },
+   {
+    "a": "comparator",
+    "b": "option3",
+    "normal": 49.0,
+    "deuteranopia": 39.4,
+    "protanopia": 45.2,
+    "tritanopia": 32.9
+   },
+   {
+    "a": "infravana",
+    "b": "saved",
+    "normal": 28.7,
+    "deuteranopia": 24.7,
+    "protanopia": 28.6,
+    "tritanopia": 11.8
+   },
+   {
+    "a": "infravana",
+    "b": "option1",
+    "normal": 48.0,
+    "deuteranopia": 40.6,
+    "protanopia": 34.4,
+    "tritanopia": 53.5
+   },
+   {
+    "a": "infravana",
+    "b": "option2",
+    "normal": 43.3,
+    "deuteranopia": 44.6,
+    "protanopia": 39.5,
+    "tritanopia": 48.4
+   },
+   {
+    "a": "infravana",
+    "b": "option3",
+    "normal": 47.4,
+    "deuteranopia": 49.8,
+    "protanopia": 43.8,
+    "tritanopia": 45.5
+   },
+   {
+    "a": "saved",
+    "b": "option1",
+    "normal": 58.6,
+    "deuteranopia": 23.0,
+    "protanopia": 28.2,
+    "tritanopia": 62.3
+   },
+   {
+    "a": "saved",
+    "b": "option2",
+    "normal": 44.3,
+    "deuteranopia": 20.3,
+    "protanopia": 20.1,
+    "tritanopia": 54.8
+   },
+   {
+    "a": "saved",
+    "b": "option3",
+    "normal": 34.8,
+    "deuteranopia": 22.0,
+    "protanopia": 16.1,
+    "tritanopia": 47.7
+   },
+   {
+    "a": "option1",
+    "b": "option2",
+    "normal": 18.6,
+    "deuteranopia": 11.5,
+    "protanopia": 15.3,
+    "tritanopia": 11.9
+   },
+   {
+    "a": "option1",
+    "b": "option3",
+    "normal": 36.5,
+    "deuteranopia": 24.4,
+    "protanopia": 28.8,
+    "tritanopia": 25.9
+   },
+   {
+    "a": "option2",
+    "b": "option3",
+    "normal": 17.6,
+    "deuteranopia": 11.7,
+    "protanopia": 14.3,
+    "tritanopia": 13.6
+   }
+  ],
+  "ladder": [
+   {
+    "role": "comparator",
+    "hex": "#5d1534",
+    "grey": "#313131",
+    "Y": 0.0311,
+    "ratio_to_previous": null
+   },
+   {
+    "role": "option1",
+    "hex": "#8f2526",
+    "grey": "#4c4c4c",
+    "Y": 0.073,
+    "ratio_to_previous": 1.52
+   },
+   {
+    "role": "infravana",
+    "hex": "#006c93",
+    "grey": "#646464",
+    "Y": 0.1283,
+    "ratio_to_previous": 1.45
+   },
+   {
+    "role": "option2",
+    "hex": "#a1592a",
+    "grey": "#6c6c6c",
+    "Y": 0.1489,
+    "ratio_to_previous": 1.12
+   },
+   {
+    "role": "saved",
+    "hex": "#319379",
+    "grey": "#848484",
+    "Y": 0.229,
+    "ratio_to_previous": 1.4
+   },
+   {
+    "role": "option3",
+    "hex": "#b28439",
+    "grey": "#8c8c8c",
+    "Y": 0.2626,
+    "ratio_to_previous": 1.12
+   }
+  ],
+  "section_nearest": [
+   10.1,
+   "option2"
+  ]
+ },
+ "P2": {
+  "name": "Rectangle",
+  "scheme": "tetradic rectangle (two complementary pairs, 232/52 and 152/332)",
+  "colours": {
+   "bg": "#f2f5f6",
+   "surface": "#f9fafb",
+   "surface_muted": "#e7eaec",
+   "grid": "#d8e1e6",
+   "border": "#cbd4d9",
+   "border_strong": "#7f888c",
+   "text": "#191c1e",
+   "text_secondary": "#585b5e",
+   "text_disabled": "#838789",
+   "section": "#214d62",
+   "infravana": "#006c93",
+   "infravana_text": "#005d7f",
+   "infravana_deep": "#004964",
+   "infravana_hover": "#003347",
+   "soft": "#dcedf6",
+   "saved": "#349d5b",
+   "saved_text": "#1e6538",
+   "comparator": "#5f0d40",
+   "option1": "#921840",
+   "option2": "#c82521",
+   "option3": "#d86a26"
+  },
+  "spec": {
+   "bg": {
+    "L": 0.968,
+    "C_asked": 0.003,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#f2f5f6",
+    "C_actual": 0.0035
+   },
+   "surface": {
+    "L": 0.985,
+    "C_asked": 0.0021,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#f9fafb",
+    "C_actual": 0.0017
+   },
+   "surface_muted": {
+    "L": 0.935,
+    "C_asked": 0.0042,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#e7eaec",
+    "C_actual": 0.0042
+   },
+   "grid": {
+    "L": 0.905,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#d8e1e6",
+    "C_actual": 0.0119
+   },
+   "border": {
+    "L": 0.865,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#cbd4d9",
+    "C_actual": 0.012
+   },
+   "border_strong": {
+    "L": 0.62,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#7f888c",
+    "C_actual": 0.0122
+   },
+   "text": {
+    "L": 0.225,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#191c1e",
+    "C_actual": 0.006
+   },
+   "text_secondary": {
+    "L": 0.47,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#585b5e",
+    "C_actual": 0.0062
+   },
+   "text_disabled": {
+    "L": 0.62,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#838789",
+    "C_actual": 0.0056
+   },
+   "section": {
+    "L": 0.4,
+    "C_asked": 0.06,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#214d62",
+    "C_actual": 0.0599
+   },
+   "infravana": {
+    "L": 0.5,
+    "C_asked": 0.102,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#006c93",
+    "C_actual": 0.1022
+   },
+   "infravana_text": {
+    "L": 0.45,
+    "C_asked": 0.0918,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#005d7f",
+    "C_actual": 0.0918
+   },
+   "infravana_deep": {
+    "L": 0.38,
+    "C_asked": 0.0775,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#004964",
+    "C_actual": 0.0771
+   },
+   "infravana_hover": {
+    "L": 0.3,
+    "C_asked": 0.0612,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#003347",
+    "C_actual": 0.0609
+   },
+   "soft": {
+    "L": 0.935,
+    "C_asked": 0.022,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#dcedf6",
+    "C_actual": 0.0218
+   },
+   "saved": {
+    "L": 0.62,
+    "C_asked": 0.1386,
+    "rel": 0.85,
+    "h": 152.0,
+    "hex": "#349d5b",
+    "C_actual": 0.1378
+   },
+   "saved_text": {
+    "L": 0.45,
+    "C_asked": 0.1006,
+    "rel": 0.85,
+    "h": 152.0,
+    "hex": "#1e6538",
+    "C_actual": 0.1011
+   },
+   "comparator": {
+    "L": 0.33,
+    "C_asked": 0.1248,
+    "rel": 0.9,
+    "h": 348.0,
+    "hex": "#5f0d40",
+    "C_actual": 0.1242
+   },
+   "option1": {
+    "L": 0.435,
+    "C_asked": 0.1568,
+    "rel": 0.9,
+    "h": 8.0,
+    "hex": "#921840",
+    "C_actual": 0.1567
+   },
+   "option2": {
+    "L": 0.54,
+    "C_asked": 0.1986,
+    "rel": 0.9,
+    "h": 28.0,
+    "hex": "#c82521",
+    "C_actual": 0.1983
+   },
+   "option3": {
+    "L": 0.645,
+    "C_asked": 0.1581,
+    "rel": 0.9,
+    "h": 48.0,
+    "hex": "#d86a26",
+    "C_actual": 0.158
+   }
+  },
+  "pairs": [
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 15.63,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.24,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 16.39,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 6.54,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#e7eaec",
+    "bg_role": "surface_muted",
+    "ratio": 14.17,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#e7eaec",
+    "bg_role": "surface_muted",
+    "ratio": 5.66,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 14.26,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 5.69,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.67,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 7.0,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#1e6538",
+    "fg_role": "saved_text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.45,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#214d62",
+    "fg_role": "section",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 8.32,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#1e6538",
+    "fg_role": "saved_text",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 6.76,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#214d62",
+    "fg_role": "section",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 8.73,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "C10 'With InfraVana' label on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dae7ec",
+    "bg_role": "wash",
+    "ratio": 5.79,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on primary button",
+    "fg": "#f9fafb",
+    "fg_role": "surface",
+    "bg": "#004964",
+    "bg_role": "infravana_deep",
+    "ratio": 9.4,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on hovered primary button",
+    "fg": "#f9fafb",
+    "fg_role": "surface",
+    "bg": "#003347",
+    "bg_role": "infravana_hover",
+    "ratio": 12.84,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside comparator bar",
+    "fg": "#f9fafb",
+    "fg_role": "@label",
+    "bg": "#5f0d40",
+    "bg_role": "comparator",
+    "ratio": 12.42,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside infravana bar",
+    "fg": "#f9fafb",
+    "fg_role": "@label",
+    "bg": "#006c93",
+    "bg_role": "infravana",
+    "ratio": 5.63,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside saved bar",
+    "fg": "#191c1e",
+    "fg_role": "@label",
+    "bg": "#349d5b",
+    "bg_role": "saved",
+    "ratio": 4.99,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "infravana fill on the chart ground",
+    "fg": "#006c93",
+    "fg_role": "infravana",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 5.37,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "saved fill on the chart ground",
+    "fg": "#349d5b",
+    "fg_role": "saved",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.13,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "comparator fill on the chart ground",
+    "fg": "#5f0d40",
+    "fg_role": "comparator",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 11.84,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option1 fill on the chart ground",
+    "fg": "#921840",
+    "fg_role": "option1",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 7.9,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option2 fill on the chart ground",
+    "fg": "#c82521",
+    "fg_role": "option2",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 5.12,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option3 fill on the chart ground",
+    "fg": "#d86a26",
+    "fg_role": "option3",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.19,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "InfraVana frontier line and points",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.67,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "budget line",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.24,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#7f888c",
+    "fg_role": "border_strong",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.3,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#214d62",
+    "fg_role": "section",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 8.32,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#7f888c",
+    "fg_role": "border_strong",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 3.46,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#214d62",
+    "fg_role": "section",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 8.73,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "selected-row edge",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "chosen tab and primary button",
+    "fg": "#004964",
+    "fg_role": "infravana_deep",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 8.97,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "focus ring",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 15.63,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 frontier line on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dae7ec",
+    "bg_role": "wash",
+    "ratio": 5.79,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 lightest Today line (2px) on the ground",
+    "fg": "#d86a26",
+    "fg_role": "option3",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.19,
+    "needs": 3.0,
+    "pass": true
+   }
+  ],
+  "distances": [
+   {
+    "a": "comparator",
+    "b": "infravana",
+    "normal": 46.2,
+    "deuteranopia": 20.2,
+    "protanopia": 23.1,
+    "tritanopia": 57.5
+   },
+   {
+    "a": "comparator",
+    "b": "saved",
+    "normal": 72.5,
+    "deuteranopia": 36.1,
+    "protanopia": 50.6,
+    "tritanopia": 64.4
+   },
+   {
+    "a": "comparator",
+    "b": "option1",
+    "normal": 13.4,
+    "deuteranopia": 19.4,
+    "protanopia": 11.8,
+    "tritanopia": 12.4
+   },
+   {
+    "a": "comparator",
+    "b": "option2",
+    "normal": 31.4,
+    "deuteranopia": 36.6,
+    "protanopia": 36.1,
+    "tritanopia": 25.7
+   },
+   {
+    "a": "comparator",
+    "b": "option3",
+    "normal": 46.6,
+    "deuteranopia": 46.4,
+    "protanopia": 48.5,
+    "tritanopia": 32.5
+   },
+   {
+    "a": "infravana",
+    "b": "saved",
+    "normal": 40.7,
+    "deuteranopia": 40.1,
+    "protanopia": 40.9,
+    "tritanopia": 14.7
+   },
+   {
+    "a": "infravana",
+    "b": "option1",
+    "normal": 49.5,
+    "deuteranopia": 32.2,
+    "protanopia": 21.3,
+    "tritanopia": 53.7
+   },
+   {
+    "a": "infravana",
+    "b": "option2",
+    "normal": 51.5,
+    "deuteranopia": 47.1,
+    "protanopia": 38.7,
+    "tritanopia": 54.8
+   },
+   {
+    "a": "infravana",
+    "b": "option3",
+    "normal": 49.7,
+    "deuteranopia": 52.5,
+    "protanopia": 44.0,
+    "tritanopia": 54.8
+   },
+   {
+    "a": "saved",
+    "b": "option1",
+    "normal": 71.5,
+    "deuteranopia": 20.2,
+    "protanopia": 39.1,
+    "tritanopia": 65.1
+   },
+   {
+    "a": "saved",
+    "b": "option2",
+    "normal": 67.1,
+    "deuteranopia": 12.5,
+    "protanopia": 24.7,
+    "tritanopia": 63.9
+   },
+   {
+    "a": "saved",
+    "b": "option3",
+    "normal": 52.6,
+    "deuteranopia": 12.9,
+    "protanopia": 10.1,
+    "tritanopia": 61.8
+   },
+   {
+    "a": "option1",
+    "b": "option2",
+    "normal": 19.1,
+    "deuteranopia": 18.5,
+    "protanopia": 23.2,
+    "tritanopia": 13.7
+   },
+   {
+    "a": "option1",
+    "b": "option3",
+    "normal": 35.7,
+    "deuteranopia": 29.7,
+    "protanopia": 35.4,
+    "tritanopia": 22.3
+   },
+   {
+    "a": "option2",
+    "b": "option3",
+    "normal": 19.1,
+    "deuteranopia": 11.7,
+    "protanopia": 16.8,
+    "tritanopia": 12.4
+   }
+  ],
+  "ladder": [
+   {
+    "role": "comparator",
+    "hex": "#5f0d40",
+    "grey": "#313131",
+    "Y": 0.0309,
+    "ratio_to_previous": null
+   },
+   {
+    "role": "option1",
+    "hex": "#921840",
+    "grey": "#4c4c4c",
+    "Y": 0.0713,
+    "ratio_to_previous": 1.5
+   },
+   {
+    "role": "infravana",
+    "hex": "#006c93",
+    "grey": "#646464",
+    "Y": 0.1283,
+    "ratio_to_previous": 1.47
+   },
+   {
+    "role": "option2",
+    "hex": "#c82521",
+    "grey": "#686868",
+    "Y": 0.1371,
+    "ratio_to_previous": 1.05
+   },
+   {
+    "role": "option3",
+    "hex": "#d86a26",
+    "grey": "#898989",
+    "Y": 0.2505,
+    "ratio_to_previous": 1.61
+   },
+   {
+    "role": "saved",
+    "hex": "#349d5b",
+    "grey": "#8a8a8a",
+    "Y": 0.256,
+    "ratio_to_previous": 1.02
+   }
+  ],
+  "section_nearest": [
+   11.4,
+   "infravana"
+  ]
+ },
+ "12A": {
+  "name": "Daybreak, as drawn in the first boards (not generated)",
+  "colours": {
+   "bg": "#f6f4ef",
+   "surface": "#fbfaf6",
+   "surface_muted": "#eeebe3",
+   "grid": "#e4e0d7",
+   "border": "#d6d1c7",
+   "border_strong": "#8a867f",
+   "text": "#1c1c1a",
+   "text_secondary": "#5c5a55",
+   "text_disabled": "#8a867f",
+   "section": "#9a422d",
+   "infravana": "#21678e",
+   "infravana_text": "#1d587a",
+   "infravana_deep": "#184661",
+   "infravana_hover": "#12364b",
+   "soft": "#dfe9ee",
+   "saved": "#2d9a72",
+   "saved_text": "#12664a",
+   "comparator": "#642640",
+   "option1": "#8e3021",
+   "option2": "#bf581b",
+   "option3": "#b9810f"
+  },
+  "spec": null,
+  "pairs": [
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1c1c1a",
+    "fg_role": "text",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 15.53,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5a55",
+    "fg_role": "text_secondary",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 6.27,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1c1c1a",
+    "fg_role": "text",
+    "bg": "#fbfaf6",
+    "bg_role": "surface",
+    "ratio": 16.34,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5a55",
+    "fg_role": "text_secondary",
+    "bg": "#fbfaf6",
+    "bg_role": "surface",
+    "ratio": 6.6,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1c1c1a",
+    "fg_role": "text",
+    "bg": "#eeebe3",
+    "bg_role": "surface_muted",
+    "ratio": 14.33,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5a55",
+    "fg_role": "text_secondary",
+    "bg": "#eeebe3",
+    "bg_role": "surface_muted",
+    "ratio": 5.78,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#1c1c1a",
+    "fg_role": "text",
+    "bg": "#dfe9ee",
+    "bg_role": "soft",
+    "ratio": 13.84,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#5c5a55",
+    "fg_role": "text_secondary",
+    "bg": "#dfe9ee",
+    "bg_role": "soft",
+    "ratio": 5.59,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#1d587a",
+    "fg_role": "infravana_text",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 7.0,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#1d587a",
+    "fg_role": "infravana_text",
+    "bg": "#fbfaf6",
+    "bg_role": "surface",
+    "ratio": 7.37,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#1d587a",
+    "fg_role": "infravana_text",
+    "bg": "#dfe9ee",
+    "bg_role": "soft",
+    "ratio": 6.24,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#12664a",
+    "fg_role": "saved_text",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 6.32,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#9a422d",
+    "fg_role": "section",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 5.99,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#12664a",
+    "fg_role": "saved_text",
+    "bg": "#fbfaf6",
+    "bg_role": "surface",
+    "ratio": 6.65,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#9a422d",
+    "fg_role": "section",
+    "bg": "#fbfaf6",
+    "bg_role": "surface",
+    "ratio": 6.3,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "C10 'With InfraVana' label on the wash",
+    "fg": "#1d587a",
+    "fg_role": "infravana_text",
+    "bg": "#e1e6e5",
+    "bg_role": "wash",
+    "ratio": 6.1,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on primary button",
+    "fg": "#fbfaf6",
+    "fg_role": "surface",
+    "bg": "#184661",
+    "bg_role": "infravana_deep",
+    "ratio": 9.63,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on hovered primary button",
+    "fg": "#fbfaf6",
+    "fg_role": "surface",
+    "bg": "#12364b",
+    "bg_role": "infravana_hover",
+    "ratio": 12.15,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside comparator bar",
+    "fg": "#fbfaf6",
+    "fg_role": "@label",
+    "bg": "#642640",
+    "bg_role": "comparator",
+    "ratio": 10.62,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside infravana bar",
+    "fg": "#fbfaf6",
+    "fg_role": "@label",
+    "bg": "#21678e",
+    "bg_role": "infravana",
+    "ratio": 5.92,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside saved bar",
+    "fg": "#1c1c1a",
+    "fg_role": "@label",
+    "bg": "#2d9a72",
+    "bg_role": "saved",
+    "ratio": 4.86,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "infravana fill on the chart ground",
+    "fg": "#21678e",
+    "fg_role": "infravana",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 5.63,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "saved fill on the chart ground",
+    "fg": "#2d9a72",
+    "fg_role": "saved",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 3.2,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "comparator fill on the chart ground",
+    "fg": "#642640",
+    "fg_role": "comparator",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 10.09,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option1 fill on the chart ground",
+    "fg": "#8e3021",
+    "fg_role": "option1",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 7.36,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option2 fill on the chart ground",
+    "fg": "#bf581b",
+    "fg_role": "option2",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 4.13,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option3 fill on the chart ground",
+    "fg": "#b9810f",
+    "fg_role": "option3",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 3.08,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "InfraVana frontier line and points",
+    "fg": "#1d587a",
+    "fg_role": "infravana_text",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 7.0,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "budget line",
+    "fg": "#5c5a55",
+    "fg_role": "text_secondary",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 6.27,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#8a867f",
+    "fg_role": "border_strong",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 3.3,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#9a422d",
+    "fg_role": "section",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 5.99,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#8a867f",
+    "fg_role": "border_strong",
+    "bg": "#fbfaf6",
+    "bg_role": "surface",
+    "ratio": 3.47,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#9a422d",
+    "fg_role": "section",
+    "bg": "#fbfaf6",
+    "bg_role": "surface",
+    "ratio": 6.3,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "selected-row edge",
+    "fg": "#1d587a",
+    "fg_role": "infravana_text",
+    "bg": "#dfe9ee",
+    "bg_role": "soft",
+    "ratio": 6.24,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "chosen tab and primary button",
+    "fg": "#184661",
+    "fg_role": "infravana_deep",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 9.15,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "focus ring",
+    "fg": "#1c1c1a",
+    "fg_role": "text",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 15.53,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 frontier line on the wash",
+    "fg": "#1d587a",
+    "fg_role": "infravana_text",
+    "bg": "#e1e6e5",
+    "bg_role": "wash",
+    "ratio": 6.1,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 lightest Today line (2px) on the ground",
+    "fg": "#b9810f",
+    "fg_role": "option3",
+    "bg": "#f6f4ef",
+    "bg_role": "bg",
+    "ratio": 3.08,
+    "needs": 3.0,
+    "pass": true
+   }
+  ],
+  "distances": [
+   {
+    "a": "comparator",
+    "b": "infravana",
+    "normal": 39.9,
+    "deuteranopia": 21.5,
+    "protanopia": 19.8,
+    "tritanopia": 54.0
+   },
+   {
+    "a": "comparator",
+    "b": "saved",
+    "normal": 62.2,
+    "deuteranopia": 26.4,
+    "protanopia": 39.6,
+    "tritanopia": 59.4
+   },
+   {
+    "a": "comparator",
+    "b": "option1",
+    "normal": 19.9,
+    "deuteranopia": 20.3,
+    "protanopia": 24.6,
+    "tritanopia": 10.7
+   },
+   {
+    "a": "comparator",
+    "b": "option2",
+    "normal": 35.2,
+    "deuteranopia": 33.0,
+    "protanopia": 36.7,
+    "tritanopia": 22.6
+   },
+   {
+    "a": "comparator",
+    "b": "option3",
+    "normal": 49.4,
+    "deuteranopia": 39.5,
+    "protanopia": 44.9,
+    "tritanopia": 29.6
+   },
+   {
+    "a": "infravana",
+    "b": "saved",
+    "normal": 34.8,
+    "deuteranopia": 31.7,
+    "protanopia": 34.9,
+    "tritanopia": 15.8
+   },
+   {
+    "a": "infravana",
+    "b": "option1",
+    "normal": 43.5,
+    "deuteranopia": 40.7,
+    "protanopia": 36.3,
+    "tritanopia": 51.6
+   },
+   {
+    "a": "infravana",
+    "b": "option2",
+    "normal": 45.7,
+    "deuteranopia": 48.4,
+    "protanopia": 42.5,
+    "tritanopia": 52.6
+   },
+   {
+    "a": "infravana",
+    "b": "option3",
+    "normal": 51.2,
+    "deuteranopia": 52.3,
+    "protanopia": 46.8,
+    "tritanopia": 47.4
+   },
+   {
+    "a": "saved",
+    "b": "option1",
+    "normal": 58.4,
+    "deuteranopia": 21.8,
+    "protanopia": 29.0,
+    "tritanopia": 62.7
+   },
+   {
+    "a": "saved",
+    "b": "option2",
+    "normal": 51.4,
+    "deuteranopia": 18.5,
+    "protanopia": 19.4,
+    "tritanopia": 60.5
+   },
+   {
+    "a": "saved",
+    "b": "option3",
+    "normal": 37.8,
+    "deuteranopia": 20.3,
+    "protanopia": 15.9,
+    "tritanopia": 50.8
+   },
+   {
+    "a": "option1",
+    "b": "option2",
+    "normal": 17.6,
+    "deuteranopia": 16.6,
+    "protanopia": 16.1,
+    "tritanopia": 14.2
+   },
+   {
+    "a": "option1",
+    "b": "option3",
+    "normal": 34.2,
+    "deuteranopia": 24.4,
+    "protanopia": 27.1,
+    "tritanopia": 23.9
+   },
+   {
+    "a": "option2",
+    "b": "option3",
+    "normal": 18.9,
+    "deuteranopia": 6.7,
+    "protanopia": 11.5,
+    "tritanopia": 11.2
+   }
+  ],
+  "ladder": [
+   {
+    "role": "comparator",
+    "hex": "#642640",
+    "grey": "#3c3c3c",
+    "Y": 0.0447,
+    "ratio_to_previous": null
+   },
+   {
+    "role": "option1",
+    "hex": "#8e3021",
+    "grey": "#505050",
+    "Y": 0.0797,
+    "ratio_to_previous": 1.37
+   },
+   {
+    "role": "infravana",
+    "hex": "#21678e",
+    "grey": "#616161",
+    "Y": 0.1198,
+    "ratio_to_previous": 1.31
+   },
+   {
+    "role": "option2",
+    "hex": "#bf581b",
+    "grey": "#767676",
+    "Y": 0.1813,
+    "ratio_to_previous": 1.36
+   },
+   {
+    "role": "saved",
+    "hex": "#2d9a72",
+    "grey": "#898989",
+    "Y": 0.2488,
+    "ratio_to_previous": 1.29
+   },
+   {
+    "role": "option3",
+    "hex": "#b9810f",
+    "grey": "#8c8c8c",
+    "Y": 0.2605,
+    "ratio_to_previous": 1.04
+   }
+  ],
+  "section_nearest": [
+   5.0,
+   "option1"
+  ]
+ },
+ "R-triad": {
+  "name": "rejected: Triad 232/352/112 (Today around 352, saving at 112)",
+  "scheme": "triadic",
+  "colours": {
+   "bg": "#f2f5f6",
+   "surface": "#f9fafb",
+   "surface_muted": "#e7eaec",
+   "grid": "#d8e1e6",
+   "border": "#cbd4d9",
+   "border_strong": "#7f888c",
+   "text": "#191c1e",
+   "text_secondary": "#585b5e",
+   "text_disabled": "#838789",
+   "section": "#3e6980",
+   "infravana": "#006c93",
+   "infravana_text": "#005d7f",
+   "infravana_deep": "#004964",
+   "infravana_hover": "#003347",
+   "soft": "#dcedf6",
+   "saved": "#82862b",
+   "saved_text": "#575a1a",
+   "comparator": "#611d53",
+   "option1": "#902d60",
+   "option2": "#c13e63",
+   "option3": "#e85f61"
+  },
+  "spec": {
+   "bg": {
+    "L": 0.968,
+    "C_asked": 0.003,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#f2f5f6",
+    "C_actual": 0.0035
+   },
+   "surface": {
+    "L": 0.985,
+    "C_asked": 0.0021,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#f9fafb",
+    "C_actual": 0.0017
+   },
+   "surface_muted": {
+    "L": 0.935,
+    "C_asked": 0.0042,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#e7eaec",
+    "C_actual": 0.0042
+   },
+   "grid": {
+    "L": 0.905,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#d8e1e6",
+    "C_actual": 0.0119
+   },
+   "border": {
+    "L": 0.865,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#cbd4d9",
+    "C_actual": 0.012
+   },
+   "border_strong": {
+    "L": 0.62,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#7f888c",
+    "C_actual": 0.0122
+   },
+   "text": {
+    "L": 0.225,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#191c1e",
+    "C_actual": 0.006
+   },
+   "text_secondary": {
+    "L": 0.47,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#585b5e",
+    "C_actual": 0.0062
+   },
+   "text_disabled": {
+    "L": 0.62,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#838789",
+    "C_actual": 0.0056
+   },
+   "section": {
+    "L": 0.5,
+    "C_asked": 0.06,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#3e6980",
+    "C_actual": 0.0603
+   },
+   "infravana": {
+    "L": 0.5,
+    "C_asked": 0.102,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#006c93",
+    "C_actual": 0.1022
+   },
+   "infravana_text": {
+    "L": 0.45,
+    "C_asked": 0.0918,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#005d7f",
+    "C_actual": 0.0918
+   },
+   "infravana_deep": {
+    "L": 0.38,
+    "C_asked": 0.0775,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#004964",
+    "C_actual": 0.0771
+   },
+   "infravana_hover": {
+    "L": 0.3,
+    "C_asked": 0.0612,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#003347",
+    "C_actual": 0.0609
+   },
+   "soft": {
+    "L": 0.935,
+    "C_asked": 0.022,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#dcedf6",
+    "C_actual": 0.0218
+   },
+   "saved": {
+    "L": 0.6,
+    "C_asked": 0.1129,
+    "rel": 0.85,
+    "h": 112.0,
+    "hex": "#82862b",
+    "C_actual": 0.1126
+   },
+   "saved_text": {
+    "L": 0.45,
+    "C_asked": 0.0847,
+    "rel": 0.85,
+    "h": 112.0,
+    "hex": "#575a1a",
+    "C_actual": 0.085
+   },
+   "comparator": {
+    "L": 0.36,
+    "C_asked": 0.1189,
+    "rel": 0.75,
+    "h": 337.0,
+    "hex": "#611d53",
+    "C_actual": 0.1189
+   },
+   "option1": {
+    "L": 0.46,
+    "C_asked": 0.143,
+    "rel": 0.75,
+    "h": 352.0,
+    "hex": "#902d60",
+    "C_actual": 0.1427
+   },
+   "option2": {
+    "L": 0.56,
+    "C_asked": 0.1684,
+    "rel": 0.75,
+    "h": 7.0,
+    "hex": "#c13e63",
+    "C_actual": 0.1682
+   },
+   "option3": {
+    "L": 0.66,
+    "C_asked": 0.1702,
+    "rel": 0.75,
+    "h": 22.0,
+    "hex": "#e85f61",
+    "C_actual": 0.1705
+   }
+  },
+  "pairs": [
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 15.63,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.24,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 16.39,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 6.54,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#e7eaec",
+    "bg_role": "surface_muted",
+    "ratio": 14.17,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#e7eaec",
+    "bg_role": "surface_muted",
+    "ratio": 5.66,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 14.26,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 5.69,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.67,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 7.0,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#575a1a",
+    "fg_role": "saved_text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.65,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#3e6980",
+    "fg_role": "section",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 5.42,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#575a1a",
+    "fg_role": "saved_text",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 6.97,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#3e6980",
+    "fg_role": "section",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 5.68,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "C10 'With InfraVana' label on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dae7ec",
+    "bg_role": "wash",
+    "ratio": 5.79,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on primary button",
+    "fg": "#f9fafb",
+    "fg_role": "surface",
+    "bg": "#004964",
+    "bg_role": "infravana_deep",
+    "ratio": 9.4,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on hovered primary button",
+    "fg": "#f9fafb",
+    "fg_role": "surface",
+    "bg": "#003347",
+    "bg_role": "infravana_hover",
+    "ratio": 12.84,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside comparator bar",
+    "fg": "#f9fafb",
+    "fg_role": "@label",
+    "bg": "#611d53",
+    "bg_role": "comparator",
+    "ratio": 11.11,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside infravana bar",
+    "fg": "#f9fafb",
+    "fg_role": "@label",
+    "bg": "#006c93",
+    "bg_role": "infravana",
+    "ratio": 5.63,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside saved bar",
+    "fg": "#191c1e",
+    "fg_role": "@label",
+    "bg": "#82862b",
+    "bg_role": "saved",
+    "ratio": 4.4,
+    "needs": 4.5,
+    "pass": false
+   },
+   {
+    "kind": "mark",
+    "pair": "infravana fill on the chart ground",
+    "fg": "#006c93",
+    "fg_role": "infravana",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 5.37,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "saved fill on the chart ground",
+    "fg": "#82862b",
+    "fg_role": "saved",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.55,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "comparator fill on the chart ground",
+    "fg": "#611d53",
+    "fg_role": "comparator",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 10.6,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option1 fill on the chart ground",
+    "fg": "#902d60",
+    "fg_role": "option1",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 7.02,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option2 fill on the chart ground",
+    "fg": "#c13e63",
+    "fg_role": "option2",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 4.63,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option3 fill on the chart ground",
+    "fg": "#e85f61",
+    "fg_role": "option3",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.07,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "InfraVana frontier line and points",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.67,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "budget line",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 6.24,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#7f888c",
+    "fg_role": "border_strong",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.3,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#3e6980",
+    "fg_role": "section",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 5.42,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#7f888c",
+    "fg_role": "border_strong",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 3.46,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#3e6980",
+    "fg_role": "section",
+    "bg": "#f9fafb",
+    "bg_role": "surface",
+    "ratio": 5.68,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "selected-row edge",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "chosen tab and primary button",
+    "fg": "#004964",
+    "fg_role": "infravana_deep",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 8.97,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "focus ring",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 15.63,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 frontier line on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dae7ec",
+    "bg_role": "wash",
+    "ratio": 5.79,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 lightest Today line (2px) on the ground",
+    "fg": "#e85f61",
+    "fg_role": "option3",
+    "bg": "#f2f5f6",
+    "bg_role": "bg",
+    "ratio": 3.07,
+    "needs": 3.0,
+    "pass": true
+   }
+  ],
+  "distances": [
+   {
+    "a": "comparator",
+    "b": "infravana",
+    "normal": 41.9,
+    "deuteranopia": 14.8,
+    "protanopia": 19.6,
+    "tritanopia": 53.8
+   },
+   {
+    "a": "comparator",
+    "b": "saved",
+    "normal": 61.1,
+    "deuteranopia": 43.7,
+    "protanopia": 51.4,
+    "tritanopia": 32.9
+   },
+   {
+    "a": "comparator",
+    "b": "option1",
+    "normal": 10.9,
+    "deuteranopia": 13.2,
+    "protanopia": 8.1,
+    "tritanopia": 11.1
+   },
+   {
+    "a": "comparator",
+    "b": "option2",
+    "normal": 23.5,
+    "deuteranopia": 31.5,
+    "protanopia": 19.4,
+    "tritanopia": 22.2
+   },
+   {
+    "a": "comparator",
+    "b": "option3",
+    "normal": 37.9,
+    "deuteranopia": 46.7,
+    "protanopia": 38.8,
+    "tritanopia": 33.4
+   },
+   {
+    "a": "infravana",
+    "b": "saved",
+    "normal": 47.5,
+    "deuteranopia": 47.1,
+    "protanopia": 44.8,
+    "tritanopia": 28.4
+   },
+   {
+    "a": "infravana",
+    "b": "option1",
+    "normal": 45.8,
+    "deuteranopia": 16.4,
+    "protanopia": 13.4,
+    "tritanopia": 57.1
+   },
+   {
+    "a": "infravana",
+    "b": "option2",
+    "normal": 49.9,
+    "deuteranopia": 33.2,
+    "protanopia": 14.1,
+    "tritanopia": 61.6
+   },
+   {
+    "a": "infravana",
+    "b": "option3",
+    "normal": 52.1,
+    "deuteranopia": 46.3,
+    "protanopia": 30.5,
+    "tritanopia": 57.4
+   },
+   {
+    "a": "saved",
+    "b": "option1",
+    "normal": 57.6,
+    "deuteranopia": 30.3,
+    "protanopia": 43.8,
+    "tritanopia": 29.1
+   },
+   {
+    "a": "saved",
+    "b": "option2",
+    "normal": 53.2,
+    "deuteranopia": 13.7,
+    "protanopia": 31.2,
+    "tritanopia": 27.1
+   },
+   {
+    "a": "saved",
+    "b": "option3",
+    "normal": 46.9,
+    "deuteranopia": 8.7,
+    "protanopia": 14.7,
+    "tritanopia": 27.2
+   },
+   {
+    "a": "option1",
+    "b": "option2",
+    "normal": 12.9,
+    "deuteranopia": 17.9,
+    "protanopia": 11.6,
+    "tritanopia": 11.4
+   },
+   {
+    "a": "option1",
+    "b": "option3",
+    "normal": 28.0,
+    "deuteranopia": 32.7,
+    "protanopia": 31.1,
+    "tritanopia": 23.2
+   },
+   {
+    "a": "option2",
+    "b": "option3",
+    "normal": 15.0,
+    "deuteranopia": 14.1,
+    "protanopia": 18.9,
+    "tritanopia": 11.5
+   }
+  ],
+  "ladder": [
+   {
+    "role": "comparator",
+    "hex": "#611d53",
+    "grey": "#393939",
+    "Y": 0.0404,
+    "ratio_to_previous": null
+   },
+   {
+    "role": "option1",
+    "hex": "#902d60",
+    "grey": "#535353",
+    "Y": 0.0865,
+    "ratio_to_previous": 1.51
+   },
+   {
+    "role": "infravana",
+    "hex": "#006c93",
+    "grey": "#646464",
+    "Y": 0.1283,
+    "ratio_to_previous": 1.31
+   },
+   {
+    "role": "option2",
+    "hex": "#c13e63",
+    "grey": "#6e6e6e",
+    "Y": 0.1568,
+    "ratio_to_previous": 1.16
+   },
+   {
+    "role": "saved",
+    "hex": "#82862b",
+    "grey": "#818181",
+    "Y": 0.2197,
+    "ratio_to_previous": 1.3
+   },
+   {
+    "role": "option3",
+    "hex": "#e85f61",
+    "grey": "#8c8c8c",
+    "Y": 0.262,
+    "ratio_to_previous": 1.16
+   }
+  ],
+  "section_nearest": [
+   5.4,
+   "infravana"
+  ]
+ },
+ "R-analogous": {
+  "name": "rejected: Analogous Today (172 to 292) with a gold saving (complement)",
+  "scheme": "analogous with a complement",
+  "colours": {
+   "bg": "#f1f5f8",
+   "surface": "#f7fbfc",
+   "surface_muted": "#e4ebee",
+   "grid": "#d8e1e6",
+   "border": "#cbd4d9",
+   "border_strong": "#7f888c",
+   "text": "#191c1e",
+   "text_secondary": "#585b5e",
+   "text_disabled": "#838789",
+   "section": "#356e72",
+   "infravana": "#006c93",
+   "infravana_text": "#005d7f",
+   "infravana_deep": "#004964",
+   "infravana_hover": "#003347",
+   "soft": "#dcedf6",
+   "saved": "#b07a2d",
+   "saved_text": "#714d1a",
+   "comparator": "#173d32",
+   "option1": "#3e35bc",
+   "option2": "#367b80",
+   "option3": "#9179e4"
+  },
+  "spec": {
+   "bg": {
+    "L": 0.968,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#f1f5f8",
+    "C_actual": 0.0059
+   },
+   "surface": {
+    "L": 0.985,
+    "C_asked": 0.0042,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#f7fbfc",
+    "C_actual": 0.0045
+   },
+   "surface_muted": {
+    "L": 0.935,
+    "C_asked": 0.0084,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#e4ebee",
+    "C_actual": 0.0085
+   },
+   "grid": {
+    "L": 0.905,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#d8e1e6",
+    "C_actual": 0.0119
+   },
+   "border": {
+    "L": 0.865,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#cbd4d9",
+    "C_actual": 0.012
+   },
+   "border_strong": {
+    "L": 0.62,
+    "C_asked": 0.012,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#7f888c",
+    "C_actual": 0.0122
+   },
+   "text": {
+    "L": 0.225,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#191c1e",
+    "C_actual": 0.006
+   },
+   "text_secondary": {
+    "L": 0.47,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#585b5e",
+    "C_actual": 0.0062
+   },
+   "text_disabled": {
+    "L": 0.62,
+    "C_asked": 0.006,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#838789",
+    "C_actual": 0.0056
+   },
+   "section": {
+    "L": 0.5,
+    "C_asked": 0.06,
+    "rel": null,
+    "h": 202.0,
+    "hex": "#356e72",
+    "C_actual": 0.06
+   },
+   "infravana": {
+    "L": 0.5,
+    "C_asked": 0.102,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#006c93",
+    "C_actual": 0.1022
+   },
+   "infravana_text": {
+    "L": 0.45,
+    "C_asked": 0.0918,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#005d7f",
+    "C_actual": 0.0918
+   },
+   "infravana_deep": {
+    "L": 0.38,
+    "C_asked": 0.0775,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#004964",
+    "C_actual": 0.0771
+   },
+   "infravana_hover": {
+    "L": 0.3,
+    "C_asked": 0.0612,
+    "rel": 1.0,
+    "h": 232.0,
+    "hex": "#003347",
+    "C_actual": 0.0609
+   },
+   "soft": {
+    "L": 0.935,
+    "C_asked": 0.022,
+    "rel": null,
+    "h": 232.0,
+    "hex": "#dcedf6",
+    "C_actual": 0.0218
+   },
+   "saved": {
+    "L": 0.62,
+    "C_asked": 0.1128,
+    "rel": 0.85,
+    "h": 72.0,
+    "hex": "#b07a2d",
+    "C_actual": 0.1131
+   },
+   "saved_text": {
+    "L": 0.45,
+    "C_asked": 0.0819,
+    "rel": 0.85,
+    "h": 72.0,
+    "hex": "#714d1a",
+    "C_actual": 0.0816
+   },
+   "comparator": {
+    "L": 0.33,
+    "C_asked": 0.048,
+    "rel": 0.75,
+    "h": 172.0,
+    "hex": "#173d32",
+    "C_actual": 0.0479
+   },
+   "option1": {
+    "L": 0.435,
+    "C_asked": 0.2019,
+    "rel": 0.75,
+    "h": 277.0,
+    "hex": "#3e35bc",
+    "C_actual": 0.2017
+   },
+   "option2": {
+    "L": 0.54,
+    "C_asked": 0.0689,
+    "rel": 0.75,
+    "h": 202.0,
+    "hex": "#367b80",
+    "C_actual": 0.0694
+   },
+   "option3": {
+    "L": 0.645,
+    "C_asked": 0.1562,
+    "rel": 0.75,
+    "h": 292.0,
+    "hex": "#9179e4",
+    "C_actual": 0.1561
+   }
+  },
+  "pairs": [
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 15.62,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 6.23,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f7fbfc",
+    "bg_role": "surface",
+    "ratio": 16.44,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f7fbfc",
+    "bg_role": "surface",
+    "ratio": 6.56,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#e4ebee",
+    "bg_role": "surface_muted",
+    "ratio": 14.2,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#e4ebee",
+    "bg_role": "surface_muted",
+    "ratio": 5.67,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "body text",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 14.26,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "secondary text",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 5.69,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 6.67,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f7fbfc",
+    "bg_role": "surface",
+    "ratio": 7.02,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "InfraVana text, links of the brand",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#714d1a",
+    "fg_role": "saved_text",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 6.89,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#356e72",
+    "fg_role": "section",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 5.28,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "saving figure",
+    "fg": "#714d1a",
+    "fg_role": "saved_text",
+    "bg": "#f7fbfc",
+    "bg_role": "surface",
+    "ratio": 7.26,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "section label (step, kicker)",
+    "fg": "#356e72",
+    "fg_role": "section",
+    "bg": "#f7fbfc",
+    "bg_role": "surface",
+    "ratio": 5.56,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "C10 'With InfraVana' label on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#d9e7ee",
+    "bg_role": "wash",
+    "ratio": 5.78,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on primary button",
+    "fg": "#f7fbfc",
+    "fg_role": "surface",
+    "bg": "#004964",
+    "bg_role": "infravana_deep",
+    "ratio": 9.43,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "label on hovered primary button",
+    "fg": "#f7fbfc",
+    "fg_role": "surface",
+    "bg": "#003347",
+    "bg_role": "infravana_hover",
+    "ratio": 12.89,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside comparator bar",
+    "fg": "#f7fbfc",
+    "fg_role": "@label",
+    "bg": "#173d32",
+    "bg_role": "comparator",
+    "ratio": 11.52,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside infravana bar",
+    "fg": "#f7fbfc",
+    "fg_role": "@label",
+    "bg": "#006c93",
+    "bg_role": "infravana",
+    "ratio": 5.65,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "text",
+    "pair": "chip label inside saved bar",
+    "fg": "#191c1e",
+    "fg_role": "@label",
+    "bg": "#b07a2d",
+    "bg_role": "saved",
+    "ratio": 4.62,
+    "needs": 4.5,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "infravana fill on the chart ground",
+    "fg": "#006c93",
+    "fg_role": "infravana",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 5.37,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "saved fill on the chart ground",
+    "fg": "#b07a2d",
+    "fg_role": "saved",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 3.38,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "comparator fill on the chart ground",
+    "fg": "#173d32",
+    "fg_role": "comparator",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 10.95,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option1 fill on the chart ground",
+    "fg": "#3e35bc",
+    "fg_role": "option1",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 7.85,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option2 fill on the chart ground",
+    "fg": "#367b80",
+    "fg_role": "option2",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 4.45,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "option3 fill on the chart ground",
+    "fg": "#9179e4",
+    "fg_role": "option3",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 3.16,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "InfraVana frontier line and points",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 6.67,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "budget line",
+    "fg": "#585b5e",
+    "fg_role": "text_secondary",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 6.23,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#7f888c",
+    "fg_role": "border_strong",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 3.3,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#356e72",
+    "fg_role": "section",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 5.28,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "input, chip and axis border",
+    "fg": "#7f888c",
+    "fg_role": "border_strong",
+    "bg": "#f7fbfc",
+    "bg_role": "surface",
+    "ratio": 3.47,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "section rule",
+    "fg": "#356e72",
+    "fg_role": "section",
+    "bg": "#f7fbfc",
+    "bg_role": "surface",
+    "ratio": 5.56,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "selected-row edge",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#dcedf6",
+    "bg_role": "soft",
+    "ratio": 6.09,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "chosen tab and primary button",
+    "fg": "#004964",
+    "fg_role": "infravana_deep",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 8.96,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "focus ring",
+    "fg": "#191c1e",
+    "fg_role": "text",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 15.62,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 frontier line on the wash",
+    "fg": "#005d7f",
+    "fg_role": "infravana_text",
+    "bg": "#d9e7ee",
+    "bg_role": "wash",
+    "ratio": 5.78,
+    "needs": 3.0,
+    "pass": true
+   },
+   {
+    "kind": "mark",
+    "pair": "C10 lightest Today line (2px) on the ground",
+    "fg": "#9179e4",
+    "fg_role": "option3",
+    "bg": "#f1f5f8",
+    "bg_role": "bg",
+    "ratio": 3.16,
+    "needs": 3.0,
+    "pass": true
+   }
+  ],
+  "distances": [
+   {
+    "a": "comparator",
+    "b": "infravana",
+    "normal": 26.3,
+    "deuteranopia": 25.1,
+    "protanopia": 28.4,
+    "tritanopia": 18.6
+   },
+   {
+    "a": "comparator",
+    "b": "saved",
+    "normal": 42.1,
+    "deuteranopia": 38.1,
+    "protanopia": 31.2,
+    "tritanopia": 50.2
+   },
+   {
+    "a": "comparator",
+    "b": "option1",
+    "normal": 36.4,
+    "deuteranopia": 31.0,
+    "protanopia": 35.3,
+    "tritanopia": 16.6
+   },
+   {
+    "a": "comparator",
+    "b": "option2",
+    "normal": 22.3,
+    "deuteranopia": 22.4,
+    "protanopia": 24.1,
+    "tritanopia": 21.5
+   },
+   {
+    "a": "comparator",
+    "b": "option3",
+    "normal": 45.1,
+    "deuteranopia": 40.0,
+    "protanopia": 43.3,
+    "tritanopia": 35.9
+   },
+   {
+    "a": "infravana",
+    "b": "saved",
+    "normal": 47.0,
+    "deuteranopia": 49.3,
+    "protanopia": 43.8,
+    "tritanopia": 46.3
+   },
+   {
+    "a": "infravana",
+    "b": "option1",
+    "normal": 22.0,
+    "deuteranopia": 10.2,
+    "protanopia": 11.8,
+    "tritanopia": 14.2
+   },
+   {
+    "a": "infravana",
+    "b": "option2",
+    "normal": 13.8,
+    "deuteranopia": 11.4,
+    "protanopia": 12.3,
+    "tritanopia": 4.1
+   },
+   {
+    "a": "infravana",
+    "b": "option3",
+    "normal": 25.7,
+    "deuteranopia": 17.8,
+    "protanopia": 15.8,
+    "tritanopia": 22.9
+   },
+   {
+    "a": "saved",
+    "b": "option1",
+    "normal": 58.9,
+    "deuteranopia": 64.4,
+    "protanopia": 60.1,
+    "tritanopia": 47.8
+   },
+   {
+    "a": "saved",
+    "b": "option2",
+    "normal": 37.4,
+    "deuteranopia": 36.5,
+    "protanopia": 30.0,
+    "tritanopia": 47.7
+   },
+   {
+    "a": "saved",
+    "b": "option3",
+    "normal": 51.2,
+    "deuteranopia": 53.4,
+    "protanopia": 53.9,
+    "tritanopia": 30.8
+   },
+   {
+    "a": "option1",
+    "b": "option2",
+    "normal": 31.5,
+    "deuteranopia": 20.5,
+    "protanopia": 23.8,
+    "tritanopia": 18.1
+   },
+   {
+    "a": "option1",
+    "b": "option3",
+    "normal": 24.2,
+    "deuteranopia": 23.2,
+    "protanopia": 20.9,
+    "tritanopia": 24.7
+   },
+   {
+    "a": "option2",
+    "b": "option3",
+    "normal": 29.0,
+    "deuteranopia": 19.5,
+    "protanopia": 21.7,
+    "tritanopia": 22.7
+   }
+  ],
+  "ladder": [
+   {
+    "role": "comparator",
+    "hex": "#173d32",
+    "grey": "#363636",
+    "Y": 0.0375,
+    "ratio_to_previous": null
+   },
+   {
+    "role": "option1",
+    "hex": "#3e35bc",
+    "grey": "#4c4c4c",
+    "Y": 0.072,
+    "ratio_to_previous": 1.39
+   },
+   {
+    "role": "infravana",
+    "hex": "#006c93",
+    "grey": "#646464",
+    "Y": 0.1283,
+    "ratio_to_previous": 1.46
+   },
+   {
+    "role": "option2",
+    "hex": "#367b80",
+    "grey": "#717171",
+    "Y": 0.1651,
+    "ratio_to_previous": 1.21
+   },
+   {
+    "role": "saved",
+    "hex": "#b07a2d",
+    "grey": "#858585",
+    "Y": 0.2334,
+    "ratio_to_previous": 1.32
+   },
+   {
+    "role": "option3",
+    "hex": "#9179e4",
+    "grey": "#8a8a8a",
+    "Y": 0.253,
+    "ratio_to_previous": 1.07
+   }
+  ],
+  "section_nearest": [
+   4.8,
+   "option2"
+  ]
+ }
+}
