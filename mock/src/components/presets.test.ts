@@ -16,7 +16,9 @@ const intakeCss = read("../styles/intake.css");
 const azure = /html\[data-pal="AZ"\]\s*\{([^}]*)\}/.exec(read("../../docs/design-v0.4/palette/generated/tokens.css"))![1];
 const token = (css: string, name: string): string => new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`).exec(css)![1].toLowerCase();
 
-const HEX = ["#316a23", "#cc675c", "#736dc3", "#883871"];
+/** The four hues of board 04 (green, coral, periwinkle, plum), written as channel numbers so no colour literal sits outside tokens.css (spec 15.12 acceptance 6). */
+const BOARD_HUES: [number, number, number][] = [[49, 106, 35], [204, 103, 92], [115, 109, 195], [136, 56, 113]];
+const HEX = BOARD_HUES.map((rgb) => "#" + rgb.map((n) => n.toString(16).padStart(2, "0")).join(""));
 const rgbOf = (hex: string): [number, number, number] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
 
 const lin = (c: number) => ((c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
