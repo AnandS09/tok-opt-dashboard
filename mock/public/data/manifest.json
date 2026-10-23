@@ -23,9 +23,9 @@
   },
   "files": {
     "hardware.csv": {
-      "version": "0.1.0-placeholder",
+      "version": "0.2.0-placeholder",
       "row_count": 9,
-      "checksum": "sha256:54ce8c61e3bbeea45d6cb40e43395009870935458490ae3daff85e99c0d4e096",
+      "checksum": "sha256:0b4ade3afa478bcdd04bcd46694d7a34f3f43985982c1a24164d761e4bb11bb1",
       "placeholder": true
     },
     "throughput_curves.csv": {
@@ -48,9 +48,9 @@
       "note": "Rows with a speed value or a batch or flex price are invented (BD-11); README.md lists them."
     },
     "seat_plans.csv": {
-      "version": "0.1.0-placeholder",
+      "version": "0.2.0-placeholder",
       "row_count": 2,
-      "checksum": "sha256:34e958c8335ef1e224e1327e310b270d3c61e6e686c6ef38827da285ee774595",
+      "checksum": "sha256:eef76a27f292736bc0bd5542793a85c6d452948ee56522b1c2fcc44674fd63fe",
       "placeholder": true
     },
     "quality.csv": {

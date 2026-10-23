@@ -139,6 +139,11 @@ export interface HardwareRow {
   usd_per_hr: number;
   hr_price_source: string;
   power_kw: number;
+  /**
+   * Optional (spec 7.3): where the hourly price comes from. Null when the
+   * column is absent or the cell is empty. The loader always sets it.
+   */
+  source_url?: string | null;
 }
 
 /** Spec 7.3 `throughput_curves.csv`. One row per concurrency point of a sweep. */
@@ -225,6 +230,8 @@ export interface SeatPlanRow {
   included_usage_note: string;
   /** Model that heavy users overflow to on API pricing; null if none. */
   overage_model_id: string | null;
+  /** Optional (spec 7.3): the plan's price page. Null when the column is absent or the cell is empty. */
+  source_url?: string | null;
 }
 
 /**
@@ -524,6 +531,13 @@ export interface SpendSegment {
   usd: number;
   /** Provenance of the data behind this spend. */
   provenance: Provenance;
+  /**
+   * Spec 15.10: the address of the data row this spend is priced from (an
+   * offer's `source_url`, a seat plan's, a piece of hardware's). When rows
+   * merged into one segment disagree, the first row's address; absent when the
+   * rows hold none. Carried to the "Where these numbers come from" table.
+   */
+  source_url?: string | null;
 }
 
 /**
@@ -539,6 +553,8 @@ export interface SavingsSegment {
   savings_source: SavingsSource;
   /** Provenance of the data behind this saving. */
   provenance: Provenance;
+  /** As on `SpendSegment`: the address of the row that carries most of this saving, if any. */
+  source_url?: string | null;
 }
 
 export type AllocationSegment = SpendSegment | SavingsSegment;
@@ -721,6 +737,8 @@ export interface TodayAlternative {
   meets_floors: boolean;
   /** Worst provenance of the data behind this option's spend. */
   provenance: Provenance;
+  /** Spec 15.10: the `source_url` of the option's row in `buying_patterns.csv`, if it holds one. */
+  source_url?: string | null;
   /** USD per million tokens by model class, null where the option buys none of that class (C3 markers). */
   usd_per_mtok_by_class: Record<ModelTier, number | null>;
 }

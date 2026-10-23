@@ -21,7 +21,7 @@ import { TIERS } from "../data/schema";
 import { deriveDemand, type WorkloadDemand } from "./demand";
 import { planInfravana } from "./infravana";
 import { compositeScores, typicalPattern } from "./patterns";
-import { PERCENT, TOKENS_PER_MTOK, worstProvenance } from "./pricing";
+import { PERCENT, TOKENS_PER_MTOK, withSource, worstProvenance } from "./pricing";
 import { tradedInputs, type EngineOptions } from "./tradeoff";
 import {
   addToClass,
@@ -83,6 +83,7 @@ export function runEngine(scenario: Scenario, tables: Tables, options?: EngineOp
     savings_source: "arbitrage",
     // A batch or flex move (G4 speed step, speed view) is priced from modelled rows.
     provenance: found ? plan.proprietary_provenance : "vendor_reported",
+    ...withSource(found ? plan.proprietary_source_url : null),
   };
   const routing: SavingsSegment = {
     label: ROUTING_LABEL,
@@ -90,6 +91,7 @@ export function runEngine(scenario: Scenario, tables: Tables, options?: EngineOp
     usd: routingUsd,
     savings_source: "routing",
     provenance: found ? plan.routing_provenance : "vendor_reported",
+    ...withSource(found ? plan.routing_source_url : null),
   };
   const infravanaSegments: AllocationSegment[] = [
     ...(found ? plan.segments : today.segments.map((s) => ({ ...s }))),

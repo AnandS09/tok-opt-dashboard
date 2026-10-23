@@ -109,6 +109,10 @@ export interface InfravanaPlan {
    * `vendor_reported` unless a speed requirement buys through modelled rows.
    */
   proprietary_provenance: Provenance;
+  /** Address of the offer that carries most of the proprietary spend, or null (spec 15.10). */
+  proprietary_source_url: string | null;
+  /** Address of the row that carries most of the routed spend, or null (spec 15.10). */
+  routing_source_url: string | null;
   by_class: ClassTotals;
   /** Tokens (in plus out) moved to open-weight models. */
   routed_tokens: number;
@@ -128,6 +132,8 @@ interface RoutedOption {
   label: string;
   kind: SpendSegment["kind"];
   provenance: Provenance;
+  /** Address of the row this option is priced from (spec 15.10), if the row holds one. */
+  sourceUrl?: string | null;
 }
 
 function clamp01(value: number): number {
@@ -284,7 +290,7 @@ export function planInfravana(
   }
 
   const proprietaryVolume = new Map<string, Volume>();
-  const keptSeats: { modelId: string; tokens: number; parts: { label: string; usd: number }[] }[] = [];
+  const keptSeats: { modelId: string; tokens: number; parts: { label: string; usd: number; source_url?: string | null }[] }[] = [];
   /** Per workload, the fraction of its tokens that is not on a kept seat plan. */
   const routableFraction = new Map<string, number>();
   const keptKeys = new Set<string>();
@@ -351,6 +357,7 @@ export function planInfravana(
               label: offer.channel,
               kind: "provider",
               provenance: priceProvenance(offer),
+              sourceUrl: offer.source_url,
             });
           }
         }
@@ -364,6 +371,7 @@ export function planInfravana(
             label: hosted.hwId,
             kind: "hardware",
             provenance: hosted.provenance,
+            sourceUrl: hardwareById.get(hosted.hwId)?.source_url,
           });
         }
         for (const option of options) {
@@ -409,9 +417,12 @@ export function planInfravana(
   const byClass = emptyClassTotals();
   let spend = keptSeatUsd;
   let proprietaryProvenance: Provenance = PRICE_PROVENANCE;
+  // The address of the largest proprietary purchase and of the largest routed option: what the two savings cite (spec 15.10).
+  let proprietaryTop = 0;
+  let proprietarySource: string | null | undefined = null;
 
   for (const kept of keptSeats) {
-    for (const part of kept.parts) book.add(part.label, "provider", part.usd, PRICE_PROVENANCE);
+    for (const part of kept.parts) book.add(part.label, "provider", part.usd, PRICE_PROVENANCE, part.source_url);
     addToClass(
       byClass,
       tierOf(kept.modelId),
@@ -424,15 +435,25 @@ export function planInfravana(
     if (v.tokensIn + v.tokensOut <= 0) continue;
     const { offer, usd } = channelFor(modelId, v);
     const provenance = priceProvenance(offer);
-    book.add(offer.channel, "provider", usd, provenance);
+    book.add(offer.channel, "provider", usd, provenance, offer.source_url);
+    if (usd > proprietaryTop) {
+      proprietaryTop = usd;
+      proprietarySource = offer.source_url;
+    }
     addToClass(byClass, tierOf(modelId), usd, v.tokensIn + v.tokensOut, provenance);
     proprietaryProvenance = worstProvenance(proprietaryProvenance, provenance);
     spend += usd;
   }
   let routingProvenance: Provenance = PRICE_PROVENANCE;
   let routedTokens = 0;
+  let routingTop = 0;
+  let routingSource: string | null | undefined = null;
   for (const option of routed) {
-    book.add(option.label, option.kind, option.usd, option.provenance);
+    book.add(option.label, option.kind, option.usd, option.provenance, option.sourceUrl);
+    if (option.usd > routingTop) {
+      routingTop = option.usd;
+      routingSource = option.sourceUrl;
+    }
     addToClass(byClass, tierOf(option.modelId), option.usd, option.tokens, option.provenance);
     routingProvenance = worstProvenance(routingProvenance, option.provenance);
     routedTokens += option.tokens;
@@ -445,6 +466,8 @@ export function planInfravana(
     segments: book.segments(),
     routing_provenance: routingProvenance,
     proprietary_provenance: proprietaryProvenance,
+    proprietary_source_url: proprietarySource ?? null,
+    routing_source_url: routingSource ?? null,
     by_class: byClass,
     routed_tokens: routedTokens,
   };

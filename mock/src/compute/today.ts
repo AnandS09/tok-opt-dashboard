@@ -52,7 +52,7 @@ export interface ModelShare {
    * the way it appears in the Today bar. Infravana keeps the seats where
    * they cost less than buying the same tokens per token.
    */
-  seat_parts?: { label: string; usd: number }[];
+  seat_parts?: { label: string; usd: number; source_url?: string | null }[];
 }
 
 /** Spend and tokens on one model, for the per-class unit price of C3. */
@@ -181,7 +181,7 @@ function computeTodayFromRows(
     workloadId: string,
     modelId: string,
     share: number,
-    seatParts?: { label: string; usd: number }[],
+    seatParts?: { label: string; usd: number; source_url?: string | null }[],
   ): void => {
     const list = modelsByWorkload.get(workloadId) ?? [];
     const existing = list.find((m) => m.model_id === modelId);
@@ -225,16 +225,16 @@ function computeTodayFromRows(
 
         const feeUsd = seatUsers * plan.usd_per_user_month * months;
         const overageUsd = seatUsers * overageUsdPerUser;
-        book.add(plan.vendor, "provider", feeUsd, TODAY_PROVENANCE);
-        book.add(overage.channel, "provider", overageUsd, TODAY_PROVENANCE);
+        book.add(plan.vendor, "provider", feeUsd, TODAY_PROVENANCE, plan.source_url);
+        book.add(overage.channel, "provider", overageUsd, TODAY_PROVENANCE, overage.source_url);
         lines.push({
           model_id: plan.overage_model_id,
           usd: feeUsd + overageUsd,
           tokens: tokensIn + tokensOut,
         });
         noteModel(d.workload_id, plan.overage_model_id, row.share_default, [
-          { label: plan.vendor, usd: feeUsd },
-          { label: overage.channel, usd: overageUsd },
+          { label: plan.vendor, usd: feeUsd, source_url: plan.source_url },
+          { label: overage.channel, usd: overageUsd, source_url: overage.source_url },
         ]);
       } else if (row.offer_id !== null) {
         const offer = offerById(tables, row.offer_id);
@@ -252,7 +252,7 @@ function computeTodayFromRows(
       pricingRule === "commit"
         ? committedCostUsd(offer, tokensIn, tokensOut)
         : listCostUsd(offer, tokensIn, tokensOut);
-    book.add(offer.channel, "provider", usd, TODAY_PROVENANCE);
+    book.add(offer.channel, "provider", usd, TODAY_PROVENANCE, offer.source_url);
     lines.push({ model_id: offer.model_id, usd, tokens: tokensIn + tokensOut });
   }
 

@@ -96,8 +96,13 @@ function parseTable<T>(spec: TableSpec, text: string): T[] {
   }
 
   const header = parsed.meta.fields ?? [];
+  const absent = new Set<string>();
   for (const column of Object.keys(spec.columns)) {
     if (!header.includes(column)) {
+      if (spec.optionalColumns?.includes(column)) {
+        absent.add(column);
+        continue;
+      }
       throw new Error(`${file}: column "${column}" is missing from the header row`);
     }
   }
@@ -109,6 +114,11 @@ function parseTable<T>(spec: TableSpec, text: string): T[] {
 
   parsed.data.forEach((row, index) => {
     for (const [column, kind] of Object.entries(spec.columns)) {
+      // An optional column the file does not have reads as empty on every row.
+      if (absent.has(column)) {
+        row[column] = null;
+        continue;
+      }
       const value = row[column];
       const where = `${file}: column "${column}" on line ${lineOf(index)}`;
       if (value === null || value === undefined) {

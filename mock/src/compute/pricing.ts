@@ -94,18 +94,25 @@ export function worstProvenance(...values: Provenance[]): Provenance {
   return worst;
 }
 
+/** `{ source_url }` for a non-empty address, else nothing, so a series with no address carries no key. */
+export function withSource(url: string | null | undefined): { source_url?: string } {
+  return url ? { source_url: url } : {};
+}
+
 /** Collects spend by (kind, label), merging repeats. */
 export class SpendBook {
   private readonly entries = new Map<string, SpendSegment>();
 
-  add(label: string, kind: SpendSegment["kind"], usd: number, provenance: Provenance): void {
+  /** `sourceUrl` is the address of the row priced; the first non-empty one of a merged segment is kept. */
+  add(label: string, kind: SpendSegment["kind"], usd: number, provenance: Provenance, sourceUrl?: string | null): void {
     const key = `${kind}|${label}`;
     const existing = this.entries.get(key);
     if (existing === undefined) {
-      this.entries.set(key, { label, kind, usd, provenance });
+      this.entries.set(key, { label, kind, usd, provenance, ...withSource(sourceUrl) });
     } else {
       existing.usd += usd;
       existing.provenance = worstProvenance(existing.provenance, provenance);
+      if (!existing.source_url && sourceUrl) existing.source_url = sourceUrl;
     }
   }
 
