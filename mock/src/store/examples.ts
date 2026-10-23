@@ -9,7 +9,7 @@ export interface Example {
   chip: string;
   /** Scenario file under the data folder to load through `loadScenario`. */
   scenarioId: string;
-  /** The company type the sentence shows for it. */
+  /** The company type the answer grid shows for it. */
   company: CompanyType;
 }
 
