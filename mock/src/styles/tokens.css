@@ -45,6 +45,12 @@
   --color-today-3: #43413d;
   --color-today-4: #2a2a28;
 
+  /* Preset hues (spec 15.4, board 04): chrome for the preset buttons and their ticks, never a chart colour. In order: green, coral, periwinkle, plum */
+  --color-preset-1: #316a23;
+  --color-preset-2: #cc675c;
+  --color-preset-3: #736dc3;
+  --color-preset-4: #883871;
+
   /* Chart-only aliases */
   --color-chart-ground: var(--color-bg);   /* what a chart is drawn on: marks, separators and chips sit on it */
   --color-series-separator: var(--color-chart-ground);
