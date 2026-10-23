@@ -200,6 +200,78 @@ async function gridButton(page, base) {
   }
 }
 
+/** The colour a token resolves to on the page, as "r,g,b". */
+const TOKEN_RGB = (name) => `(() => {
+  const probe = document.createElement('div');
+  probe.style.color = 'var(${name})';
+  document.body.append(probe);
+  const c = getComputedStyle(probe).color.match(/\\d+/g).slice(0, 3).join(',');
+  probe.remove();
+  return c;
+})()`;
+
+/**
+ * Reads the chart canvas back from the page and finds the 1px budget line (the column with the most
+ * pixels of its colour). A "text band" is a run of pixel rows with ink, secondary ink, the brand blue
+ * or the saving green within 40px of the line (rows closer than 5px are one band, so a name and its
+ * figures are one). The line runs behind the bars, so on a phone only a row name can sit on it. The
+ * label's secondary ink is the line's own colour, so a single pixel is not enough to tell the line
+ * from a letter: what is measured is the share of each band's rows on which the line column is the
+ * line's colour. A line drawn through a name keeps that share near 1; behind the name's own
+ * background only the strokes of letters that happen to fall on the column are left.
+ */
+const BUDGET_STRIKES = (line, inks) => `(() => {
+  const canvas = document.querySelector('.stage__panel canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const { width, height } = canvas;
+  const data = ctx.getImageData(0, 0, width, height).data;
+  const at = (x, y) => { const i = (y * width + x) * 4; return [data[i], data[i + 1], data[i + 2], data[i + 3]]; };
+  const near = (px, rgb) => Math.abs(px[0] - rgb[0]) <= 2 && Math.abs(px[1] - rgb[1]) <= 2 && Math.abs(px[2] - rgb[2]) <= 2 && px[3] > 250;
+  const lineRgb = ${JSON.stringify(line)};
+  const inkRgb = ${JSON.stringify(inks)};
+  let best = { x: -1, n: 0 };
+  for (let x = 0; x < width; x++) {
+    let n = 0;
+    for (let y = 0; y < height; y++) if (near(at(x, y), lineRgb)) n++;
+    if (n > best.n) best = { x, n };
+  }
+  const text = [];
+  for (let y = 0; y < height; y++) {
+    let hit = false;
+    for (let x = Math.max(0, best.x - 40); x <= Math.min(width - 1, best.x + 40) && !hit; x++) {
+      if (Math.abs(x - best.x) <= 1) continue;
+      if (inkRgb.some((c) => near(at(x, y), c))) hit = true;
+    }
+    if (hit) text.push(y);
+  }
+  const bands = [];
+  for (const y of text) {
+    const last = bands[bands.length - 1];
+    if (last && y - last.to < 5) last.to = y;
+    else bands.push({ from: y, to: y });
+  }
+  const shares = bands.filter((b) => b.to - b.from >= 6).map((b) => {
+    let on = 0;
+    for (let y = b.from; y <= b.to; y++) if (near(at(best.x, y), lineRgb)) on++;
+    return { from: b.from, to: b.to, share: on / (b.to - b.from + 1) };
+  });
+  return { lineX: best.x, lineRows: best.n, bands: shares.length, worst: Math.max(0, ...shares.map((b) => b.share)), shares: shares.map((b) => b.from + ':' + b.share.toFixed(2)).join(' ') };
+})()`;
+
+/** On a phone the budget line must not strike through a row name of the lead chart (the line runs behind the bars). */
+async function budgetLineOnPhone(page, base) {
+  const width = 390;
+  await toFinal(page, base, width);
+  await sleep(600);
+  const line = (await page.eval(TOKEN_RGB("--color-budget-line"))).split(",").map(Number);
+  const inks = [];
+  for (const name of ["--color-text", "--color-text-secondary", "--color-accent-strong", "--color-positive"]) inks.push((await page.eval(TOKEN_RGB(name))).split(",").map(Number));
+  const r = await page.eval(BUDGET_STRIKES(line, inks));
+  check("F-4 390px: the budget line is drawn in the lead chart", r.lineRows > 100, JSON.stringify(r));
+  check("F-4 390px: the lead chart's row names are measured (a band of text near the line for each of 5 rows)", r.bands >= 5, JSON.stringify(r));
+  check(`F-4 390px: the budget line does not run through any row name (${r.worst.toFixed(2)} of a name's rows at worst, at most 0.60)`, r.worst <= 0.6, `worst share ${r.worst.toFixed(2)}; ${r.shares}`);
+}
+
 // ---------------------------------------------------------------------------
 
 let chrome;
@@ -216,6 +288,7 @@ try {
   await headline(page, base);
   await chartRule(page, base);
   await gridButton(page, base);
+  await budgetLineOnPhone(page, base);
   const errors = page.logs.filter((l) => /^EXC/.test(l));
   check("no script error during the run", errors.length === 0, errors.slice(0, 2).join(" | "));
   page.close();

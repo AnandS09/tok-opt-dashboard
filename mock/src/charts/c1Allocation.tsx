@@ -377,6 +377,9 @@ export function buildAllocationOption(
         verticalAlign: "bottom",
         formatter: aboveText(row),
         rich: richText,
+        // The row's name sits on the chart ground, so the budget line, which runs behind the bars, never strikes through it.
+        backgroundColor: t.surface,
+        padding: [0, 4, 2, 0],
       };
     });
   }

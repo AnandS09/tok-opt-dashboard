@@ -441,6 +441,8 @@ export function structureProblemsC1(results: Results, option: EChartsCoreOption,
         const label = (pieces[first]?.label ?? {}) as Obj;
         const at = label.position;
         if (!Array.isArray(at) || at[0] !== 0 || at[1] !== -4) problems.push(`${where}: row ${r} has no name above its bar (label at ${JSON.stringify(at)})`);
+        // The budget line runs behind the bars; the name sits on the chart ground so the line never strikes through it.
+        if (label.backgroundColor !== t.surface) problems.push(`${where}: row ${r}'s name has no ${t.surface} background, so the budget line can run through it`);
       });
     } else if (axisLabel.show === false) problems.push(`${where}: the row names are hidden on a wide chart`);
     // The budget line: 1px, secondary ink.
@@ -1186,6 +1188,11 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
   expect(
     "phone: a row name is not above its bar",
     structureProblemsC1(results, withSeries(c1Phone, seriesOf(c1Phone).map((s, i) => (i === 0 ? { ...s, label: { ...(s.label as Obj), position: "inside" } } : s))), tokens, "c1 phone", phone),
+  );
+  expect(
+    "phone: a row name has no background, so the budget line can run through it",
+    structureProblemsC1(results, withSeries(c1Phone, seriesOf(c1Phone).map((s, i) => (i === 0 ? { ...s, label: { ...(s.label as Obj), backgroundColor: undefined } } : s))), tokens, "c1 phone", phone),
+    c1PhoneClean,
   );
   // The drawing rules: a dash, a decal or a pattern anywhere.
   const dashClean = noPatternOrDashProblems(c1, renderSvg(c1, dims), "c1");
