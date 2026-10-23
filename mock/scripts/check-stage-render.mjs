@@ -134,6 +134,13 @@ function referenceGrid(count, width, phone) {
 // In-page helpers (strings evaluated in the page)
 // ---------------------------------------------------------------------------
 
+/**
+ * What spec 15.9 (2) rules out, as its intent reads: a chart named or indexed by an ordinal. That is "Figure 3", a
+ * leading "3." or "3)", "3 of 10", "chart 3", "tile 3" and a registry id ("C3"). A figure that is data (the wide
+ * tile's takeaway says "$100K a quarter" and "30% less") is not an ordinal and may carry digits.
+ */
+const ORDINAL = /\bfig(?:ure|\.)?\s*\d|\b(?:chart|tile|item|slide|graph)\s*#?\d|^\s*#?\d+\s*[.):]\s|(?:^|\s)\d+\s*(?:\/|of)\s*\d+\b|\bC(?:10|[1-9])\b/i;
+
 const PAGE = {
   title: "document.querySelector('.stage__title')?.textContent ?? null",
   live: "document.querySelector('.stage [aria-live=polite]')?.textContent ?? null",
@@ -327,9 +334,10 @@ async function noOrdinals(page, base) {
     const tiles = await page.eval(`[...document.querySelectorAll('.grid-view__cell')].map((li) => {
       const t = li.querySelector('.grid-view__title').textContent;
       const b = li.querySelector('button.grid-view__item');
-      return { title: t, name: b ? b.textContent : li.querySelector('.grid-view__item').textContent, label: b?.getAttribute('aria-label') ?? '' };
+      return { title: t, name: b ? b.textContent : li.querySelector('.grid-view__item').textContent, label: b?.getAttribute('aria-label') ?? '', takeaway: li.querySelector('.grid-view__takeaway')?.textContent ?? null };
     })`);
-    check(`15.9 (2)(3) ${w.viewport}px: ten grid tiles, each titled with its registry title and no digit in its name`, tiles.length === 10 && JSON.stringify(tiles.map((t) => t.title)) === JSON.stringify(TITLES) && tiles.every((t) => !/\d/.test(t.name + t.label)), JSON.stringify(tiles.filter((t) => /\d/.test(t.name)).map((t) => t.name)));
+    check(`15.9 (3) ${w.viewport}px: ten grid tiles, each titled with its registry title and no digit in its title`, tiles.length === 10 && JSON.stringify(tiles.map((t) => t.title)) === JSON.stringify(TITLES) && tiles.every((t) => !/\d/.test(t.title)), JSON.stringify(tiles.filter((t) => /\d/.test(t.title)).map((t) => t.title)));
+    check(`15.9 (2) ${w.viewport}px: no tile's title, name, label or takeaway carries an ordinal or a chart number`, tiles.every((t) => !ORDINAL.test(`${t.title}\n${t.name}\n${t.label}\n${t.takeaway ?? ""}`)), JSON.stringify(tiles.filter((t) => ORDINAL.test(`${t.title}\n${t.name}\n${t.label}\n${t.takeaway ?? ""}`)).map((t) => t.title)));
     const gridText = await page.eval(PAGE.readable);
     check(`15.9 (1) ${w.viewport}px: no 'Figure n' with the grid view open`, !/figure\s*\d/i.test(gridText));
     check(`15.8 (7) ${w.viewport}px: the page does not scroll sideways, grid view open`, await page.eval(PAGE.noSideScroll));
