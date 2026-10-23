@@ -1,10 +1,12 @@
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type TouchEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type TouchEvent } from "react";
 import type { ChartDef, Results } from "../contract";
 import { C10Context } from "../charts/c10Context";
-import { wrapIndex, type StageDirection, type StageSlotContext } from "../store/stage";
+import { chartRegistry } from "../charts/registry";
+import { listCharts } from "../store/chartListing";
+import { announcement, wrapIndex, type StageDirection, type StageSlotContext } from "../store/stage";
 import "../styles/stage.css";
 import { ChartBoundary } from "./ChartBoundary";
-import { ChartIndex } from "./ChartIndex";
+import { ChartIndex, GridButton } from "./ChartIndex";
 import { Drawer } from "./Drawer";
 import { GridView } from "./GridView";
 import { BenefitsSlot } from "./StageSlots";
@@ -66,10 +68,11 @@ function StageBody({ direction, def, results, ctx, onHow }: StageBodyProps) {
 }
 
 /**
- * The stage (spec 4.1): one chart in focus, picked by the numbered index, the
- * arrows, the left and right keys, a swipe or the grid view. The chart is
- * drawn through its own component at stage size; a change slides the new
- * chart in over the fade token's duration (none under reduced motion).
+ * The stage (spec 4.1, 15.8): one chart in focus, picked from the contents
+ * column (a picker on phones), the arrows, the left and right keys, a swipe or
+ * the grid view. The chart is drawn through its own component at stage size; a
+ * change slides the new chart in over the fade token's duration (none under
+ * reduced motion). Nothing here numbers a chart (spec 15.9): the title stands alone.
  */
 export function Stage({ slides, results, active, direction, ctx, onSlide }: StageProps) {
   const [gridOpen, setGridOpen] = useState(false);
@@ -78,6 +81,8 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
   const titleId = useId();
   const count = slides.length;
   const def = slides[active];
+  // Every chart of the registry, built or planned, as the column and the grid list them.
+  const listed = useMemo(() => listCharts(slides, chartRegistry), [slides]);
   // C10 draws its frontier from the scenario and the tables, and reads and sets its view in the address.
   const c10 = useMemo(
     () => ({ scenario: ctx.scenario, tables: ctx.tables, view: ctx.view.c10, setView: ctx.setC10 }),
@@ -97,11 +102,18 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
     if (index === active) return;
     onSlide(index, index > active ? "next" : "prev");
   };
+  const toggleGrid = () => setGridOpen((open) => !open);
   const pickFromGrid = (index: number) => {
     if (index !== active) onSlide(index, "jump");
     setGridOpen(false);
-    gridButton.current?.focus();
   };
+
+  // Closing the grid brings the column back; focus returns to the Grid view button it was opened from.
+  const wasGridOpen = useRef(false);
+  useEffect(() => {
+    if (wasGridOpen.current && !gridOpen) gridButton.current?.focus();
+    wasGridOpen.current = gridOpen;
+  }, [gridOpen]);
 
   // Left and right arrow keys, anywhere on the page except in a control that uses them or under a dialog.
   const stepRef = useRef(step);
@@ -126,7 +138,6 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       setGridOpen(false);
-      gridButton.current?.focus();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -149,76 +160,83 @@ export function Stage({ slides, results, active, direction, ctx, onSlide }: Stag
   };
 
   if (!def) return null;
-  const figure = active + 1;
-  const style = { "--figure-number": `"${figure}"` } as CSSProperties;
 
   return (
     <C10Context.Provider value={c10}>
     <section className="stage" aria-label="Charts">
-      <div className="stage__bar">
-        <ChartIndex slides={slides} active={active} onPick={pick} />
-        <button
-          ref={gridButton}
-          type="button"
-          className="button stage__grid-button"
-          aria-pressed={gridOpen}
-          onClick={() => setGridOpen((open) => !open)}
-        >
-          Grid view
-        </button>
-      </div>
-
-      {/* The title of the chart in focus, read out on every change (spec 4.1 acceptance 6). */}
+      {/* The title of the chart in focus, read out on every change (spec 4.1 acceptance 6; spec 15.9: the title alone). */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {`Figure ${figure} of ${count}: ${def.title}`}
+        {announcement(def)}
       </div>
 
       {gridOpen ? (
-        <GridView slides={slides} results={results} goalView={ctx.goalView} active={active} onPick={pickFromGrid} />
-      ) : (
-        <section
-          className="chart-card card stage__panel"
-          aria-labelledby={titleId}
-          style={style}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-          onTouchCancel={() => {
-            touchStart.current = null;
-          }}
-        >
-          <div className="stage__head">
-            <button
-              type="button"
-              className="stage__arrow"
-              aria-label="Previous chart"
-              disabled={count < 2}
-              onClick={() => step(-1)}
-            >
-              <Chevron side="left" />
-            </button>
-            <h2 id={titleId} className="chart-card__title stage__title">
-              {def.title}
-            </h2>
-            <button
-              type="button"
-              className="stage__arrow"
-              aria-label="Next chart"
-              disabled={count < 2}
-              onClick={() => step(1)}
-            >
-              <Chevron side="right" />
-            </button>
-          </div>
-          {/* Keyed by chart, so the arrival of a new chart (and only that) plays the transition. */}
-          <StageBody
-            key={def.id}
-            direction={shown.current === def.id ? "none" : direction}
-            def={def}
+        // The contents column is not rendered while the grid is open: the grid has the full width (spec 15.8).
+        <div className="stage__grid">
+          <GridButton gridOpen={gridOpen} onGrid={toggleGrid} gridButton={gridButton} />
+          <GridView
+            charts={listed}
+            slides={slides}
             results={results}
-            ctx={ctx}
-            onHow={() => setHow(def)}
+            goalView={ctx.goalView}
+            active={active}
+            onPick={pickFromGrid}
           />
-        </section>
+        </div>
+      ) : (
+        <div className="stage__layout">
+          <div className="stage__contents">
+            <ChartIndex
+              charts={listed}
+              active={active}
+              onPick={pick}
+              gridOpen={gridOpen}
+              onGrid={toggleGrid}
+              gridButton={gridButton}
+            />
+          </div>
+          <section
+            className="chart-card card stage__panel"
+            aria-labelledby={titleId}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+            onTouchCancel={() => {
+              touchStart.current = null;
+            }}
+          >
+            <div className="stage__head">
+              <button
+                type="button"
+                className="stage__arrow"
+                aria-label="Previous chart"
+                disabled={count < 2}
+                onClick={() => step(-1)}
+              >
+                <Chevron side="left" />
+              </button>
+              <h2 id={titleId} className="chart-card__title stage__title">
+                {def.title}
+              </h2>
+              <button
+                type="button"
+                className="stage__arrow"
+                aria-label="Next chart"
+                disabled={count < 2}
+                onClick={() => step(1)}
+              >
+                <Chevron side="right" />
+              </button>
+            </div>
+            {/* Keyed by chart, so the arrival of a new chart (and only that) plays the transition. */}
+            <StageBody
+              key={def.id}
+              direction={shown.current === def.id ? "none" : direction}
+              def={def}
+              results={results}
+              ctx={ctx}
+              onHow={() => setHow(def)}
+            />
+          </section>
+        </div>
       )}
 
       {how ? (

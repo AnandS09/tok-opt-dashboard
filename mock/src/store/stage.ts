@@ -74,6 +74,14 @@ export function activeIndex(slides: readonly ChartDef[], slide: ChartId | null):
   return at < 0 ? 0 : at;
 }
 
+/**
+ * What the stage's live region says when the chart changes: the chart's title
+ * alone, never "Figure n of N" or any position (spec 4.1 acceptance 6, 15.9).
+ */
+export function announcement(def: Pick<ChartDef, "title">): string {
+  return def.title;
+}
+
 /** The index of the slide a step of `delta` from `from` reaches, wrapping at the ends (spec 4.1). */
 export function wrapIndex(from: number, delta: number, count: number): number {
   return count <= 0 ? -1 : (((from + delta) % count) + count) % count;
