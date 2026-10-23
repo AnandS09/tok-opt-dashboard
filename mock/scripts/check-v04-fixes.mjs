@@ -1,5 +1,6 @@
 // Measured-render check of the layout and label faults the bundled review of the
-// merged v0.4 build raised (headline wrap, chart rule). From mock/:
+// merged v0.4 build raised (headline wrap, chart rule, pressed button, chart
+// labels, goal tab, comparator line). From mock/:
 //
 //   node scripts/check-v04-fixes.mjs
 //
@@ -178,6 +179,27 @@ async function chartRule(page, base) {
   }
 }
 
+/** The pressed Grid view button stays readable under the pointer (4.5:1). */
+async function gridButton(page, base) {
+  for (const width of [1280, 390]) {
+    await toFinal(page, base, width);
+    await click(page, ".stage__grid-button");
+    await page.eval("document.activeElement.blur()");
+    await mouseAt(page, 2, 2);
+    const away = await page.eval(CONTRAST(".stage__grid-button"));
+    await page.eval("document.querySelector('.stage__grid-button').scrollIntoView({ block: 'center' })");
+    await sleep(200);
+    const box = await page.eval("(() => { const r = document.querySelector('.stage__grid-button').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()");
+    await mouseAt(page, box[0], box[1]);
+    const hovered = await page.eval(CONTRAST(".stage__grid-button"));
+    const isHover = await page.eval("document.querySelector('.stage__grid-button').matches(':hover')");
+    check(`F-3 ${width}px: the pressed Grid view label is readable with the pointer away (${away.ratio.toFixed(2)}:1)`, away.ratio >= 4.5, JSON.stringify(away));
+    check(`F-3 ${width}px: the pressed Grid view label is readable under the pointer (${hovered.ratio.toFixed(2)}:1)`, isHover && hovered.ratio >= 4.5, JSON.stringify({ isHover, ...hovered }));
+    await mouseAt(page, 2, 2);
+    await click(page, ".stage__grid-button");
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 let chrome;
@@ -193,6 +215,7 @@ try {
   const page = await newPage(chrome.port);
   await headline(page, base);
   await chartRule(page, base);
+  await gridButton(page, base);
   const errors = page.logs.filter((l) => /^EXC/.test(l));
   check("no script error during the run", errors.length === 0, errors.slice(0, 2).join(" | "));
   page.close();

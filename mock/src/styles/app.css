@@ -128,7 +128,8 @@ a {
   cursor: pointer;
 }
 
-.button:hover:not(:disabled) {
+/* A pressed button keeps its own fill under the pointer: the light label would vanish on the hover fill. */
+.button:hover:not(:disabled):not([aria-pressed="true"]) {
   background: var(--color-surface-muted);
 }
 
