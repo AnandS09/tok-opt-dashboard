@@ -35,6 +35,7 @@ import { ParetoChart } from "../c10Pareto";
 import {
   CURRENT_LABEL,
   MARKER_SIZE,
+  NAME_SERIES,
   POINT_SIZE,
   WASH_OPACITY,
   WASH_SERIES,
@@ -46,6 +47,7 @@ import {
 } from "../c10Option";
 import { comparisonOf } from "../comparison";
 import { INFRAVANA_LABEL } from "../labels";
+import { textWidth } from "../measure";
 import type { Tokens } from "../tokens";
 import type { Dims } from "../useEChart";
 import { STYLE_BLOCK, coloursOf, dataOf, noPatternOrDashProblems, renderSvg, seriesOf, textsOf } from "./renderCheck";
@@ -140,7 +142,7 @@ function boxesOf(c: C10Case): BenefitBox[] {
 }
 
 /** Spec 6.3 acceptance (1) to (3), the Today lines and the line style, read from the drawn option. */
-export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: string, dims?: Dims): string[] {
+export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: string, _dims?: Dims): string[] {
   const problems: string[] = [];
   const t = c.tokens;
   const dots = pointsOf(option, `${INFRAVANA_LABEL} (points)`);
@@ -271,25 +273,79 @@ export function c10OptionProblems(c: C10Case, option: EChartsCoreOption, where: 
     });
   if (new Set(identities).size !== identities.length) problems.push(`${where}: two Today marks share a marker shape and size [${identities.join(" ")}]`);
 
-  // Label placement: "With InfraVana" is beside its first point, on the side where no Today line runs within its height.
-  const grid = (option as Obj).grid as Obj | undefined;
-  const ymax = (((option as Obj).yAxis as Obj | undefined)?.max as number | undefined) ?? 0;
-  const dotSeries = seriesOf(option).find((x) => x.name === `${INFRAVANA_LABEL} (points)`);
-  const position = (((dotSeries?.label ?? {}) as Obj).position as string | undefined) ?? "";
-  if (dims && grid && ymax > 0 && dotSeries && ((dotSeries.label ?? {}) as Obj).show === true && dots.length > 0) {
-    const plotHeight = dims.height - (grid.top as number) - (grid.bottom as number);
-    const px = (tokens: number) => plotHeight * (1 - tokens / ymax);
-    const labelHeight = t.lineSm + t.space1 + 2;
-    const y = px(dots[0][1]);
-    const [from, to] = position === "top" ? [y - labelHeight, y] : [y, y + labelHeight];
-    const hits = (a: number, b: number) => greys.filter((g) => px(g.alt.tokens_at_budget) >= a - 2 && px(g.alt.tokens_at_budget) <= b + 2);
-    const [otherFrom, otherTo] = position === "top" ? [y, y + labelHeight] : [y - labelHeight, y];
-    // A fault only when the chosen side has a Today line in it and the other side is clear.
-    if (c.view === "quality" && hits(from, to).length > 0 && hits(otherFrom, otherTo).length === 0) {
-      problems.push(`${where}: the InfraVana label (${position}) sits on the Today line of ${hits(from, to)[0].alt.label} while the other side is clear`);
-    }
+  // The line's name has a series of its own, placed from the shapes around it (`placeNameLabel`); the drawing is checked in `c10SvgProblems`.
+  const stage = ((option as Obj).yAxis as Obj | undefined)?.show !== false;
+  if (stage && dots.length > 0 && !seriesOf(option).some((x) => x.name === NAME_SERIES && dataOf(x).length === 1)) {
+    problems.push(`${where}: the InfraVana line has no name label`);
   }
   return problems;
+}
+
+/** The numbers of a path's `d` as points (the chart draws only M and L). */
+function pathPoints(d: string): [number, number][] {
+  const nums = [...d.matchAll(/-?[\d.]+(?:e-?\d+)?/g)].map((m) => Number(m[0]));
+  const out: [number, number][] = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) out.push([nums[i], nums[i + 1]]);
+  return out;
+}
+
+/** The `<path>` elements of an svg with their attributes and points. */
+function svgPaths(svg: string): { attrs: string; pts: [number, number][] }[] {
+  return [...svg.matchAll(/<path d="([^"]*)"([^>]*)>/g)].map((m) => ({ attrs: m[2], pts: pathPoints(m[1]) }));
+}
+
+const attrOf = (attrs: string, name: string): string | undefined => new RegExp(`\\s${name}="([^"]*)"`).exec(attrs)?.[1];
+
+/**
+ * "With InfraVana" is drawn with no line through it (a measured read of the svg, not of the option): its
+ * text box against the frontier's segments, the setting's drop line and ring, and every Today line. A name
+ * on a paper chip (a rectangle in the paper colour that covers it) is allowed to sit on a line.
+ */
+export function nameLabelProblems(svg: string, t: Tokens, where: string): string[] {
+  const text = [...svg.matchAll(/<text([^>]*)>With InfraVana<\/text>/g)].map((m) => m[1]);
+  if (text.length !== 1) return [`${where}: "${INFRAVANA_LABEL}" is drawn ${text.length} times, expected 1`];
+  const at = /transform="translate\(([\d.-]+) ([\d.-]+)\)"/.exec(text[0]);
+  if (!at) return [`${where}: the name label has no position`];
+  const x0 = Number(at[1]) + Number(/ x="([\d.-]+)"/.exec(text[0])?.[1] ?? 0);
+  const cy = Number(at[2]) + Number(/ y="([\d.-]+)"/.exec(text[0])?.[1] ?? 0);
+  const size = Number(/font-size:([\d.]+)px/.exec(text[0])?.[1] ?? 14);
+  const box = { x0, x1: x0 + textWidth(INFRAVANA_LABEL, size, t.weightBold, t.fontSans), y0: cy - size * 0.6, y1: cy + size * 0.6 };
+  const touches = (a: { x0: number; x1: number; y0: number; y1: number }, pad: number) =>
+    box.x0 < a.x1 + pad && box.x1 > a.x0 - pad && box.y0 < a.y1 + pad && box.y1 > a.y0 - pad;
+  const hitsOf: string[] = [];
+  const todayFills = new Set([t.today1, t.today2, t.today3, t.today4].map((v) => v.toLowerCase()));
+  for (const p of svgPaths(svg)) {
+    const stroke = attrOf(p.attrs, "stroke")?.toLowerCase();
+    const width = Number(attrOf(p.attrs, "stroke-width") ?? 1);
+    const fill = attrOf(p.attrs, "fill")?.toLowerCase();
+    let kind: string | null = null;
+    if (stroke === t.accentStrong.toLowerCase() && width >= 3) kind = "the frontier";
+    else if (stroke !== undefined && todayFills.has(stroke) && p.pts.length >= 2 && p.pts.every((q) => q[1] === (p.pts[0] as [number, number])[1])) kind = "a Today line";
+    else if (stroke === t.borderStrong.toLowerCase() && p.pts.length === 2 && p.pts[0][0] === p.pts[1][0] && Math.abs(p.pts[0][1] - p.pts[1][1]) > 100) kind = "the setting's drop line";
+    else if (stroke === t.text.toLowerCase() && fill === t.surface.toLowerCase() && p.pts.length > 2) kind = "the setting's ring";
+    if (kind === null) continue;
+    const half = Math.max(width, 1) / 2 + 0.5;
+    if (kind === "the setting's ring") {
+      const xs = p.pts.map((q) => q[0]);
+      const ys = p.pts.map((q) => q[1]);
+      if (touches({ x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }, 0)) hitsOf.push(kind);
+      continue;
+    }
+    for (let i = 1; i < p.pts.length; i++) {
+      const [ax, ay] = p.pts[i - 1] as [number, number];
+      const [bx, by] = p.pts[i] as [number, number];
+      if (touches({ x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: Math.min(ay, by), y1: Math.max(ay, by) }, half)) {
+        hitsOf.push(kind);
+        break;
+      }
+    }
+  }
+  if (hitsOf.length === 0) return [];
+  // The chip is a path in the paper colour drawn at the text's own position, just under it.
+  const chip = [...svg.matchAll(/<path d="[^"]*" transform="translate\(([\d.-]+) ([\d.-]+)\)" fill="([^"]*)"/g)].some(
+    (m) => m[3].toLowerCase() === t.surface.toLowerCase() && Number(m[1]) === Number(at[1]) && Number(m[2]) === Number(at[2]),
+  );
+  return chip ? [] : [`${where}: "${INFRAVANA_LABEL}" has ${[...new Set(hitsOf)].join(" and ")} through it`];
 }
 
 /** Texts and positions of an svg: the translate of each `<text>`. */
@@ -319,6 +375,7 @@ export function c10SvgProblems(c: C10Case, svg: string, size: "stage" | "thumb",
   if (size === "thumb" && texts.length > 0) problems.push(`${where}: thumb draws ${texts.length} text nodes, expected none`);
   if (size === "stage" && texts.length === 0) problems.push(`${where}: stage draws no text`);
   if (size === "stage" && !texts.includes(INFRAVANA_LABEL)) problems.push(`${where}: the InfraVana line is not labelled`);
+  if (size === "stage" && texts.includes(INFRAVANA_LABEL)) problems.push(...nameLabelProblems(svg, t, where));
 
   problems.push(...noPatternOrDashProblems({}, svg, where));
   // The setting's name is drawn above the plot (the top margin of the stage grid is 28px), not on a data line.
@@ -504,12 +561,17 @@ export function runC10SelfTests(scenario: Scenario, tables: Tables, results: Res
     expect(v("the points are 8px"), c10OptionProblems(c, edit(option, dots, (s) => ({ ...s, symbolSize: 8 })), view));
     expect(v("the points carry a ring"), c10OptionProblems(c, edit(option, dots, (s) => ({ ...s, itemStyle: { ...(s.itemStyle as Obj), borderWidth: 2 } })), view));
     expect(v("the drawing holds a dashed stroke"), c10SvgProblems(c, `${renderSvg(option, dims)}<path stroke-dasharray="6 3"/>`, "stage", dims, view));
-    const flipped = (position: string) => edit(option, dots, (s) => ({ ...s, label: { ...(s.label as Obj), position } }));
+    // The name label in the frontier's own way: the label's anchor moved onto a step of the line, drawn and measured in the svg.
+    const nameSeries = seriesOf(option).find((x) => x.name === NAME_SERIES);
+    const cleanName = nameLabelProblems(renderSvg(option, dims), tokens, view);
+    if (cleanName.length > 0) problems.push(`C10 self-test ${view}: the unbroken name label reports ${cleanName[0]}`);
+    if (nameSeries) {
+      const onLine = edit(option, NAME_SERIES, (s) => ({ ...s, data: [{ value: [data.frontier.points[0].threshold + 0.3, data.frontier.points[0].infravana_tokens] }] }));
+      expect(v("the InfraVana name sits on the frontier"), nameLabelProblems(renderSvg(onLine, dims), tokens, view), cleanName);
+      const onSetting = edit(option, NAME_SERIES, (s) => ({ ...s, data: [{ value: [data.frontier.current_threshold - 2, (data.current_tokens ?? data.frontier.points[0].infravana_tokens) * 0.9] }] }));
+      expect(v("the InfraVana name is crossed by the setting's line"), nameLabelProblems(renderSvg(onSetting, dims), tokens, view), cleanName);
+    }
     if (view === "quality") {
-      // The label on either side where a Today line runs within its height: caught (S1: the 13.4B line above the frontier).
-      const wrong = ["top", "bottom"].find((p) => c10OptionProblems(c, flipped(p), view, dims).length > 0);
-      if (wrong) expect(v("the InfraVana label sits on a Today line"), c10OptionProblems(c, flipped(wrong), view, dims), c10OptionProblems(c, option, view, dims));
-      else notes.push(`C10 self-test ${view}: no Today line is near the InfraVana label here; placement not exercised`);
       // The comparator's tick swapped for an option's circle: two Today marks share a marker.
       const cmpName = markName(data.today[0]);
       expect(v("a Today mark takes another's marker"), c10OptionProblems(c, edit(option, cmpName, (s) => mapData(s, (d, i) => (i === 1 ? { ...(d as Obj), symbol: "circle", symbolSize: 10 } : d))), view, dims));

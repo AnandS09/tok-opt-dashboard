@@ -14,6 +14,8 @@ import type { EChartsCoreOption } from "echarts/core";
 import { fmtTokens, fmtTokensSig } from "../shared/format";
 import { baseOption, tooltipChrome } from "./base";
 import type { C10Data, TodayMark } from "./c10Data";
+import { placeNameLabel, stepPath } from "./c10Label";
+import type { LabelObstacles } from "./c10Label";
 import { qualityLine } from "./comparison";
 import { esc, fmtBudget } from "./format";
 import { INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
@@ -36,6 +38,10 @@ export const WASH_OPACITY = 0.1;
 /** The name of the series that draws it. */
 export const WASH_SERIES = `${INFRAVANA_LABEL} (wash)`;
 export const RING_SIZE = 14;
+/** The series that carries the frontier's name, and the air kept between that name and the lines near it. */
+export const NAME_SERIES = `${INFRAVANA_LABEL} (name)`;
+export const NAME_GAP = 4;
+export const NAME_CLEAR = 3;
 
 /** Below this chart width the end labels give way to the key. */
 export const NARROW = 600;
@@ -275,15 +281,6 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
   const points = data.frontier.points;
   // The wash runs from the frontier down to the best Today line: the area is the gain, not the total.
   const bestToday = Math.max(0, ...data.today.map((m) => m.tokens));
-  // The line's name goes beside the first point, on the side where no Today line runs within the label's height:
-  // below by default, above when a reference line runs just below the point; when both sides are crowded,
-  // on the side with the larger gap to the nearest line.
-  const labelHeight = t.lineSm + t.space1 + 2;
-  const firstY = points.length > 0 ? pixelOf(points[0].infravana_tokens) : 0;
-  const linesPx = lines.map((m) => pixelOf(m.tokens));
-  const gapBelow = Math.min(plotHeight - firstY, ...linesPx.filter((y) => y >= firstY - 2).map((y) => y - firstY));
-  const gapAbove = Math.min(firstY, ...linesPx.filter((y) => y < firstY - 2).map((y) => firstY - y));
-  const infravanaLabelAbove = gapBelow < labelHeight + 2 && gapAbove > gapBelow;
   if (points.length > 0) {
     const frontier = [[x.min, points[0].infravana_tokens], ...points.map((p) => [p.threshold, p.infravana_tokens])];
     // The wash is a series of its own, behind every line: the frontier lifted to the best Today line where it dips below it,
@@ -318,19 +315,6 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
       symbolSize: POINT_SIZE,
       z: 5,
       itemStyle: { color: t.accentStrong, opacity: 1 },
-      label: {
-        show: stage,
-        position: infravanaLabelAbove ? "top" : "bottom",
-        distance: t.space1,
-        align: "left",
-        color: t.accentStrong,
-        fontSize: t.fontSm,
-        fontWeight: t.weightBold,
-        // On the wash, so the area under the line is not broken by a chip of paper.
-        backgroundColor: "transparent",
-        padding: [1, 3],
-        formatter: (p: { dataIndex: number }) => (p.dataIndex === 0 ? INFRAVANA_LABEL : ""),
-      },
       data: points.map((p) => ({
         value: [p.threshold, p.infravana_tokens],
         tip: [
@@ -340,6 +324,55 @@ export function buildParetoOption(data: C10Data, size: "stage" | "thumb", t: Tok
         ].join("<br/>"),
       })),
     } as unknown as ScatterSeriesOption);
+  }
+
+  // The line's name, in a spot beside the frontier where no line touches the text (see `placeNameLabel`).
+  if (points.length > 0 && stage) {
+    const plotWidth = Math.max(1, dims.width - grid.left - grid.right);
+    const xPx = (v: number) => ((v - x.min) / (x.max - x.min)) * plotWidth;
+    const current = data.current_tokens !== null ? { x: xPx(data.frontier.current_threshold), y: pixelOf(data.current_tokens), ring: RING_SIZE / 2 } : null;
+    const obstacles: LabelObstacles = {
+      frontier: stepPath([[x.min, points[0].infravana_tokens], ...points.map((p) => [p.threshold, p.infravana_tokens] as [number, number])].map(([vx, vy]) => [xPx(vx as number), pixelOf(vy as number)] as [number, number])),
+      frontierWidth: t.frontierLineWidth,
+      setting: current,
+      todayLines: lines.map((m) => pixelOf(m.tokens)),
+      todayWidth: t.todayLineWidth,
+      squares: [
+        ...lines.map((m, i) => ({ x: plotWidth - i * (MARKER_SIZE + 4), y: pixelOf(m.tokens), half: Math.max(MARKER_SIZE, TICK_SIZE[1]) / 2 })),
+        ...pointMarks(data).map((m) => ({ x: xPx(m.speed as number), y: pixelOf(m.tokens), half: MARKER_SIZE / 2 })),
+      ],
+      plotWidth,
+      plotHeight,
+    };
+    const width = Math.ceil(textWidth(INFRAVANA_LABEL, t.fontSm, t.weightBold, t.fontSans));
+    const spot = placeNameLabel(obstacles, width, t.lineSm, NAME_GAP, NAME_CLEAR);
+    if (spot) {
+      const centre = (spot.rect.y0 + spot.rect.y1) / 2;
+      series.push({
+        ...base,
+        type: "scatter",
+        name: NAME_SERIES,
+        symbol: "circle",
+        symbolSize: 0,
+        silent: true,
+        z: 5,
+        itemStyle: { color: t.accentStrong, opacity: 1 },
+        label: {
+          show: true,
+          position: "right",
+          distance: 0,
+          align: "left",
+          verticalAlign: "middle",
+          color: t.accentStrong,
+          fontSize: t.fontSm,
+          fontWeight: t.weightBold,
+          // A crowded plot (no clear spot) gives the name a paper ground so it still reads; otherwise it sits on the wash bare.
+          ...(spot.hits > 0 ? { backgroundColor: t.surface, padding: [1, 3] } : { backgroundColor: "transparent" }),
+          formatter: () => INFRAVANA_LABEL,
+        },
+        data: [{ value: [x.min + (spot.rect.x0 / plotWidth) * (x.max - x.min), ymax * (1 - centre / plotHeight)] }],
+      } as unknown as ScatterSeriesOption);
+    }
   }
 
   // The ring at the visitor's own setting, on the step line's height there.
