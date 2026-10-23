@@ -1,5 +1,5 @@
 // Measured-render check of the layout and label faults the bundled review of the
-// merged v0.4 build raised (headline wrap). From mock/:
+// merged v0.4 build raised (headline wrap, chart rule). From mock/:
 //
 //   node scripts/check-v04-fixes.mjs
 //
@@ -161,6 +161,23 @@ async function headline(page, base) {
   }
 }
 
+/** Each chart sits under a 2px rule in the section accent (spec 14.3). */
+async function chartRule(page, base) {
+  for (const width of [1280, 390]) {
+    await toFinal(page, base, width);
+    const r = await page.eval(`(() => {
+      const probe = document.createElement('div');
+      probe.style.color = 'var(--color-section)';
+      document.body.append(probe);
+      const section = getComputedStyle(probe).color;
+      probe.remove();
+      const cs = getComputedStyle(document.querySelector('.stage__panel'));
+      return { width: cs.borderTopWidth, style: cs.borderTopStyle, color: cs.borderTopColor, section };
+    })()`);
+    check(`F-2 ${width}px: the chart's top rule is 2px solid in the section accent`, r.width === "2px" && r.style === "solid" && r.color === r.section, JSON.stringify(r));
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 let chrome;
@@ -175,6 +192,7 @@ try {
   chrome = await launch(CDP_PORT);
   const page = await newPage(chrome.port);
   await headline(page, base);
+  await chartRule(page, base);
   const errors = page.logs.filter((l) => /^EXC/.test(l));
   check("no script error during the run", errors.length === 0, errors.slice(0, 2).join(" | "));
   page.close();

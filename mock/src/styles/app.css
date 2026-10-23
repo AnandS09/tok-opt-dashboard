@@ -771,15 +771,16 @@ a {
 /* ---- Chart cards ---- */
 
 /*
- * Each chart is a titled figure: a 1px ink rule above, the title alone (no
- * ordinal, spec 15.9), the chart, and a source-and-note line (spec 14.3).
+ * Each chart is a titled figure: a 2px rule in the section accent above, the
+ * title alone (no ordinal, spec 15.9), the chart, and a source-and-note line
+ * (spec 14.3). The rule is chrome, outside the chart canvas.
  */
 .chart-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-5) 0 var(--space-4);
-  border-top: 1px solid var(--color-text);
+  border-top: 2px solid var(--color-section);
 }
 
 .chart-card__title {
