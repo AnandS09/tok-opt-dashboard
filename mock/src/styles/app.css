@@ -615,7 +615,7 @@ a {
   font-size: var(--font-size-sm);
 }
 
-.check--disabled {
+.check:has(input:disabled) {
   color: var(--color-text-disabled);
 }
 

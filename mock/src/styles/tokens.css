@@ -1,75 +1,84 @@
 @import "./fonts.css";
 
 /*
- * Design tokens: the Research Note theme (spec 14). The values are those of
- * mock/docs/theme-options/source/d1-research-note.css; the contrast of every
- * text, mark and border pair is in spec 14.1 and mock/docs/theme-options/contrast-tables.md.
- * This is the only file that may contain a hex colour. Names are stable: a
- * token is added here, never renamed or removed.
+ * Design tokens: the Research Note theme (spec 14) in the Azure palette (spec
+ * 14.1, 15.12). Every colour below is copied from
+ * mock/docs/design-v0.4/palette/generated/tokens.css (block html[data-pal="AZ"]),
+ * which palette.py writes; the contrast of every pair is in
+ * mock/docs/design-v0.4/palette/generated/checks.md. This is the only file that
+ * may contain a hex colour. A token is added here before it ships (spec 14.5).
  */
 
 :root {
   /* Surfaces */
-  --color-bg: #f6f4ef;              /* warm paper: the page and the chart ground */
-  --color-bg-top: #f6f4ef;          /* kept for stylesheets that still name it: the page has no gradient */
-  --color-surface: #fbfaf6;
-  --color-surface-muted: #eeebe3;
-  --color-surface-raised: #ffffff;  /* hovered or selected option: lifts off the surface without a shadow */
-  --color-skeleton: #e6e2d8;
+  --color-bg: #f7f4ef;              /* paper: the page and the chart ground */
+  --color-bg-top: #f7f4ef;          /* kept for stylesheets that still name it: the page has no gradient */
+  --color-surface: #fcfaf6;         /* panels and chart ground */
+  --color-surface-muted: #ece9e2;   /* never under a chart (marks fall below 3:1 on it) */
+  --color-surface-raised: #ffffff;  /* hovered option, tooltip: lifts off the surface without a shadow */
+  --color-skeleton: var(--color-surface-muted);
 
   /* Text */
-  --color-text: #1c1c1a;            /* ink: text, structural rules, the budget line */
-  --color-text-secondary: #5c5a55;
-  --color-text-disabled: #8a867f;
+  --color-text: #1d1c19;            /* ink: text, structural rules, focus ring */
+  --color-text-secondary: #5c5b57;  /* secondary text, the budget line */
+  --color-text-disabled: #888682;   /* :disabled controls only (3.31:1, reported, not gated) */
 
   /* Lines */
-  --color-border: #d6d1c7;          /* decorative rules between sections */
-  --color-border-strong: #8a867f;   /* inputs, chips, sliders, axis lines: >=3:1 */
-  --color-grid: #e4e0d7;
+  --color-border: #d6d2ca;          /* decorative rules between sections */
+  --color-border-strong: #89867e;   /* inputs, chips, sliders, axis lines: >=3:1 */
+  --color-grid: #e3dfd7;
 
-  /* Infravana accent: the only chart hue */
-  --color-accent: #466577;          /* fills, lines >=3px, large text */
-  --color-accent-strong: #3d5a6b;   /* With-Infravana text, lines <=2px, markers; never generic links */
-  --color-accent-deep: #2f4856;     /* primary buttons: surface label 9.21:1 */
-  --color-accent-hover: #233843;    /* hover/pressed on primary buttons */
-  --color-accent-soft: #e8ebea;     /* selected-option background */
-  --color-hero-end: #e8ebea;        /* kept for stylesheets that still name it: the hero has no gradient */
+  /* InfraVana: the most vivid mark by absolute chroma (spec 15.12) */
+  --color-accent: #0065b0;          /* fills; paper label inside 5.77:1 */
+  --color-accent-strong: #005798;   /* InfraVana text, lines, frontier, selected-row edge */
+  --color-accent-deep: #004479;     /* primary buttons, the chosen tab: paper label 9.58:1 */
+  --color-accent-hover: #002f56;    /* hover and pressed on primary buttons */
+  --color-accent-soft: #dfebf8;     /* selected-row background */
+  --color-hero-end: var(--color-accent-soft); /* kept for stylesheets that still name it: the hero has no gradient */
 
-  /* Savings: the one positive accent, only for money saved */
-  --color-positive: #1f6b5e;        /* hero saving figure, C1 "Saved" outline */
-  --color-saved: #dcebe5;           /* C1 "Saved" fill, always with the --color-positive outline */
+  /* Savings: the one positive hue, only for money saved */
+  --color-positive: #1e6250;        /* saving figures */
+  --color-saved: #319379;           /* the one labelled "Saved" block in C1; ink label inside 4.53:1 */
 
-  /* "Today" series: only two distinct greys exist (spec 14.1), so slots 3 and 4 rely on patterns (14.4) behind direct labels */
-  --color-today-1: #2a2a28;
-  --color-today-2: #43413d;
-  --color-today-3: #43413d;
-  --color-today-4: #2a2a28;
+  /* "Today" series: the comparator is the darkest, then options 1 to 3 (spec 15.11); each keeps its colour in every chart */
+  --color-today-1: #5d1534;         /* comparator (wine) */
+  --color-today-2: #892e2c;         /* option 1 (brick) */
+  --color-today-3: #a1592a;         /* option 2 (sienna) */
+  --color-today-4: #b28439;         /* option 3 (ochre) */
+  --color-label-on-comparator: #fcfaf6; /* paper label inside a dark bar */
+
+  /* Section accent: chrome only, never inside a chart */
+  --color-section: #7f5a43;
 
   /* Chart-only aliases */
   --color-chart-ground: var(--color-bg);   /* what a chart is drawn on: marks, separators and chips sit on it */
   --color-series-separator: var(--color-chart-ground);
-  --color-budget-line: var(--color-text);
-  --color-pattern-on-fill: var(--color-surface);       /* decal colour on grey and accent fills (design-tokens 3.1) */
-  --color-pattern-on-saved: var(--color-positive);     /* decal colour on the hollow savings segments */
-  --color-provenance-on-fill: var(--color-surface);    /* dashed and dotted perimeter on a fill (3.3) */
-  --color-provenance-on-hollow: var(--color-positive); /* the same on a savings segment */
+  --color-budget-line: var(--color-text-secondary);
   --color-scrim: color-mix(in srgb, var(--color-text) 50%, transparent); /* drawer backdrop; panel edge >=3:1 */
 
-  /* Chart strokes: read with getComputedStyle, parse numbers */
-  --chart-separator-width: 1px;
-  --chart-savings-outline-width: 1.5px;   /* C1 "saved" block outline */
-  --chart-budget-line-width: 1.5px;
-  --chart-provenance-width: 2px;          /* modelled and vendor-reported perimeters */
-  --chart-today-line-width: 1.5px;        /* C10 Today reference lines */
-  --chart-frontier-line-width: 2px;       /* C10 InfraVana step line */
-  --chart-dash-modelled: 6 3;             /* dash array: modelled */
-  --chart-dash-vendor: 2 3;               /* dash array: vendor-reported */
+  /* Chart strokes and sizes: read with getComputedStyle, parse numbers */
+  --chart-separator-width: 2px;           /* paper gap between neighbouring segments; no outlines */
+  --chart-budget-line-width: 1px;
+  --chart-today-line-width: 2px;          /* C10 Today reference lines */
+  --chart-frontier-line-width: 3px;       /* C10 InfraVana step line */
+  --chart-ring-width: 2px;                /* C10 ring at the visitor's own setting */
+  --chart-bar-thickness: 24px;            /* horizontal bars of C1 and C5 */
   --chart-stage-height: 320px;            /* chart canvas height in a chart card */
 
+  /* Bridge for the chart code of the previous commit, which still reads these: removed with that code. */
+  --color-pattern-on-fill: var(--color-surface);
+  --color-pattern-on-saved: var(--color-positive);
+  --color-provenance-on-fill: var(--color-surface);
+  --color-provenance-on-hollow: var(--color-positive);
+  --chart-savings-outline-width: 1.5px;
+  --chart-provenance-width: 2px;
+  --chart-dash-modelled: 6 3;
+  --chart-dash-vendor: 2 3;
+
   /* State banners (infeasible budget, rejected prompt, attempts exhausted) */
-  --color-notice-bg: #fff6dd;
-  --color-notice-text: #6b4a00;
-  --color-notice-border: #a07a1a;
+  --color-notice-bg: #fdf3d9;
+  --color-notice-text: #584503;
+  --color-notice-border: #695205;
 
   /* Focus */
   --focus-ring-color: var(--color-text);
