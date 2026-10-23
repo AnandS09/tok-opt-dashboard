@@ -1,6 +1,26 @@
-diff --color -ruN a/src/charts/c10Option.ts b/src/charts/c10Option.ts
---- a/src/charts/c10Option.ts	2026-10-22 23:02:17
-+++ b/src/charts/c10Option.ts	2026-10-22 23:02:17
+diff --color -ruN a2/src/charts/C3Key.tsx b2/src/charts/C3Key.tsx
+--- a/src/charts/C3Key.tsx	2026-10-22 23:30:50
++++ b/src/charts/C3Key.tsx	2026-10-22 23:30:50
+@@ -4,6 +4,7 @@
+ import { comparisonOf } from "./comparison";
+ import { INFRAVANA_LABEL, TODAY_LABEL } from "./labels";
+ import { optionStyle } from "./patterns";
++import { V } from "../v04";
+ 
+ /** The custom property each Today grey and the accent are read from, for the swatches. */
+ const FILL_VAR: Record<string, string> = {
+@@ -31,7 +32,7 @@
+     <ul className="chart-key" aria-label="Key to the bars and markers">
+       {item("comparator", "bar", FILL_VAR.today1, `${TODAY_LABEL}: ${cmp.label}`)}
+       {item("infravana", "bar", "var(--color-accent)", INFRAVANA_LABEL)}
+-      {cmp.options.map((o) => item(o.alt.pattern_id, optionStyle(o.rank).marker, FILL_VAR[optionStyle(o.rank).fill], o.alt.label))}
++      {cmp.options.map((o) => item(o.alt.pattern_id, V.look ? "bar" : optionStyle(o.rank).marker, FILL_VAR[optionStyle(o.rank).fill], o.alt.label))}
+     </ul>
+   );
+ }
+diff --color -ruN a2/src/charts/c10Option.ts b2/src/charts/c10Option.ts
+--- a/src/charts/c10Option.ts	2026-10-22 23:30:50
++++ b/src/charts/c10Option.ts	2026-10-22 23:30:50
 @@ -22,6 +22,7 @@
  import type { Tokens } from "./tokens";
  import type { Dims } from "./useEChart";
@@ -18,7 +38,22 @@ diff --color -ruN a/src/charts/c10Option.ts b/src/charts/c10Option.ts
  export const RING_SIZE = 14;
  
  /** Below this chart width the end labels give way to the key. */
-@@ -278,6 +279,9 @@
+@@ -225,8 +226,12 @@
+         // The label follows its marker, so it is moved back to the shared column.
+         // A narrower marker (the comparator's tick) puts the label's start closer: add the difference back.
+         offset: [i * (MARKER_SIZE + 4) + (MARKER_SIZE - markerWidthOf(mark)) / 2, offsets[i]],
+-        formatter: () => labelLines[i].map((l) => `{${l.style}|${l.text}}`).join("\n"),
+-        rich,
++        // palette-v04 look: a swatch of the line's colour before its name is the key from label to line.
++        formatter: () =>
++          labelLines[i].map((l, j) => `${V.look && j === 0 ? "{sw|}{gap| }" : V.look ? "{ind| }" : ""}{${l.style}|${l.text}}`).join("\n"),
++        rich: V.look
++          ? { ...rich, sw: { width: 10, height: 10, backgroundColor: colour, borderRadius: 1 }, gap: { width: 4, fontSize: t.fontXs }, ind: { width: 14, fontSize: t.fontXs } }
++          : rich,
+       },
+     };
+     series.push({
+@@ -278,6 +283,9 @@
        symbol: "none",
        z: 3,
        lineStyle: { color: t.accentStrong, width: t.frontierLineWidth, type: dash ?? "solid" },
@@ -28,7 +63,7 @@ diff --color -ruN a/src/charts/c10Option.ts b/src/charts/c10Option.ts
        data: [[x.min, points[0].infravana_tokens], ...points.map((p) => [p.threshold, p.infravana_tokens])],
      } as LineSeriesOption);
      series.push({
-@@ -287,7 +291,7 @@
+@@ -287,7 +295,7 @@
        symbol: "circle",
        symbolSize: POINT_SIZE,
        z: 5,
@@ -37,7 +72,7 @@ diff --color -ruN a/src/charts/c10Option.ts b/src/charts/c10Option.ts
        label: {
          show: stage,
          position: infravanaLabelAbove ? "top" : "bottom",
-@@ -296,8 +300,8 @@
+@@ -296,8 +304,8 @@
          color: t.accentStrong,
          fontSize: t.fontSm,
          fontWeight: t.weightBold,
@@ -48,9 +83,9 @@ diff --color -ruN a/src/charts/c10Option.ts b/src/charts/c10Option.ts
          padding: [1, 3],
          formatter: (p: { dataIndex: number }) => (p.dataIndex === 0 ? INFRAVANA_LABEL : ""),
        },
-diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
---- a/src/charts/c1Allocation.tsx	2026-10-22 23:02:17
-+++ b/src/charts/c1Allocation.tsx	2026-10-22 23:02:17
+diff --color -ruN a2/src/charts/c1Allocation.tsx b2/src/charts/c1Allocation.tsx
+--- a/src/charts/c1Allocation.tsx	2026-10-22 23:30:50
++++ b/src/charts/c1Allocation.tsx	2026-10-22 23:30:50
 @@ -39,7 +39,11 @@
  import type { Tokens } from "./tokens";
  import type { Dims } from "./useEChart";
@@ -63,7 +98,99 @@ diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
  use([BarChart, GridComponent, MarkLineComponent, TooltipComponent]);
  
  export { planBar } from "./c1Plan";
-@@ -252,7 +256,7 @@
+@@ -80,8 +84,23 @@
+   provenance: Provenance;
+   seg: PlannedSegment | null;
+   option: OptionBar | null;
++  /** palette-v04 look: the tooltip line of a merged block. */
++  note?: string;
+ }
+ 
++/** WCAG relative luminance of a #rrggbb colour. */
++function lum(hex: string): number {
++  const v = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
++  const [r, g, b] = v.map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
++  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
++}
++/** The paper colour on a fill if it reaches 4.5:1, else the ink (palette.py's label rule). */
++export function labelOn(fill: string, t: Tokens): string {
++  const a = lum(fill);
++  const p = lum(t.patternOnFill);
++  return (Math.max(a, p) + 0.05) / (Math.min(a, p) + 0.05) >= 4.5 ? t.patternOnFill : t.text;
++}
++
+ function piecesOf(results: Results, cmp: Comparison, t: Tokens): Piece[] {
+   const a = results.allocation;
+   const pieces: Piece[] = [];
+@@ -91,7 +110,7 @@
+       label: seg.label,
+       usd: seg.usd,
+       fill: t[TODAY_FILL_ALTERNATION[i % 2]],
+-      textColor: t.patternOnFill,
++      textColor: V.pal ? labelOn(t[TODAY_FILL_ALTERNATION[i % 2]], t) : t.patternOnFill,
+       decal: decalOf(CHANNEL_PATTERNS[Math.min(i, CHANNEL_PATTERNS.length - 1)], t.patternOnFill),
+       outline: outlineOf(seg.provenance, false, t),
+       hollow: false,
+@@ -109,7 +128,7 @@
+         label: seg.label,
+         usd: seg.usd,
+         fill: t.accent,
+-        textColor: t.patternOnFill,
++        textColor: V.pal ? labelOn(t.accent, t) : t.patternOnFill,
+         decal: decalOf(INFRAVANA_PATTERNS[Math.min(i, INFRAVANA_PATTERNS.length - 1)], t.patternOnFill),
+         outline: outlineOf(seg.provenance, false, t),
+         hollow: false,
+@@ -119,9 +138,29 @@
+       });
+     });
+   // The savings segments are hollow: a pale fill needs its outline for an edge (1.12:1 against the paper).
+-  for (const seg of planned.filter((s) => s.tone !== "spend" && s.usd > 0)) {
++  const savedSegs = planned.filter((s) => s.tone !== "spend" && s.usd > 0);
++  // palette-v04 look: the saving is one block with one label; its two sources are named in the tooltip.
++  if (V.look && savedSegs.length > 0) {
++    const total = savedSegs.reduce((sum, s) => sum + s.usd, 0);
++    const parts = savedSegs.map((s) => `${fmtUsdSig(s.usd)} ${s.tone === "arbitrage" ? "from better prices for the same models" : "from moving work to cheaper models"}`);
+     pieces.push({
+       row: 1,
++      label: "Saved",
++      usd: total,
++      fill: t.saved,
++      textColor: labelOn(t.saved, t),
++      decal: undefined,
++      outline: outlineOf(savedSegs[0].provenance, true, t),
++      hollow: true,
++      provenance: savedSegs[0].provenance,
++      seg: savedSegs[0],
++      option: null,
++      note: `Not spent: ${parts.join(" and ")}.`,
++    });
++  }
++  for (const seg of V.look ? [] : savedSegs) {
++    pieces.push({
++      row: 1,
+       label: seg.label,
+       usd: seg.usd,
+       fill: t.saved,
+@@ -157,6 +196,7 @@
+ // ---------------------------------------------------------------------------
+ 
+ function explain(p: Piece): string {
++  if (p.note) return p.note;
+   if (p.option) return "Another way to buy the same work today, shown for comparison.";
+   const seg = p.seg;
+   if (!seg) return "";
+@@ -217,7 +257,9 @@
+   const spent = a.total_usd - saved;
+   const extent = Math.max(a.total_usd, a.budget_usd, ...cmp.options.map((o) => o.alt.total_usd));
+   const axisMax = niceCeil(extent);
+-  const left = stage ? labelColumn(dims.width) + t.space3 : GRID_THUMB.left;
++  // palette-v04 look: on a phone the row name goes above its bar and the bar takes the full width.
++  const above = V.look && narrow && stage;
++  const left = above ? t.space2 : stage ? labelColumn(dims.width) + t.space3 : GRID_THUMB.left;
+   // Option labels sit right of their bar, or right of the budget line when the line is in the way, so the
+   // margin holds the longest of them: a label never moves between rows.
+   const optionLabelPx = narrow ? 0 : Math.max(0, ...cmp.options.map((o) => textWidth(optionLabels(o)[0], t.fontXs, t.weightBold, t.fontSans)));
+@@ -252,7 +294,7 @@
        type: "bar",
        name: p.label,
        stack: "total",
@@ -72,7 +199,7 @@ diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
        silent: !stage,
        emphasis: { disabled: true },
        data: rows.map((_, r) =>
-@@ -279,11 +283,19 @@
+@@ -279,11 +321,19 @@
          show: !narrow,
          position: "right",
          offset: [pastBudgetLine(p.usd, full), 0],
@@ -93,7 +220,7 @@ diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
        };
      } else {
        // Inside a patterned block the name sits on a chip of the block's own fill, so text never crosses a pattern.
-@@ -295,7 +307,8 @@
+@@ -295,7 +345,8 @@
          color: p.textColor,
          fontSize: t.fontXs,
          fontWeight: t.weightBold,
@@ -103,7 +230,7 @@ diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
          padding: [CHIP_PAD_Y, CHIP_PAD_X],
          borderRadius: CHIP_RADIUS,
        };
-@@ -337,6 +350,8 @@
+@@ -337,6 +388,8 @@
      const subLines = (text: string) =>
        wrapText(text, columnPx, t.fontXs, t.weightRegular, t.fontSans).map((l) => `{sub|${l}}`);
      if (row.kind === "infravana") {
@@ -112,7 +239,45 @@ diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
        return `{inf|${INFRAVANA_LABEL}}\n{sub|${fmtUsdSig(spent)} cost}`;
      }
      if (row.kind === "comparator") {
-@@ -404,7 +419,8 @@
+@@ -354,6 +407,37 @@
+     return name.join("\n");
+   };
+ 
++  if (above) {
++    const aboveText = (r: number): string => {
++      const row = rows[r];
++      if (row.kind === "infravana") return `{inf|${INFRAVANA_LABEL}}\n{sub|${fmtUsdSig(spent)} cost · }{sav|${fmtUsdSig(saved)} saved}`;
++      if (row.kind === "comparator") {
++        const q = cmp.comparator ? ` · ${qualityText(cmp.comparator)}` : "";
++        return `{today|${TODAY_LABEL}: ${cmp.label}}\n{sub|${fmtUsdSig(a.total_usd)} cost${q}}`;
++      }
++      const alt = row.option?.alt;
++      return alt ? `{opt|${alt.label}}\n{sub|${fmtUsdSig(alt.total_usd)} cost · ${qualityText(alt)}${alt.meets_floors ? "" : ", below floor"}}` : "";
++    };
++    rows.forEach((_, r) => {
++      const i = pieces.findIndex((p) => p.row === r);
++      if (i < 0) return;
++      series[i].label = {
++        show: true,
++        position: [0, -4],
++        align: "left",
++        verticalAlign: "bottom",
++        formatter: aboveText(r),
++        rich: {
++          today: { color: t.text, fontSize: t.fontSm, fontWeight: t.weightBold, lineHeight: t.lineSm },
++          inf: { color: t.accentStrong, fontSize: t.fontSm, fontWeight: t.weightBold, lineHeight: t.lineSm },
++          opt: { color: t.text, fontSize: t.fontSm, fontWeight: t.weightRegular, lineHeight: t.lineSm },
++          sub: { color: t.textSecondary, fontSize: t.fontXs, lineHeight: t.lineXs },
++          sav: { color: t.positive, fontSize: t.fontXs, fontWeight: t.weightBold, lineHeight: t.lineXs },
++        },
++      };
++    });
++  }
++
+   const rich = (color: string) => ({
+     color,
+     fontSize: t.fontSm,
+@@ -404,16 +488,19 @@
        data: rows.map((r) => r.key),
        show: stage,
        axisTick: { show: false },
@@ -120,9 +285,10 @@ diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
 +      // palette-v04 look: no y axis rule; the bars start on one edge and need no fence.
 +      axisLine: { show: !V.look, lineStyle: { color: t.borderStrong } },
        axisLabel: {
++        show: !above,
          margin: t.space3,
          interval: 0,
-@@ -412,8 +428,9 @@
+         formatter: (_value: string, index: number) => rowLabel(index),
          rich: {
            today: rich(t.text),
            inf: rich(t.accentStrong),
@@ -133,9 +299,9 @@ diff --color -ruN a/src/charts/c1Allocation.tsx b/src/charts/c1Allocation.tsx
          },
        },
      },
-diff --color -ruN a/src/charts/c3CostPerMtok.tsx b/src/charts/c3CostPerMtok.tsx
---- a/src/charts/c3CostPerMtok.tsx	2026-10-22 23:02:17
-+++ b/src/charts/c3CostPerMtok.tsx	2026-10-22 23:02:17
+diff --color -ruN a2/src/charts/c3CostPerMtok.tsx b2/src/charts/c3CostPerMtok.tsx
+--- a/src/charts/c3CostPerMtok.tsx	2026-10-22 23:30:50
++++ b/src/charts/c3CostPerMtok.tsx	2026-10-22 23:30:50
 @@ -20,6 +20,7 @@
  import { PROVENANCE_TEXT, outlineOf } from "./provenanceStyle";
  import type { Tokens } from "./tokens";
@@ -152,7 +318,7 @@ diff --color -ruN a/src/charts/c3CostPerMtok.tsx b/src/charts/c3CostPerMtok.tsx
 -const BAR_WIDTH_PCT = 30;
 +// palette-v04 look: slimmer bars (at most 44px) so a marker and a bar read at one weight.
 +const MARKER_SIZE = V.look ? 14 : 12;
-+const BAR_WIDTH_PCT = V.look ? 18 : 30;
++const BAR_WIDTH_PCT = V.look ? 13 : 30;
  /** Narrower bars on a phone leave the markers room beside the pair. */
  const BAR_WIDTH_PCT_NARROW = 20;
  /** and a wider gap, so a value label wider than its bar does not touch the bar beside it. */
@@ -161,13 +327,68 @@ diff --color -ruN a/src/charts/c3CostPerMtok.tsx b/src/charts/c3CostPerMtok.tsx
 -const BAR_MAX_PX = 96;
 -const BAR_GAP_PCT = 12;
 +const BAR_MAX_PX = V.look ? 44 : 96;
-+const BAR_GAP_PCT = V.look ? 20 : 12;
++const BAR_GAP_PCT = V.look ? 18 : 12;
  
  /** The ECharts option for C3: grouped bars by model class, the comparator next to InfraVana, and a marker per priced class for each other option. */
  export function buildCostPerMtokOption(
-diff --color -ruN a/src/charts/c5TokensBought.tsx b/src/charts/c5TokensBought.tsx
---- a/src/charts/c5TokensBought.tsx	2026-10-22 23:02:17
-+++ b/src/charts/c5TokensBought.tsx	2026-10-22 23:02:17
+@@ -146,7 +148,32 @@
+   const roomStep = roomStepFrom(start);
+   const step = cmp.options.length > 1 ? Math.max(0, Math.min(priced ? labelStep : narrow ? MARKER_SIZE : 20, roomStep)) : 0;
+ 
+-  const markers: ScatterSeriesOption[] = cmp.options.map((o, i) => {
++  // palette-v04 look: every Today option is a bar on the same baseline as InfraVana, so prices compare by length.
++  const optionBars: BarSeriesOption[] = V.look
++    ? cmp.options.map((o) => ({
++        type: "bar",
++        name: o.alt.label,
++        barWidth: `${barPct}%`,
++        barMaxWidth: BAR_MAX_PX,
++        barGap: `${gapPct}%`,
++        silent: !stage,
++        emphasis: { disabled: true },
++        itemStyle: { color: t[optionStyle(o.rank).fill] },
++        data: rows.map((r) => {
++          const price = o.alt.usd_per_mtok_by_class[r.model_class];
++          return price === null ? null : { value: price, itemStyle: { color: t[optionStyle(o.rank).fill] } };
++        }),
++        label: {
++          show: stage && !narrow,
++          position: "top",
++          fontSize: t.fontXs,
++          color: t.textSecondary,
++          lineHeight: t.lineXs,
++          formatter: (p) => fmtUsdPerMtok(Number(p.value)),
++        },
++      }))
++    : [];
++  const markers: ScatterSeriesOption[] = V.look ? [] : cmp.options.map((o, i) => {
+     const style = optionStyle(o.rank);
+     return {
+       type: "scatter",
+@@ -185,9 +212,9 @@
+           trigger: "item",
+           formatter: (params: unknown) => {
+             const p = params as { seriesType: string; dataIndex: number; seriesIndex: number; value: unknown };
+-            if (p.seriesType === "scatter") {
++            if (p.seriesType === "scatter" || p.seriesIndex >= sides.length) {
+               const option = cmp.options[p.seriesIndex - sides.length];
+-              const k = Array.isArray(p.value) ? Number(p.value[0]) : -1;
++              const k = Array.isArray(p.value) ? Number(p.value[0]) : p.seriesType === "bar" ? p.dataIndex : -1;
+               const row = rows[k];
+               const price = row && option ? option.alt.usd_per_mtok_by_class[row.model_class] : null;
+               if (!row || !option || price === null) return "";
+@@ -235,7 +262,7 @@
+       axisTick: { show: false },
+       splitLine: { lineStyle: { color: t.grid } },
+     },
+-    series: [...bars, ...markers],
++    series: [...bars, ...optionBars, ...markers],
+   };
+ }
+ 
+diff --color -ruN a2/src/charts/c5TokensBought.tsx b2/src/charts/c5TokensBought.tsx
+--- a/src/charts/c5TokensBought.tsx	2026-10-22 23:30:50
++++ b/src/charts/c5TokensBought.tsx	2026-10-22 23:30:50
 @@ -24,6 +24,8 @@
  import type { Tokens } from "./tokens";
  import type { Dims } from "./useEChart";
@@ -211,9 +432,25 @@ diff --color -ruN a/src/charts/c5TokensBought.tsx b/src/charts/c5TokensBought.ts
            const lines = wrapText(bar.name, column, t.fontSm, t.weightBold, t.fontSans).map((l) => `{${style}|${l}}`);
            const sub = [
              ...(narrow ? detailLines(bar) : []),
-diff --color -ruN a/src/charts/provenanceStyle.ts b/src/charts/provenanceStyle.ts
---- a/src/charts/provenanceStyle.ts	2026-10-22 23:02:17
-+++ b/src/charts/provenanceStyle.ts	2026-10-22 23:02:17
+diff --color -ruN a2/src/charts/comparison.ts b2/src/charts/comparison.ts
+--- a/src/charts/comparison.ts	2026-10-22 23:30:50
++++ b/src/charts/comparison.ts	2026-10-22 23:30:50
+@@ -1,3 +1,4 @@
++import { V } from "../v04";
+ import type { Results, TodayAlternative } from "../contract";
+ import { TODAY_LABEL } from "./labels";
+ import { MAX_OPTIONS } from "./patterns";
+@@ -56,5 +57,6 @@
+  */
+ export function barRowsHeight(results: Results, phone = false): number {
+   const rows = 2 + comparisonOf(results).options.length;
+-  return Math.max(320, 70 + (phone ? 80 : 54) * rows);
++  // palette-v04 look: on a phone the row name sits above a full-width bar, two lines of text over a 24px bar.
++  return Math.max(320, 70 + (phone ? (V.look ? 84 : 80) : 54) * rows);
+ }
+diff --color -ruN a2/src/charts/provenanceStyle.ts b2/src/charts/provenanceStyle.ts
+--- a/src/charts/provenanceStyle.ts	2026-10-22 23:30:50
++++ b/src/charts/provenanceStyle.ts	2026-10-22 23:30:50
 @@ -32,6 +32,8 @@
  export function outlineOf(p: Provenance, hollow: boolean, t: Tokens): Outline {
    // v0.4 proposal (ask 10): provenance moves to the note line and the tooltip; no perimeters.
@@ -223,9 +460,9 @@ diff --color -ruN a/src/charts/provenanceStyle.ts b/src/charts/provenanceStyle.t
    if (hollow) {
      return {
        borderColor: dash ? t.provenanceOnHollow : t.positive,
-diff --color -ruN a/src/main.tsx b/src/main.tsx
---- a/src/main.tsx	2026-10-22 23:02:17
-+++ b/src/main.tsx	2026-10-22 23:02:17
+diff --color -ruN a2/src/main.tsx b2/src/main.tsx
+--- a/src/main.tsx	2026-10-22 23:30:50
++++ b/src/main.tsx	2026-10-22 23:30:50
 @@ -5,6 +5,8 @@
  import "./styles/tokens.css";
  import "./styles/app.css";
@@ -235,9 +472,9 @@ diff --color -ruN a/src/main.tsx b/src/main.tsx
  
  createRoot(document.getElementById("root")!).render(
    <StrictMode>
-diff --color -ruN a/src/styles/v04look.css b/src/styles/v04look.css
+diff --color -ruN a2/src/styles/v04look.css b2/src/styles/v04look.css
 --- a/src/styles/v04look.css	1969-12-31 19:00:00
-+++ b/src/styles/v04look.css	2026-10-22 23:02:17
++++ b/src/styles/v04look.css	2026-10-22 23:30:50
 @@ -0,0 +1,8 @@
 +/* palette-v04: the restyled charts, as token values (the ECharts option changes are keyed on V.look). */
 +html[data-look] {
@@ -247,13 +484,13 @@ diff --color -ruN a/src/styles/v04look.css b/src/styles/v04look.css
 +  --chart-today-line-width: 2px;         /* C10 Today lines wide enough to show their hue */
 +  --chart-frontier-line-width: 3px;      /* C10 InfraVana: the heaviest line on the page */
 +}
-diff --color -ruN a/src/styles/v04p.css b/src/styles/v04p.css
+diff --color -ruN a2/src/styles/v04p.css b2/src/styles/v04p.css
 --- a/src/styles/v04p.css	1969-12-31 19:00:00
-+++ b/src/styles/v04p.css	2026-10-22 23:02:17
-@@ -0,0 +1,53 @@
-+/* Generated by palette.py: the token overrides each option loads in the scratch app. */
++++ b/src/styles/v04p.css	2026-10-22 23:30:50
+@@ -0,0 +1,83 @@
++/* Generated by palette.py: the token overrides each offered option loads in the scratch app. */
 +
-+html[data-pal="P1"] {
++html[data-pal="AZ"] {
 +  --color-bg: #f7f4ef;
 +  --color-bg-top: #f7f4ef;
 +  --color-surface: #fcfaf6;
@@ -264,55 +501,86 @@ diff --color -ruN a/src/styles/v04p.css b/src/styles/v04p.css
 +  --color-border: #d6d2ca;
 +  --color-border-strong: #89867e;
 +  --color-grid: #e3dfd7;
-+  --color-accent: #006c93;
-+  --color-accent-strong: #005d7f;
-+  --color-accent-deep: #004964;
-+  --color-accent-hover: #003347;
-+  --color-accent-soft: #dcedf6;
++  --color-accent: #0065b0;
++  --color-accent-strong: #005798;
++  --color-accent-deep: #004479;
++  --color-accent-hover: #002f56;
++  --color-accent-soft: #dfebf8;
 +  --color-positive: #1e6250;
 +  --color-saved: #319379;
 +  --color-today-1: #5d1534;
-+  --color-today-2: #8f2526;
++  --color-today-2: #892e2c;
 +  --color-today-3: #a1592a;
 +  --color-today-4: #b28439;
 +  --color-section: #7f5a43;
-+  --color-label-on-saved: #1d1c19;
++  --color-notice-bg: #fdf3d9;
++  --color-notice-text: #584503;
++  --color-notice-border: #695205;
++  --color-preset-1: #8b7ea5;
++  --color-preset-2: #776a90;
++  --color-preset-3: #63567b;
++  --color-preset-4: #4f4366;
++  --color-preset-5: #3d3052;
++  --color-label-on-comparator: #fcfaf6;
++}
++html[data-pal="AZ"][data-ramp="clay"] {
++  --color-preset-1: #a47c65;
++  --color-preset-2: #8e6851;
++  --color-preset-3: #79543e;
++  --color-preset-4: #64412b;
++  --color-preset-5: #502e19;
 +}
 +
-+html[data-pal="P2"] {
-+  --color-bg: #f2f5f6;
-+  --color-bg-top: #f2f5f6;
-+  --color-surface: #f9fafb;
-+  --color-surface-muted: #e7eaec;
-+  --color-text: #191c1e;
-+  --color-text-secondary: #585b5e;
-+  --color-text-disabled: #838789;
-+  --color-border: #cbd4d9;
-+  --color-border-strong: #7f888c;
-+  --color-grid: #d8e1e6;
-+  --color-accent: #006c93;
-+  --color-accent-strong: #005d7f;
-+  --color-accent-deep: #004964;
-+  --color-accent-hover: #003347;
-+  --color-accent-soft: #dcedf6;
-+  --color-positive: #1e6538;
-+  --color-saved: #349d5b;
-+  --color-today-1: #5f0d40;
-+  --color-today-2: #921840;
-+  --color-today-3: #c82521;
-+  --color-today-4: #d86a26;
-+  --color-section: #214d62;
-+  --color-label-on-saved: #191c1e;
++html[data-pal="AG"] {
++  --color-bg: #f7f4ef;
++  --color-bg-top: #f7f4ef;
++  --color-surface: #fcfaf6;
++  --color-surface-muted: #ece9e2;
++  --color-text: #1d1c19;
++  --color-text-secondary: #5c5b57;
++  --color-text-disabled: #888682;
++  --color-border: #d6d2ca;
++  --color-border-strong: #89867e;
++  --color-grid: #e3dfd7;
++  --color-accent: #0065b0;
++  --color-accent-strong: #005798;
++  --color-accent-deep: #004479;
++  --color-accent-hover: #002f56;
++  --color-accent-soft: #dfebf8;
++  --color-positive: #1e6250;
++  --color-saved: #319379;
++  --color-today-1: #b28439;
++  --color-today-2: #5d1534;
++  --color-today-3: #892e2c;
++  --color-today-4: #a1592a;
++  --color-section: #7f5a43;
++  --color-notice-bg: #fdf3d9;
++  --color-notice-text: #584503;
++  --color-notice-border: #695205;
++  --color-preset-1: #8b7ea5;
++  --color-preset-2: #776a90;
++  --color-preset-3: #63567b;
++  --color-preset-4: #4f4366;
++  --color-preset-5: #3d3052;
++  --color-label-on-comparator: #1d1c19;
 +}
-diff --color -ruN a/src/v04.ts b/src/v04.ts
---- a/src/v04.ts	2026-10-22 23:02:17
-+++ b/src/v04.ts	2026-10-22 23:02:17
-@@ -8,7 +8,8 @@
++html[data-pal="AG"][data-ramp="clay"] {
++  --color-preset-1: #a47c65;
++  --color-preset-2: #8e6851;
++  --color-preset-3: #79543e;
++  --color-preset-4: #64412b;
++  --color-preset-5: #502e19;
++}
+diff --color -ruN a2/src/v04.ts b2/src/v04.ts
+--- a/src/v04.ts	2026-10-22 23:30:50
++++ b/src/v04.ts	2026-10-22 23:30:50
+@@ -8,7 +8,9 @@
  const on = (k: string): boolean => q.has(k) || q.has("all");
  
  export const V = {
 -  pal: get("pal"), // A | B | C: palette, solid fills, no patterns
 +  pal: get("pal"), // A | B | C | P1 | P2: palette, solid fills, no patterns
++  ramp: get("ramp"), // palette-v04: preset ramp clay instead of the default violet
 +  look: on("look"), // palette-v04: the restyled charts (bar weight, labels, rules, separators)
    a1: on("a1"),
    a2: on("a2"),

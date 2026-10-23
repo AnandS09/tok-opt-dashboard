@@ -5,7 +5,8 @@ Every formula is the published one, written out so a reviewer can check it:
 - OKLab and OKLCH (Bjorn Ottosson, 2020, "A perceptual color space for image processing").
 - CIELAB D65 and CIEDE2000 (Sharma, Wu and Dalal, 2005, with kL = kC = kH = 1).
 - Colour-vision deficiency simulation: Machado, Oliveira and Fernandes (2009), severity 1.0
-  matrices, applied to linear sRGB and clipped to [0, 1].
+  matrices, applied to linear sRGB and clipped to [0, 1] (simulate), and to gamma-encoded sRGB
+  as a sensitivity check (simulate_gamma).
 """
 import math
 
@@ -189,6 +190,15 @@ def simulate(h, kind):
     m = MACHADO[kind]
     out = [min(1.0, max(0.0, sum(m[i][j] * lin[j] for j in range(3)))) for i in range(3)]
     return rgb_to_hex(from_linear(c) for c in out)
+
+
+def simulate_gamma(h, kind):
+    """The same matrices applied to gamma-encoded sRGB (the other common convention; a sensitivity check)."""
+    if kind == "normal":
+        return h
+    rgb = hex_to_rgb(h)
+    m = MACHADO[kind]
+    return rgb_to_hex(min(1.0, max(0.0, sum(m[i][j] * rgb[j] for j in range(3)))) for i in range(3))
 
 
 def grey(h):
