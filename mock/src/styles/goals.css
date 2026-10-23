@@ -1,89 +1,193 @@
 /*
- * Goal tabs (spec 6.2) and the solve states of chart C5, in the Research Note
- * language (spec 14.3): serif labels on an ink rule, the accent only on the
- * active tab, 2px corners, no shadows. Every value comes from tokens.css.
+ * The goal tab bar and the result panel it is joined to (spec 6.2, 15.6, board
+ * 06 option 6B), and the solve states of chart C5, in the Research Note
+ * language (spec 14.3): four equal tabs on a darker fill, the chosen tab in the
+ * panel's colour with a 3px deep-accent top edge and no line under it so it
+ * joins the panel, 2px corners, no shadows. Every value comes from tokens.css.
  *
  * The hero's own rules (the lead, figure, stats) are in app.css beside the
- * rules they extend.
+ * rules they extend; the panel rules here carry a `.goal-section` prefix so
+ * they win over them whatever the load order.
  */
 
-/* ---- The tab list ---- */
+/* ---- The tab bar and the panel under it are one block, with no gap between ---- */
+
+.goal-section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 
 .goal-tabs {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
   min-width: 0;
 }
 
+/* The kicker over the bar, in the section accent (chrome only). */
+.goal-tabs__kicker {
+  margin: 0 0 var(--space-2);
+  color: var(--color-section, var(--color-text-secondary));
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+/*
+ * Four equal tabs fill the width at every width. The list sits over the panel
+ * (z-index) and its chosen tab reaches one pixel into the panel's top border,
+ * which is how the chosen tab and the panel become one shape.
+ */
 .goal-tabs__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-5);
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
   padding: 0;
 }
 
 .goal-tabs__tab {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: var(--space-1) 0;
-  background: none;
-  border: 0;
-  /* The active tab's accent line is the only coloured rule on the row. */
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  /* Behind the panel: a darker fill, a 1px top edge (the chosen tab has 3px, so the text stays level). */
+  padding: calc(var(--space-3) + 2px) var(--space-3) var(--space-3);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   color: var(--color-text-secondary);
-  font-family: var(--font-display);
-  font-size: var(--font-size-lg);
-  line-height: var(--line-height-tight);
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.goal-tabs__tab:hover:not(:disabled) {
-  color: var(--color-text);
+/* Neighbouring tabs share one edge: only the first tab draws a left border, so the four columns stay equal. */
+.goal-tabs__tab + .goal-tabs__tab {
+  border-left-width: 0;
 }
 
 .goal-tabs__tab[aria-selected="true"] {
-  border-bottom-color: var(--color-accent-strong);
-  color: var(--color-accent-strong);
+  /* The panel's colour, a 3px edge on top, nothing under it, and one pixel lower than the others. */
+  padding-top: var(--space-3);
+  margin-bottom: -1px;
+  background: var(--color-surface);
+  border-top: 3px solid var(--color-accent-deep);
+  border-bottom: 0;
+  color: var(--color-text);
+}
+
+.goal-tabs__label {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
+}
+
+.goal-tabs__tab[aria-selected="true"] .goal-tabs__label {
   font-weight: var(--font-weight-medium);
 }
 
-.goal-tabs__tab:disabled {
-  color: var(--color-text-disabled);
-  cursor: not-allowed;
+.goal-tabs__short {
+  display: none;
 }
 
-/* ---- Why a tab cannot be chosen: one line each, printed under the list ---- */
-
-.goal-tabs__reasons {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+.goal-tabs__figure {
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: var(--line-height-tight);
+  transition: opacity var(--duration-fade) var(--ease-standard);
 }
 
-.goal-tabs__reason-name {
+.goal-tabs__tab[aria-selected="true"] .goal-tabs__figure {
+  color: var(--color-positive);
   font-weight: var(--font-weight-semibold);
 }
 
-/* Phones: two tabs to a row, each a full-width touch target. */
-@media (max-width: 600px) {
-  .goal-tabs__list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 var(--space-4);
+/* While a figure is on its way the previous one stays, dimmed at once. */
+.goal-tabs__figure[data-stale="true"],
+.goal-tabs__figure[data-pending="true"] {
+  opacity: 0.45;
+  transition: none;
+}
+
+/* The label that marks a placeholder figure (G3 with no team work). */
+.goal-tabs__flag,
+.hero__flag {
+  display: inline-block;
+  padding: 0 var(--space-1);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  font-style: normal;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-label);
+  line-height: 1.4;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.hero__flag {
+  color: var(--color-text-secondary);
+}
+
+.goal-tabs__tab:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-offset) * -1);
+}
+
+/* ---- The result panel the chosen tab opens into (spec 15.6, 14.3) ---- */
+
+.goal-section .hero {
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.goal-section .hero__lead {
+  color: var(--color-section, var(--color-text-secondary));
+}
+
+/*
+ * The figure and its "than <comparator>" tail are two flex items that wrap as
+ * wholes, so a long comparator name dropped to its own line takes the height of
+ * its own text, not of the paragraph's much larger hero-size line.
+ */
+.goal-section .hero__figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.3em;
+}
+
+/* Phones: the four tabs stay in one row with their short names on up to two lines, and no figures. */
+@media (max-width: 599px) {
+  .goal-tabs__tab {
+    padding: calc(var(--space-2) + 2px) var(--space-2) var(--space-2);
   }
 
-  .goal-tabs__tab {
-    font-size: var(--font-size-md);
+  .goal-tabs__tab[aria-selected="true"] {
+    padding-top: var(--space-2);
+  }
+
+  .goal-tabs__label {
+    font-size: var(--font-size-sm);
+  }
+
+  .goal-tabs__long,
+  .goal-tabs__figure {
+    display: none;
+  }
+
+  .goal-tabs__short {
+    display: inline;
+  }
+
+  .goal-section .hero {
+    padding: var(--space-4);
   }
 }
 

@@ -1,27 +1,25 @@
 /**
- * The three places later steps fill (spec 4, 4.1, 6.2, 6.4). Each slot is its
+ * The two places later steps fill (spec 4, 4.1, 6.2, 6.4). Each slot is its
  * own component with its own props, so a step that builds one replaces that
- * function and leaves `App.tsx`, `Stage.tsx` and the other slots alone.
+ * function and leaves `App.tsx`, `Stage.tsx` and the other slot alone.
  *
- *   GoalTabsSlot    above the hero            goal tabs G1 to G4 (6.2)
- *   ComparatorSlot  under the hero            the "Compared with" selector (6.1)
+ *   GoalSlot        above the stage           the goal tab bar over the result
+ *                                             panel, whose headline holds the
+ *                                             comparator picker (6.1, 6.2, R-6, R-7)
  *   BenefitsSlot    under each figure title   the benefit boxes (6.4)
  *
- * The goal-tabs slot holds the goal tabs, the comparator slot holds the
- * "Compared with" selector and the boxes slot holds the benefit boxes.
  * `data-slot` names each one for tests and for the step that replaces it. The
  * view state and its setters arrive in `ctx`.
  */
-import { useMemo } from "react";
 import { effectiveView, frontierForView } from "../charts/c10Data";
 import type { ChartDef, Results } from "../contract";
 import { benefitContext } from "../store/benefitContext";
 import { choiceFor, selectedComparator } from "../store/comparator";
-import { goalTabStates } from "../store/goal";
+import { g3PlaceholderReason, useGoalFigures } from "../store/goal";
 import type { StageSlotContext } from "../store/stage";
 import { BenefitBoxes } from "./BenefitBoxes";
-import { ComparatorSelect } from "./ComparatorSelect";
 import { GoalTabs } from "./GoalTabs";
+import { HeadlineStrip } from "./HeadlineStrip";
 
 /** The result of a chart function that may throw while an input is mid-change, else `fallback`. */
 function attempt<T>(fn: () => T, fallback: T): T {
@@ -33,38 +31,38 @@ function attempt<T>(fn: () => T, fallback: T): T {
 }
 
 // ---------------------------------------------------------------------------
-// Slot 1: goal tabs. Replace the body of GoalTabsSlot; keep the wrapper's data-slot.
+// Slot 1: the goal tab bar and the result panel it is joined to (spec 6.2,
+// 15.6, 15.7). The tabs show every goal's figure, so all four goals are worked
+// out here whichever tab is active. The comparator is picked inside the
+// headline: the panel gets the choice and reports a pick through `setComparator`.
 // ---------------------------------------------------------------------------
 
-export function GoalTabsSlot({ ctx }: { ctx: StageSlotContext }) {
-  const { scenario, tables, view, setGoal } = ctx;
-  const states = useMemo(() => goalTabStates(scenario, tables), [scenario, tables]);
+export function GoalSlot({ ctx, contactUrl }: { ctx: StageSlotContext; contactUrl: string }) {
+  const { scenario, tables, results, view, goalView, setGoal, setComparator, setSteps } = ctx;
+  const figures = useGoalFigures({ scenario, tables, enabled: true });
+  const placeholder = view.goal === "G3" && g3PlaceholderReason(scenario, tables) !== null;
   return (
-    <div data-slot="goal-tabs">
-      <GoalTabs active={view.goal} states={states} onSelect={setGoal} />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Slot 2: the "Compared with" selector. Replace the body of ComparatorSlot.
-// ---------------------------------------------------------------------------
-
-export function ComparatorSlot({ ctx }: { ctx: StageSlotContext }) {
-  const { results, view, setComparator } = ctx;
-  return (
-    <div data-slot="comparator">
-      <ComparatorSelect
+    <div className="goal-section" data-slot="goal-tabs">
+      <GoalTabs active={view.goal} figures={figures} onSelect={setGoal} />
+      <HeadlineStrip
+        goal={view.goal}
         results={results}
-        value={selectedComparator(results, view.comparator)}
-        onChange={(id) => setComparator(choiceFor(results, id))}
+        scenario={scenario}
+        goalView={goalView}
+        comparator={{
+          value: selectedComparator(results, view.comparator),
+          onChange: (id) => setComparator(choiceFor(results, id)),
+        }}
+        placeholder={placeholder}
+        onSteps={setSteps}
+        contactUrl={contactUrl}
       />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Slot 3: benefit boxes, under the figure title (spec 6.4). The chart's
+// Slot 2: benefit boxes, under the figure title (spec 6.4). The chart's
 // one-sentence takeaway stays as the boxes' accessible name.
 // ---------------------------------------------------------------------------
 
@@ -79,7 +77,9 @@ export function BenefitsSlot({ def, results, ctx }: { def: ChartDef; results: Re
       : null;
   const context = benefitContext(ctx.scenario, ctx.tables, solve, frontier);
   const boxes = attempt(() => def.benefits(results, context), []);
-  const waiting = stale || ((ctx.goalView.goal === "G2" || ctx.goalView.goal === "G3") && solve === null);
+  // A solved tab with no value yet is waiting, unless the solve failed or cannot run (G3 with no team work).
+  const waiting =
+    stale || ((ctx.goalView.goal === "G2" || ctx.goalView.goal === "G3") && solve === null && ctx.goalView.error === null);
   return (
     <div data-slot="benefit-boxes" data-stale={waiting ? "true" : undefined}>
       <BenefitBoxes boxes={boxes} caption={attempt(() => def.caption(results, ctx.goalView), "")} saved={def.id === "C1"} />
