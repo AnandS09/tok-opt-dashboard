@@ -191,7 +191,11 @@ async function contentsColumn(page, base) {
   await sleep(200);
   const afterHeight = await page.eval(`(() => { const r = ${nav}.getBoundingClientRect(); return [r.top, r.bottom, innerHeight]; })()`);
   check("15.8 (1) after scrolling by the stage's height the column is still in the viewport", afterHeight[1] > 0 && afterHeight[0] < afterHeight[2], JSON.stringify(afterHeight));
-  await page.eval("window.scrollTo(0, document.querySelector('.stage').getBoundingClientRect().top + scrollY + 200)");
+  // Half of the slack between the stage and the column (at most 200px): the column can only be held while the stage is taller than it is.
+  await page.eval(`(() => {
+    const slack = document.querySelector('.stage').getBoundingClientRect().height - ${nav}.getBoundingClientRect().height;
+    window.scrollTo(0, document.querySelector('.stage').getBoundingClientRect().top + scrollY + Math.max(1, Math.min(200, slack / 2)));
+  })()`);
   await sleep(200);
   const mid = await page.eval(`(() => { const r = ${nav}.getBoundingClientRect(); return [r.top, r.bottom, innerHeight]; })()`);
   check("15.8 (1) part-way down the stage the column is in view, held at the top", mid[0] >= 0 && mid[0] < 40 && mid[1] <= mid[2], JSON.stringify(mid));
