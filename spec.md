@@ -1,6 +1,6 @@
-# Infravana Inference Playground: UI Spec (draft v0.4, NOT FROZEN)
+# Infravana Inference Playground: UI Spec (v0.4, FROZEN 2026-10-23)
 
-Status: MVP draft v0.4, **NOT FROZEN**. v0.4 adds section 15: the requirements for your twelve visual and flow asks of 2026-10-22 and your balanced-grid rule, written against the designs you chose on 2026-10-23 from the boards in mock/docs/design-v0.4/, and the Azure palette. It is ready for your freeze decision. Nothing in section 15 is built until you have frozen and approved the spec. Builds on [intent.md](intent.md). v0.3 folds in your decisions of 2026-10-21: the guided intake is the front door and the language-model layer is parked for a later version (Appendix A); the page takes the Research Note design language; charts sit on a carousel stage; every chart compares several "Today" options; goal tabs, an iso-cost Pareto chart and benefit boxes are added; the provenance rules of section 9 are restored.
+Status: MVP v0.4, **FROZEN on 2026-10-23**. Frozen at the user's instruction of 2026-10-23: changes after this point need the user's approval and a new version. v0.4 adds section 15: the requirements for your twelve visual and flow asks of 2026-10-22 and your balanced-grid rule, written against the designs you chose on 2026-10-23 from the boards in mock/docs/design-v0.4/, and the Azure palette. Builds on [intent.md](intent.md). v0.3 folds in your decisions of 2026-10-21: the guided intake is the front door and the language-model layer is parked for a later version (Appendix A); the page takes the Research Note design language; charts sit on a carousel stage; every chart compares several "Today" options; goal tabs, an iso-cost Pareto chart and benefit boxes are added; the provenance rules of section 9 are restored.
 
 Tags used in this document:
 
@@ -614,16 +614,14 @@ Only points you have not answered are listed. Closed by your answers on 2026-10-
 | 10 | Keep the information in a closed disclosure with a source table; the boxes and outlines go; no invented addresses | "Restore the full spec rules" for badges and outlines (12.2 row 15), BD-9, BD-11 guardrail (4) | R-10, 7.3, 9, 14.4 |
 | 11, 12 | Distinct Today hues; colourful, hopeful charts on calm chrome; Azure chosen, Azure gold-first not | The patterns of "Restore the full spec rules", the greys for Today, the v0.3 palette | R-11, R-12, 6, 6.1, 14, 14.1, 14.4, 14.5 |
 
-**"Rest are all ok": the reading to confirm at freeze.** On 2026-10-23 you said "rest are all ok". I read it as accepting two things, and ask you to confirm the reading at freeze:
+**Frozen on 2026-10-23.** You instructed the freeze and the start of implementation on 2026-10-23. The reading of "rest are all ok" (your reply of 2026-10-23) is therefore taken as confirmed: it accepts the one drawn result of each of asks 1, 3, 7, 9 (no ordinals) and 10 (R-1, R-3, R-7, R-9, R-10), and the flagged defaults this list carried before.
 
-- The one drawn result of each of asks 1, 3, 7, 9 (no ordinals) and 10 (R-1, R-3, R-7, R-9, R-10).
-- The flagged defaults this list carried before. The boards answered most of them: the estimate on the budget step (R-3), the preset row (R-4), the answer grid (R-5), the tab bar (R-6), the headline picker and its line (R-7), the contents column (R-8), the disclosure's details (R-10) and the palette's gates (R-11, R-12).
+**Still open, proceeding on these defaults.**
 
-**Open for the freeze.**
-
-1. **Brand-owner sign-off of the accent.** The accent moves from `#466577` to `#0065b0`: hue 250° instead of the logo's 232°, OKLCH chroma 0.142 instead of the logo's 0.038, CIEDE2000 14.3 from the logo's median colour. The logo file is unchanged. If it is not signed off, the palette README's fallback is the logo hue, and then InfraVana cannot be the most vivid mark with four Today bars that pass the vision gates. This replaces 12.4 item 28's accent question. (14.1, R-12)
-2. **The fourth Today option.** The palette has four Today colours: the comparator and options 1 to 3. The code allows four options besides the comparator (`MAX_OPTIONS` is 4 in `mock/src/charts/patterns.ts`), so it can draw five Today bars. The design README offers two ways out: option 4 reuses option 1's colour, or the Today bars are capped at four in total. The cap is the default you set in 6.1, and the palette README assumes it. Which do you want? (6.1, R-11)
-3. **Your view of the redrawn preset colours.** Board 04 was redrawn in four hues after you rejected the violet ramp. Your reaction to the redraw is not yet known. (R-4)
+1. **Brand-owner sign-off of the accent move to `#0065b0`** (from `#466577`). Proceeding on `#0065b0`, as 14.1 states. The logo file is unchanged. (14.1, R-12)
+2. **The fourth Today option reusing a colour.** The palette has four Today colours, for the comparator and options 1 to 3. Proceeding on the cap of four Today bars that you set in 6.1; a fourth option besides the comparator would reuse option 1's colour. (6.1, R-11)
+3. **`MAX_OPTIONS` is 4 in code** (`mock/src/charts/patterns.ts`), so the code can draw four options besides the comparator, five Today bars. Proceeding on the spec's cap, which the build enforces. (6.1, R-11)
+4. **The preset ramp tokens are missing from the generated palette files.** `generated/tokens.css` and `checks.md` hold the violet ramp, not board 04's four hues. Proceeding on board 04's hexes and figures (14.1, R-4) until `palette.py` generates them. Your view of the redrawn preset colours is also still unknown.
 
 **Gaps the boards and READMEs leave [OPEN].** These are recorded so the build does not guess:
 
