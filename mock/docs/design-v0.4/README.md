@@ -4,7 +4,64 @@
 
 All figures are invented placeholders, not quotes.
 
-## The twelve asks, in your order
+## Round 2 (your feedback of 2026-10-23): changed boards
+
+**These boards replace the round-1 boards for asks 2, 4, 5, 6 and 8, and add two boards for ask 9.** The round-1 versions are in [`archive/round-1/`](archive/round-1/). Every round-2 board uses palette 12A as a colour placeholder and says so, because the palette is being redone separately. Boards 11 and 12 and the `palette/` folder are not part of this round.
+
+| Ask | Board | What it shows | Reply |
+|---|---|---|---|
+| 2 | [`02-step-label.png`](02-step-label.png) | Step 1 reads "Step 1", with the rule already at 1/6. From step 2 it reads "Step n of N": 6 for a software company, 5 for an AI-first startup | one result |
+| 4 | [`04-customers.png`](04-customers.png) | 4B with colour-coded presets. Each button has a 5px top edge in its colour, and its tick on the slider matches. Drawn on the team, customers and budget steps, desktop and phone | one result |
+| 5 | [`05-sentence.png`](05-sentence.png) | 5B, balanced. 6 answers → 3 × 2. 5 answers → Company wide, then a row of 3. Phone: a one-column ruled list | one result |
+| 6 | [`06-goal-tabs.png`](06-goal-tabs.png) | Three browser-tab styles. **6B tab bar (recommended)**: four equal tabs with figures. 6A: folder tabs. 6C: Chrome-style tabs | 6A, 6B or 6C |
+| 8 | [`08-chart-tabs.png`](08-chart-tabs.png) | 8C contents column, refined, with ten charts. No numbers; a small glyph of each chart's form. Phone: one picker | one result |
+| 9 | [`09-grid-view.png`](09-grid-view.png) | The chart grid view for 4, 5, 6, 7, 9 and 10 charts, desktop and phone, with the balanced-grid rule written under it | one result |
+| 9 | [`09-other-grids.png`](09-other-grids.png) | The intake lists, answer grid, benefit boxes, fine-tune panel and goal tabs, all following the same rule | one result |
+
+**Colour logic for the ask 4 presets.**
+- **One hue, graded by size.** The presets are ordered sizes, so they use one violet ramp, light for small and dark for large: `#a575b4`, `#8a55af`, `#643e99`, `#412d7f`, with `#2e2160` kept for a fifth preset.
+- **No chart role uses violet.** The intake has no chart beside it, either.
+- **Contrast against the page:** 3.29, 4.78, 7.10 and 10.02.
+- **Greyscale:** neighbouring presets differ by 1.41 to 1.49:1.
+- **Not colour alone:** the value is always written on the button.
+
+**The balanced-grid rule** (proposed for every grid):
+1. **Every row is full.**
+2. **Columns come from the width:** up to container width ÷ the grid's minimum cell width.
+3. **Choose** the column count that gives the fewest rows.
+4. **When no column count divides the item count,** the first k items span two columns, with the smallest k that fills every row. A wide chart tile shows the chart's thumbnail beside its takeaway.
+5. **Results for the chart grid on desktop:**
+   - 4 → 4 × 1
+   - 5 → 3 columns, 1 wide
+   - 6 → 3 × 2
+   - 7 → 4 columns, 1 wide
+   - 9 → 3 × 3
+   - 10 → 4 columns, 2 wide
+6. **On phones,** grids have 2 columns. Odd counts get 1 wide tile.
+
+**What round 2 forces on the spec and the build:**
+- **Step label (spec 4.3):** "Step 1" on step 1 and "Step n of N" from step 2 replaces "no total anywhere".
+- **Tokens:** the preset colours are five new chrome tokens. The slider markup gives each tick and its button the same colour variable.
+- **Goal tabs (6.2):**
+  - The hero becomes a framed panel (surface fill, 1px edge) instead of the double rule (14.3).
+  - On phones, the four tabs stay in one row with short labels: "Less money", "More AI", "More people", "Trade-off". The old 2 × 2 phone layout goes.
+  - 6B needs every goal's figure up front, so all four goals must be solved before the tabs render.
+  - 6C needs a stated exception to the 2px corner rule (10px tab corners and curved feet).
+- **Contents column (4.1):** the column is 16rem wide on desktop and stays in view while the page scrolls. Grid view hides it. Every chart needs a glyph.
+- **Balanced grids:** a rule in 14.3. The grid view needs a "wide tile" variant with a takeaway line. The fine-tune panel with 5 knobs gets a wide knob.
+
+**Decisions for round 2:**
+- Choose 6A, 6B or 6C. I recommend 6B.
+- Approve the balanced-grid rule, in particular the wide-tile treatment for 5, 7 and 10 charts.
+- Approve the violet preset colours. They are provisional until the new palette lands, and the palette designer should confirm they do not clash with it.
+
+**Not drawn in round 2:**
+- 6B's figures for the other goals are placeholders.
+- A fine-tune panel with 5 knobs is described but not drawn.
+- The planned charts are placeholder tiles.
+- The hover and focus states of the tabs are not drawn.
+
+## The twelve asks, in your order (round 1)
 
 | Ask | Board | What we propose | Options | Recommended |
 |---|---|---|---|---|
