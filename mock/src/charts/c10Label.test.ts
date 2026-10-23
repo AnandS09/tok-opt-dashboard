@@ -102,7 +102,7 @@ describe("the review's scenario (software company, 120 people, 200,000 customers
     const dims: Dims = { width: 1040, height: 400 };
     const svg = renderSvg(buildParetoOption(data, "stage", t, dims), dims);
     // Move the text onto the frontier's first step.
-    const frontier = /<path d="(M[^"]*)"[^>]*stroke="#005798"[^>]*stroke-width="3"/.exec(svg)?.[1] ?? "";
+    const frontier = new RegExp(`<path d="(M[^"]*)"[^>]*stroke="${t.accentStrong}"[^>]*stroke-width="3"`).exec(svg)?.[1] ?? "";
     const [px, py] = (frontier.match(/-?[\d.]+/g) ?? []).map(Number);
     const moved = svg.replace(/(<text[^>]*?transform=")translate\([\d.-]+ [\d.-]+\)("[^>]*>With InfraVana<)/, `$1translate(${px} ${py})$2`);
     expect(nameLabelProblems(moved, t, "moved")).not.toEqual([]);
