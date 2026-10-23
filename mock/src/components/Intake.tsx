@@ -1,16 +1,21 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import type { LatencyClass, Results, Scenario, Tables } from "../contract";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import type { LatencyClass, Scenario, Tables } from "../contract";
 import { fmtInt, joinList, LATENCY_LABEL } from "./format";
 import { fmtPct, fmtUsd, fmtUsdSig } from "../shared/format";
 import { BUDGET_USD_PER_QUARTER_RANGE, CUSTOMERS_RANGE, USERS_RANGE } from "../data/ranges";
 import { LogSlider } from "./LogSlider";
 import "../styles/intake.css";
+import { ANSWER_GRID, balancedGrid, placeCells } from "../store/balancedGrid";
 import {
+  beginIntake,
   BUDGET_MARKS,
   BUDGETS,
   COMPANIES,
   companyOf,
+  estimateBasisLine,
+  estimateFigures,
   hasBasis,
+  kindsOfWork,
   lowerFirst,
   selectedWorkloads,
   setBudget,
@@ -20,10 +25,12 @@ import {
   setUsers,
   setWorkloads,
   SPEEDS,
+  stepProgress,
   stepsFor,
   withCurrent,
   type Company,
   type CompanyType,
+  type EstimateFigures,
   type StepId,
 } from "../store/intake";
 
@@ -39,7 +46,20 @@ const SPEED_HINT: Record<LatencyClass, string> = {
   batch: "Jobs run in the background, as in nightly reports",
 };
 
-const ICON_SHAPES: Record<CompanyType, ReactNode> = {
+/** The compute seller's row (spec 15.1) is drawn like the five company rows: a server rack in the same line style. */
+const PROVIDER = {
+  label: "I sell AI compute",
+  hint: "Cloud or GPU provider: talk to us about selling through InfraVana",
+};
+
+const ICON_SHAPES: Record<CompanyType | "provider", ReactNode> = {
+  provider: (
+    <>
+      <rect x="3" y="4" width="18" height="6" rx="1.5" />
+      <rect x="3" y="14" width="18" height="6" rx="1.5" />
+      <path d="M7 7h.01M7 17h.01M11 7h6M11 17h6" />
+    </>
+  ),
   ai_first: (
     <>
       <path d="M12 3l9 4.5-9 4.5-9-4.5z" />
@@ -67,56 +87,64 @@ const ICON_SHAPES: Record<CompanyType, ReactNode> = {
   ),
 };
 
+function Icon({ shape }: { shape: CompanyType | "provider" }) {
+  return (
+    <svg className="choice__icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      {ICON_SHAPES[shape]}
+    </svg>
+  );
+}
+
 function workLabels(ids: string[], tables: Tables): string {
   return joinList(tables.workloads.filter((w) => ids.includes(w.workload_id)).map((w) => lowerFirst(w.label)));
 }
 
 interface EstimateProps {
-  results: Results | null;
-  /** Shown instead of the figures, which would be stale or empty. */
-  note: string | null;
+  /** Null when the answers cannot be worked out. */
+  figures: EstimateFigures | null;
+  /** What the figures are worked out from; shown under them. */
+  basis: string;
 }
 
-/** The live estimate beside the questions: what `compute()` gives for the answers so far. */
-function Estimate({ results, note }: EstimateProps) {
-  let body;
-  if (note) {
-    body = <p className="estimate__note">{note}</p>;
-  } else if (!results) {
-    body = <p className="estimate__note">Working it out...</p>;
-  } else {
-    const total = results.allocation.total_usd;
-    const savedPct = Math.round(results.headline.cost_savings_pct);
-    const saved = (total * results.headline.cost_savings_pct) / 100;
-    body = (
-      <dl className="estimate__figures">
-        <div>
-          <dt>Today</dt>
-          <dd>{fmtUsdSig(total)}</dd>
-        </div>
-        <div>
-          <dt>With InfraVana</dt>
-          <dd>{fmtUsdSig(total - saved)}</dd>
-        </div>
-        <div className="estimate__saving">
-          <dt>You save</dt>
-          <dd>{savedPct > 0 ? fmtPct(savedPct) : "About the same"}</dd>
-        </div>
-      </dl>
-    );
-  }
+/**
+ * The live estimate beside the questions (spec 15.3): its figures are worked
+ * out from the visitor's own answers, and the line under them says which.
+ */
+function Estimate({ figures, basis }: EstimateProps) {
   return (
     <aside className="estimate" aria-label="Your estimate" aria-live="polite">
       <p className="estimate__title">Your estimate, per quarter</p>
-      {body}
+      {figures ? (
+        <>
+          <dl className="estimate__figures">
+            <div>
+              <dt>Today</dt>
+              <dd>{fmtUsdSig(figures.today)}</dd>
+            </div>
+            <div>
+              <dt>With InfraVana</dt>
+              <dd>{fmtUsdSig(figures.withInfravana)}</dd>
+            </div>
+            <div className="estimate__saving">
+              <dt>You save</dt>
+              <dd>{Math.round(figures.savedPct) > 0 ? fmtPct(figures.savedPct) : "About the same"}</dd>
+            </div>
+          </dl>
+          <p className="estimate__basis">{basis}</p>
+        </>
+      ) : (
+        <p className="estimate__note">These answers could not be worked out yet.</p>
+      )}
     </aside>
   );
 }
 
+/** The steps that show the estimate: the budget step and the speed step, once the head counts are answered (spec 15.3). */
+const ESTIMATE_STEPS: StepId[] = ["budget", "speed"];
+
 interface QuestionsProps {
   tables: Tables;
   scenario: Scenario;
-  results: Results | null;
   company: CompanyType | null;
   contactUrl: string;
   onCompany: (company: CompanyType) => void;
@@ -127,18 +155,10 @@ interface QuestionsProps {
 /**
  * The guided start: the company type, then the questions that follow from
  * it, one at a time. Work is multi-select with Continue; every other step is
- * a single click. The estimate beside it recomputes after every answer.
+ * a single click. From the budget step the estimate beside it is worked out
+ * from the answers given so far.
  */
-export function IntakeQuestions({
-  tables,
-  scenario,
-  results,
-  company,
-  contactUrl,
-  onCompany,
-  onEdit,
-  onDone,
-}: QuestionsProps) {
+export function IntakeQuestions({ tables, scenario, company, contactUrl, onCompany, onEdit, onDone }: QuestionsProps) {
   const [current, setCurrent] = useState<StepId>("company");
   const [answered, setAnswered] = useState<StepId[]>([]);
   /** The work cards switched on; the company type switches all of its own on. */
@@ -154,8 +174,19 @@ export function IntakeQuestions({
   // Before a type is picked the total is not known yet.
   const steps: StepId[] = info ? stepsFor(info, tables) : ["company"];
   const index = Math.max(0, steps.indexOf(current));
+  const progress = stepProgress(info, current, tables);
   const customerWord = info?.customerWord ?? "customers";
   const { users, budget_usd_per_quarter: budget, customers = 0 } = scenario.baseline;
+
+  const showEstimate = info !== null && ESTIMATE_STEPS.includes(current);
+  const estimate = useMemo(() => {
+    if (!showEstimate || !info) return null;
+    try {
+      return { figures: estimateFigures(scenario, tables), basis: estimateBasisLine(scenario, info, tables) };
+    } catch {
+      return { figures: null, basis: "" };
+    }
+  }, [showEstimate, info, scenario, tables]);
 
   // With no work picked the scenario still holds the last pick, so the visitor cannot leave the work step.
   const stuck = current === "work" && picked.length === 0;
@@ -178,7 +209,7 @@ export function IntakeQuestions({
       return;
     }
     onCompany(c.id);
-    onEdit((s) => setCompany(s, c, tables));
+    onEdit((s) => beginIntake(s, c, tables));
     setPicked(c.workloads);
     // Another type offers other work, so the later answers start again.
     setAnswered(["company"]);
@@ -219,15 +250,15 @@ export function IntakeQuestions({
         <>
           {COMPANIES.map((c) => (
             <button key={c.id} type="button" className="choice" aria-pressed={company === c.id} onClick={() => pickCompany(c)}>
-              <svg className="choice__icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-                {ICON_SHAPES[c.id]}
-              </svg>
+              <Icon shape={c.id} />
               <span className="choice__label">{c.title}</span>
               <span className="choice__hint">{c.line}</span>
             </button>
           ))}
           <a className="choice choice--provider" href={contactUrl}>
-            <span className="choice__label">I sell AI compute (cloud or GPU provider)</span>
+            <Icon shape="provider" />
+            <span className="choice__label">{PROVIDER.label}</span>
+            <span className="choice__hint">{PROVIDER.hint}</span>
           </a>
         </>
       );
@@ -313,11 +344,14 @@ export function IntakeQuestions({
   const chips = steps.filter((step) => step !== current && answered.includes(step));
 
   return (
-    <section className={`intake card intake--${current}`} aria-labelledby="intake-title">
+    <section
+      className={`intake card intake--${current}${showEstimate ? " intake--estimate" : ""}`}
+      aria-labelledby="intake-title"
+    >
       <div className="intake__main">
         <label className="intake__step">
-          {info ? `Step ${index + 1} of ${steps.length}` : "Step 1"}
-          <progress className="intake__progress" value={info ? index + 1 : 0} max={steps.length} />
+          {progress.label}
+          <progress className="intake__progress" value={progress.value} max={progress.max} />
         </label>
         {chips.length > 0 ? (
           <ul className="intake__answers" aria-label="Your answers so far">
@@ -366,53 +400,113 @@ export function IntakeQuestions({
           ) : null}
         </div>
       </div>
-      {/* Step 1 has nothing to estimate yet, so the panel starts at step 2 (spec 4.3). */}
-      {current === "company" ? null : (
-        <Estimate results={results} note={stuck ? "Pick at least one kind of work." : null} />
-      )}
+      {/* No panel on steps 1 to 4: it has nothing of the visitor's to work from until the budget step (spec 15.3). */}
+      {estimate ? <Estimate figures={estimate.figures} basis={estimate.basis} /> : null}
     </section>
   );
 }
 
-interface BlankProps {
+/** The width of an element, re-read whenever it changes size and before the first paint. */
+function useWidth(ref: RefObject<HTMLElement | null>): number {
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const read = () => {
+      const next = el.clientWidth;
+      setWidth((previous) => (previous === next ? previous : next));
+    };
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return width;
+}
+
+function Caret() {
+  return (
+    <svg className="answer__caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+      <path d="M2 4.5l4 4 4-4" />
+    </svg>
+  );
+}
+
+interface SelectCellProps {
   label: string;
   value: string;
   choices: Choice[];
   onChange: (value: string) => void;
 }
 
-/** One blank of the sentence: a native select styled as underlined text. */
-function Blank({ label, value, choices, onChange }: BlankProps) {
+interface CellFrameProps {
+  label: string;
+  span: number;
+  endsRow: boolean;
+  lastRow: boolean;
+  children: (labelId: string) => ReactNode;
+}
+
+/** One cell of the answer grid: a small-capitals label over the control that holds the value (spec 15.5). */
+function AnswerCell({ label, span, endsRow, lastRow, children }: CellFrameProps) {
+  const labelId = useId();
   return (
-    <select className="blank" aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}>
-      {choices.map((c) => (
-        <option key={c.value} value={c.value}>
-          {c.label}
-        </option>
-      ))}
-    </select>
+    <div
+      className={`answer${endsRow ? " answer--ends-row" : ""}${lastRow ? " answer--last-row" : ""}`}
+      style={span > 1 ? { gridColumn: `span ${span}` } : undefined}
+    >
+      <span id={labelId} className="answer__label">
+        {label}
+      </span>
+      <span className="answer__control">{children(labelId)}</span>
+    </div>
   );
 }
 
-interface WorkBlankProps {
+/** The value of a list cell: a native select drawn as serif text with a caret and an underline. */
+function SelectValue({ labelId, value, choices, onChange }: Omit<SelectCellProps, "label"> & { labelId: string }) {
+  return (
+    <>
+      <select className="answer__value" aria-labelledby={labelId} value={value} onChange={(e) => onChange(e.target.value)}>
+        {choices.map((c) => (
+          <option key={c.value} value={c.value}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+      <Caret />
+    </>
+  );
+}
+
+interface WorkValueProps {
+  labelId: string;
   tables: Tables;
   options: string[];
   selected: string[];
   onChange: (ids: string[]) => void;
 }
 
-/** The work blank: a button that opens a native popover of checkboxes; at least one stays on. */
-function WorkBlank({ tables, options, selected, onChange }: WorkBlankProps) {
+/** The work cell's value: a button that opens a native popover of checkboxes; at least one stays on. */
+function WorkValue({ labelId, tables, options, selected, onChange }: WorkValueProps) {
   const popId = `${useId()}-work`;
-  const text = workLabels(selected, tables);
+  const buttonId = `${popId}-button`;
   return (
     <>
-      <button type="button" className="blank" popoverTarget={popId} aria-label={`Main work: ${text}`}>
-        {text}
+      <button
+        id={buttonId}
+        type="button"
+        className="answer__value"
+        popoverTarget={popId}
+        aria-labelledby={`${labelId} ${buttonId}`}
+        title={workLabels(selected, tables)}
+      >
+        {kindsOfWork(selected.length)}
       </button>
+      <Caret />
       <div id={popId} popover="auto" className="popover">
         <fieldset className="checks">
-          <legend className="field__label">Main work</legend>
+          <legend className="field__label">Work</legend>
           {tables.workloads
             .filter((w) => options.includes(w.workload_id))
             .map((w) => {
@@ -441,7 +535,7 @@ function WorkBlank({ tables, options, selected, onChange }: WorkBlankProps) {
   );
 }
 
-interface SentenceProps {
+interface AnswersProps {
   tables: Tables;
   scenario: Scenario;
   company: CompanyType;
@@ -449,74 +543,131 @@ interface SentenceProps {
   onEdit: (update: (s: Scenario) => Scenario) => void;
 }
 
-/** The answers as one editable sentence; changing a blank recomputes the page. */
-export function IntakeSentence({ tables, scenario, company, onCompany, onEdit }: SentenceProps) {
+function capitalise(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+/**
+ * The answers as a balanced grid (spec 15.5): Company, Team and Customers,
+ * then Budget a quarter, Work and Answers needed; a type without team work or
+ * customer work leaves that cell out. Each cell is the control of the old
+ * old blank, and changing one recomputes the page. The columns and wide cells come
+ * from the balanced-grid rule (spec 15.13) for the grid's width.
+ */
+export function IntakeAnswers({ tables, scenario, company, onCompany, onEdit }: AnswersProps) {
   const { users, budget_usd_per_quarter: budget, customers = 0 } = scenario.baseline;
   const info = companyOf(company);
   const selected = selectedWorkloads(scenario, tables);
   const team = hasBasis(scenario, tables, "employee");
   const served = hasBasis(scenario, tables, "customer");
+  const gridRef = useRef<HTMLDivElement>(null);
+  const width = useWidth(gridRef);
+
+  const cells: { key: string; label: string; render: (labelId: string) => ReactNode }[] = [
+    {
+      key: "company",
+      label: "Company",
+      render: (labelId) => (
+        <SelectValue
+          labelId={labelId}
+          value={company}
+          choices={COMPANIES.map((c) => ({ value: c.id, label: c.title }))}
+          onChange={(v) => {
+            const next = companyOf(v as CompanyType);
+            onEdit((s) => setCompany(s, next, tables));
+            onCompany(next.id);
+          }}
+        />
+      ),
+    },
+  ];
+  if (team) {
+    cells.push({
+      key: "team",
+      label: "Team",
+      render: (labelId) => (
+        <SelectValue
+          labelId={labelId}
+          value={String(users)}
+          choices={withCurrent(info.teamSizes, users).map((n) => ({
+            value: String(n),
+            label: `${fmtInt(n)} ${n === 1 ? "person" : "people"}`,
+          }))}
+          onChange={(v) => onEdit((s) => setUsers(s, Number(v)))}
+        />
+      ),
+    });
+  }
+  if (served) {
+    cells.push({
+      key: "customers",
+      label: capitalise(info.customerWord),
+      render: (labelId) => (
+        <SelectValue
+          labelId={labelId}
+          value={String(customers)}
+          choices={withCurrent(info.customerCounts, customers).map((n) => ({ value: String(n), label: fmtInt(n) }))}
+          onChange={(v) => onEdit((s) => setCustomers(s, Number(v)))}
+        />
+      ),
+    });
+  }
+  cells.push(
+    {
+      key: "budget",
+      label: "Budget a quarter",
+      render: (labelId) => (
+        <SelectValue
+          labelId={labelId}
+          value={String(budget)}
+          choices={withCurrent(BUDGETS, budget).map((n) => ({ value: String(n), label: fmtUsd(n) }))}
+          onChange={(v) => onEdit((s) => setBudget(s, Number(v)))}
+        />
+      ),
+    },
+    {
+      key: "work",
+      label: "Work",
+      render: (labelId) => (
+        <WorkValue
+          labelId={labelId}
+          tables={tables}
+          options={[...info.workloads, ...selected]}
+          selected={selected}
+          onChange={(ids) => onEdit((s) => setWorkloads(s, ids, tables))}
+        />
+      ),
+    },
+    {
+      key: "speed",
+      label: "Answers needed",
+      render: (labelId) => (
+        <SelectValue
+          labelId={labelId}
+          value={scenario.latency_class}
+          choices={SPEEDS.map((c) => ({ value: c, label: LATENCY_LABEL[c] }))}
+          onChange={(v) => onEdit((s) => setSpeed(s, v as LatencyClass))}
+        />
+      ),
+    },
+  );
+
+  const layout = balancedGrid(cells.length, width, ANSWER_GRID);
+  const places = placeCells(layout);
 
   return (
-    <div className="sentence">
-      We are{" "}
-      <Blank
-        label="Company type"
-        value={company}
-        choices={COMPANIES.map((c) => ({ value: c.id, label: c.sentence }))}
-        onChange={(v) => {
-          const next = companyOf(v as CompanyType);
-          onEdit((s) => setCompany(s, next, tables));
-          onCompany(next.id);
-        }}
-      />
-      {team ? (
-        <>
-          {" "}
-          with{" "}
-          <Blank
-            label="Team size"
-            value={String(users)}
-            choices={withCurrent(info.teamSizes, users).map((n) => ({ value: String(n), label: fmtInt(n) }))}
-            onChange={(v) => onEdit((s) => setUsers(s, Number(v)))}
-          />{" "}
-          people
-        </>
-      ) : null}
-      {served ? (
-        <>
-          {team ? " and " : " serving "}
-          <Blank
-            label={`Number of ${info.customerWord}`}
-            value={String(customers)}
-            choices={withCurrent(info.customerCounts, customers).map((n) => ({ value: String(n), label: fmtInt(n) }))}
-            onChange={(v) => onEdit((s) => setCustomers(s, Number(v)))}
-          />{" "}
-          {info.customerWord}
-        </>
-      ) : null}
-      . Our AI budget is{" "}
-      <Blank
-        label="Budget per quarter"
-        value={String(budget)}
-        choices={withCurrent(BUDGETS, budget).map((n) => ({ value: String(n), label: fmtUsd(n) }))}
-        onChange={(v) => onEdit((s) => setBudget(s, Number(v)))}
-      />{" "}
-      a quarter, used {selected.length > 1 ? "on" : "only on"}{" "}
-      <WorkBlank
-        tables={tables}
-        options={[...info.workloads, ...selected]}
-        selected={selected}
-        onChange={(ids) => onEdit((s) => setWorkloads(s, ids, tables))}
-      />
-      , and answers need to come back{" "}
-      <Blank
-        label="Response speed"
-        value={scenario.latency_class}
-        choices={SPEEDS.map((c) => ({ value: c, label: LATENCY_LABEL[c] }))}
-        onChange={(v) => onEdit((s) => setSpeed(s, v as LatencyClass))}
-      />
-      .
+    <div
+      ref={gridRef}
+      className="answers"
+      role="group"
+      aria-label="Your answers"
+      style={{ gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))` }}
+    >
+      {cells.map((cell, i) => (
+        <AnswerCell key={cell.key} label={cell.label} {...places[i]}>
+          {cell.render}
+        </AnswerCell>
+      ))}
     </div>
   );
 }
