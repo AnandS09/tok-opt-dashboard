@@ -18,6 +18,7 @@ import {
   setSpeed,
   setUsers,
   setWorkloads,
+  showsEstimate,
   stepProgress,
   stepsFor,
   type Company,
@@ -213,5 +214,23 @@ describe("the line under the estimate figures (spec 15.3)", () => {
 
   it("kindsOfWork is singular for one", () => {
     expect([kindsOfWork(1), kindsOfWork(2), kindsOfWork(5)]).toEqual(["1 kind", "2 kinds", "5 kinds"]);
+  });
+});
+
+describe("15.3 (1): the estimate panel is on the budget and speed steps and on no earlier one", () => {
+  const steps = ["company", "work", "users", "customers", "budget", "speed"] as const;
+
+  it("shows on budget and speed only", () => {
+    expect(steps.filter((s) => showsEstimate(s))).toEqual(["budget", "speed"]);
+  });
+
+  it("holds for every company type's own run of steps: no step before the budget has a panel", () => {
+    for (const company of COMPANIES) {
+      const own = stepsFor(company, tables);
+      const first = own.indexOf("budget");
+      expect(first, company.id).toBeGreaterThan(0);
+      for (const step of own.slice(0, first)) expect(showsEstimate(step), `${company.id} ${step}`).toBe(false);
+      for (const step of own.slice(first)) expect(showsEstimate(step), `${company.id} ${step}`).toBe(true);
+    }
   });
 });

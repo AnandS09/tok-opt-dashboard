@@ -266,6 +266,14 @@ export function stepProgress(company: Company | null, current: StepId, tables: T
   return { label: `Step ${n} of ${steps.length}`, value: n, max: steps.length };
 }
 
+/** The steps that show the estimate: the budget step and the speed step, once the head counts are answered (spec 15.3 (1)). */
+const ESTIMATE_STEPS: readonly StepId[] = ["budget", "speed"];
+
+/** True on the steps that have the estimate beside the question; false on every earlier step. */
+export function showsEstimate(step: StepId): boolean {
+  return ESTIMATE_STEPS.includes(step);
+}
+
 /**
  * The scenario the live estimate is worked out from (spec 15.3): the visitor's
  * answers (company type, work, head counts, speed) and the section 5 defaults,

@@ -20,6 +20,9 @@ import { loadFixtureScenario, loadFixtureTables, restoreFetch } from "../test/fi
 import {
   computedFigures,
   G3_PLACEHOLDER,
+  tabFigures,
+  tabPlan,
+  tabSolveAxes,
   g1FigureText,
   g3PlaceholderReason,
   g4FigureText,
@@ -276,6 +279,78 @@ describe("G3 when no head count fits the comparator's budget (the review's answe
   it("says Needs a larger budget when neither side fits", () => {
     const solve = { ...solveAtBudget(review, tables, "users"), infravana_scale: 0 };
     expect(solvedFigureText("G3", review, solve)).toBe(NEEDS_BUDGET);
+  });
+});
+
+describe("R-6 acceptance (7) across scenarios and comparators: every tab's figure is its hero's figure", () => {
+  /** The four tab figures as the page makes them, with the solves run to completion. */
+  function tabs(base: Scenario, goal: GoalId, patch: Partial<HashFields>) {
+    const ctx = contextFor(base, goal, patch);
+    const plan = tabPlan(ctx.scenario, tables);
+    const axes = tabSolveAxes(plan.placeholder);
+    const finished = (axis: "intensity" | "users" | null) => ({ solve: axis === null ? null : solveAtBudget(plan.own, tables, axis), stale: false, error: null });
+    return tabFigures(plan.own, plan.computed, plan.placeholder, finished(axes.intensity), finished(axes.users));
+  }
+
+  /** Two comparators other than the default, so the figures cannot match by coincidence of the default. */
+  const otherComparators = (base: Scenario): string[] => {
+    const r = contextFor(base, "G1").results;
+    return r.today_alternatives.filter((a) => a.pattern_id !== r.comparator).slice(0, 2).map((a) => a.pattern_id);
+  };
+
+  const bases = (): [string, Scenario][] => [
+    ["s1", scenarios.s1],
+    ["s2", scenarios.s2],
+    ["hardware_heavy", scenarios.hardware_heavy],
+    ["review answers", (() => {
+      let s = beginIntake(scenarios.s1, companyOf("software"), tables);
+      s = setSpeed(setBudget(setCustomers(setUsers(s, 120), 200_000), 150_000), "standard");
+      return s;
+    })()],
+  ];
+
+  it("G1, G2, G3 and G4 equal their heroes for every scenario, the default comparator and two others", () => {
+    for (const [name, base] of bases()) {
+      for (const comparator of [null, ...otherComparators(base)]) {
+        const patch: Partial<HashFields> = comparator === null ? {} : { comparator };
+        const label = `${name} ${comparator ?? "default"}`;
+        const figs = tabs(base, "G1", patch);
+        // G1: the percent (or "about the same") is in the hero's text.
+        expect(plain(heroOf(slotMarkup(base, "G1", patch))), `${label} G1`).toContain(figs.G1.text);
+        // G2 and G3: the multiple (or the sentence that replaces it) is the hero's figure line.
+        for (const goal of ["G2", "G3"] as const) {
+          const hero = heroOf(slotMarkup(base, goal, patch));
+          const figure = plain(/<p class="hero__figure[^"]*"[^>]*>(.*?)<\/p>/.exec(hero)?.[1] ?? "");
+          const tab = figs[goal].text;
+          expect(figure === tab || figure === `${tab} for your budget`, `${label} ${goal}: tab "${tab}", hero "${figure}"`).toBe(true);
+        }
+        // G4: the extra saving at the largest give-up.
+        const levels = tradeoffLevels(base, tables, { comparator: comparator ?? null });
+        const steps = { qualityStep: levels.quality.length - 1, speedStep: levels.speed.length - 1 };
+        const hero4 = heroOf(slotMarkup(base, "G4", { ...patch, ...steps }));
+        const stated = /<strong>([^<]*) more<\/strong>/.exec(hero4)?.[1];
+        expect(figs.G4.text, `${label} G4`).toBe(stated !== undefined ? `Up to ${stated} more saved` : "No extra saving");
+      }
+    }
+  });
+
+  it("G2's tab reads the intensity solve and G3's the users solve, so the two differ where the solves do", () => {
+    // On the review's answers the two solves differ (G2 1.9 times, G3 has no head count for the comparator).
+    const review = bases()[3][1];
+    const figs = tabs(review, "G1", {});
+    expect(figs.G2.text).toMatch(/times the AI work$/);
+    expect(figs.G3.text).toBe(FITS_WITH_US_ONLY);
+    // Handing each tab the other's solve changes its figure, so a tab that reads the wrong axis cannot pass the test above.
+    const plan = tabPlan(contextFor(review, "G1").scenario, tables);
+    const intensity = { solve: solveAtBudget(plan.own, tables, "intensity"), stale: false, error: null };
+    const users = { solve: solveAtBudget(plan.own, tables, "users"), stale: false, error: null };
+    expect(tabFigures(plan.own, plan.computed, null, users, intensity).G2.text).not.toBe(figs.G2.text);
+    expect(tabFigures(plan.own, plan.computed, null, users, intensity).G3.text).not.toBe(figs.G3.text);
+  });
+
+  it("solves G2 on intensity and G3 on users up front, and G3 not at all behind the placeholder", () => {
+    expect(tabSolveAxes(null)).toEqual({ intensity: "intensity", users: "users" });
+    expect(tabSolveAxes("no team work")).toEqual({ intensity: "intensity", users: null });
   });
 });
 

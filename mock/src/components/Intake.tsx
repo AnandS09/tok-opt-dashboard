@@ -24,6 +24,7 @@ import {
   setSpeed,
   setUsers,
   setWorkloads,
+  showsEstimate,
   SPEEDS,
   stepProgress,
   stepsFor,
@@ -139,9 +140,6 @@ function Estimate({ figures, basis }: EstimateProps) {
   );
 }
 
-/** The steps that show the estimate: the budget step and the speed step, once the head counts are answered (spec 15.3). */
-const ESTIMATE_STEPS: StepId[] = ["budget", "speed"];
-
 interface QuestionsProps {
   tables: Tables;
   scenario: Scenario;
@@ -178,7 +176,7 @@ export function IntakeQuestions({ tables, scenario, company, contactUrl, onCompa
   const customerWord = info?.customerWord ?? "customers";
   const { users, budget_usd_per_quarter: budget, customers = 0 } = scenario.baseline;
 
-  const showEstimate = info !== null && ESTIMATE_STEPS.includes(current);
+  const showEstimate = info !== null && showsEstimate(current);
   const estimate = useMemo(() => {
     if (!showEstimate || !info) return null;
     try {
