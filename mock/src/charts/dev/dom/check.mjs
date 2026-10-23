@@ -656,7 +656,8 @@ async function child(bundle) {
       click(gridButton);
       await settle("grid view");
       groundRules("grid view tiles");
-      click(gridButton);
+      // The column holding the first button unmounts while the grid is open and the grid header mounts its own, so read it again.
+      click(doc.querySelector("button.stage__grid-button") ?? gridButton);
       await settle("grid view closed");
     }
   }
