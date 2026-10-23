@@ -88,7 +88,8 @@ function g1Content(results: Results, picker: ReactNode): HeroContent {
     const withUs = infravanaPct < 100 ? `${fmtPct(infravanaPct)} with ${BRAND}` : `all of it with ${BRAND}`;
     figure = (
       <>
-        Your {fmtUsd(results.allocation.budget_usd)} covers {fmtPct(todayPct)} of this work with {picker}, {withUs}
+        Your {fmtUsd(results.allocation.budget_usd)} covers {fmtPct(todayPct)} of this work with{" "}
+        <span className="hero__keep">{picker},</span> {withUs}
       </>
     );
   } else if (savedPct > 0) {
@@ -388,6 +389,7 @@ export function HeadlineStrip({
     "hero__figure",
     hero.tone === "saving" ? "hero__figure--saving" : "",
     hero.tone === "quiet" ? "hero__figure--quiet" : "",
+    hero.versus !== null ? "hero__figure--versus" : "",
   ]
     .filter(Boolean)
     .join(" ");

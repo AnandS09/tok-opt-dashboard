@@ -152,11 +152,12 @@
 }
 
 /*
- * The figure and its "than <comparator>" tail are two flex items that wrap as
- * wholes, so a long comparator name dropped to its own line takes the height of
- * its own text, not of the paragraph's much larger hero-size line.
+ * A headline with a "than <comparator>" tail: the figure and the tail are two
+ * flex items that wrap as wholes, so a long comparator name dropped to its own
+ * line takes the height of its own text, not of the paragraph's much larger
+ * hero-size line. Any other headline is ordinary inline text.
  */
-.goal-section .hero__figure {
+.goal-section .hero__figure--versus {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;

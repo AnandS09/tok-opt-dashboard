@@ -210,6 +210,18 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * The picker and the comma that follows it never part, so the comma cannot start a
+ * line of its own; the name still wraps inside its own box.
+ */
+.hero__keep {
+  white-space: nowrap;
+}
+
+.hero__keep .comparator {
+  white-space: normal;
+}
+
 /* In the small "than ..." tail of the G1 headline the name still reads as the brand's picker. */
 .hero__than .comparator {
   color: var(--color-accent-strong);

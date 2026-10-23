@@ -352,6 +352,18 @@ describe("R-7 acceptance (1) to (3): the comparator is the one list control of t
     expect(inFigure("G3")).toEqual({ figure: false, lead: true });
   });
 
+  it("keeps the comma after the picker inside one unbreakable span, so it cannot start a line of its own", () => {
+    // A budget under what the work costs today gives the long headline: "Your $X covers N% of this work with <picker>, M% with InfraVana".
+    const short: Scenario = { ...scenarios.s1, baseline: { ...scenarios.s1.baseline, budget_usd_per_quarter: 60_000 } };
+    const hero = heroOf(slotMarkup(short, "G1"));
+    const figure = /<p class="hero__figure[^"]*"[^>]*>(.*?)<\/p>/.exec(hero)?.[1] ?? "";
+    expect(plain(figure)).toMatch(/covers \d+% of this work with .*, .* with InfraVana/);
+    expect(figure).toMatch(/<span class="hero__keep"><span class="comparator"[\s\S]*<\/span>,<\/span>/);
+    // That headline is ordinary inline text; only the "than <comparator>" form has the flex tail.
+    expect(hero).not.toContain("hero__figure--versus");
+    expect(heroOf(slotMarkup(scenarios.s1, "G1"))).toContain("hero__figure--versus");
+  });
+
   it("lists every comparator the results offer, with the typical buyer marked while another is chosen", () => {
     const ctx = contextFor(scenarios.s1, "G1");
     const markup = slotMarkup(scenarios.s1, "G1");
