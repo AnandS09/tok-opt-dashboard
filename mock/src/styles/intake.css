@@ -4,10 +4,50 @@
  * tokens.css; nothing here sets a colour literal.
  */
 
-/* ---- Step 1 has no estimate panel, so its list takes the full width ---- */
+/* ---- Only the budget and speed steps have an estimate panel; every other step takes the full width (spec 15.3) ---- */
 
-.intake.intake--company {
+.intake {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.intake.intake--estimate {
+  grid-template-columns: minmax(0, 1fr) 240px;
+}
+
+/*
+ * ---- Step label and progress rule (spec 15.2, 14.3) ----
+ * Small capitals with tracking in the section accent, over a rule in the same
+ * colour on a light track. The rule is 3px: board 02 and its README draw 3px
+ * where spec 14.3 says 2px (open in spec 15.2), and the board is built.
+ * --color-section is added by the palette; until it is merged the label and
+ * rule fall back to the accent that was in use.
+ */
+.intake .intake__step {
+  color: var(--color-section, var(--color-accent-strong));
+}
+
+.intake .intake__progress {
+  height: 3px;
+}
+
+.intake .intake__progress::-webkit-progress-bar {
+  background: var(--color-border);
+}
+
+.intake .intake__progress::-webkit-progress-value {
+  background: var(--color-section, var(--color-accent-strong));
+}
+
+.intake .intake__progress::-moz-progress-bar {
+  background: var(--color-section, var(--color-accent-strong));
+}
+
+/* ---- Estimate: what the figures are worked out from (spec 15.3) ---- */
+
+.estimate .estimate__basis {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-body);
 }
 
 /* ---- Ruled list of equal rows ---- */
@@ -75,24 +115,6 @@
 
 .choices--list .choice__hint {
   font-size: var(--font-size-md);
-}
-
-/* The provider path: the same row, quieter, so it does not pose as a kind of buyer. */
-.choices--list .choice--provider {
-  color: var(--color-text-secondary);
-}
-
-.choices--list .choice--provider .choice__label {
-  font-weight: var(--font-weight-regular);
-}
-
-/* One line, no icon and no hint (spec 4.3, BD-18): the text starts in the icon column. */
-.choices--list .choice--provider {
-  grid-template-columns: minmax(0, 1fr) 20px;
-}
-
-.choices--list .choice--provider .choice__label {
-  grid-column: 1;
 }
 
 /* Work and speed have no icon, and work is a multi-select: a tick box in place of the arrow. */
@@ -186,6 +208,8 @@
 
 /* A 44px-high hit area over a 4px track, filled in accent up to the thumb. */
 .lv__range {
+  position: relative;
+  z-index: 1;
   appearance: none;
   width: 100%;
   height: 44px;
@@ -237,48 +261,39 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Ticks only show where the marks sit under them (wide tracks); above the button row they would point at nothing. */
-.lv__ticks {
-  display: none;
-  position: absolute;
-  left: 11px;
-  right: 11px;
-  top: 30px;
-  height: 8px;
-  pointer-events: none;
+/*
+ * Preset buttons and ticks (spec 15.4, board 04). The presets are one row of
+ * equal buttons above the track at every width. Each has its own hue as a 6px
+ * top edge, and its tick on the track takes the same colour from the same
+ * custom property (--lv-hue, set on both in LogSlider).
+ */
+.lv__presets {
+  margin-bottom: var(--space-2);
 }
 
-.lv__tick {
-  position: absolute;
-  top: 0;
-  width: 1px;
-  height: 8px;
-  background: var(--color-text);
-}
-
-.lv__ends {
-  display: flex;
-  justify-content: space-between;
+.lv__presets-label {
+  margin-bottom: var(--space-1);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  font-variant-numeric: var(--font-numeric);
 }
 
-/* Narrow tracks: the marks are a row of 44px buttons, because spaced by value they would sit under 44px apart. */
 .lv__marks {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
   gap: var(--space-2);
 }
 
 .lv__mark {
-  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 0;
   min-height: 44px;
-  padding: 0 var(--space-3);
-  background: transparent;
+  padding: 0 var(--space-1);
+  background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border-strong);
+  border-top: 6px solid var(--lv-hue);
   border-radius: var(--radius-sm);
   font: inherit;
   font-size: var(--font-size-sm);
@@ -287,13 +302,19 @@
 }
 
 .lv__mark:hover {
-  border-color: var(--color-accent-strong);
+  background: var(--color-surface-raised);
 }
 
+/* Selected: a tint of its own colour, a 3px edge in that colour, a check mark and a bold label, so colour is never the only cue. */
 .lv__mark[aria-pressed="true"] {
-  background: var(--color-text);
-  border-color: var(--color-text);
-  color: var(--color-surface);
+  background: color-mix(in srgb, var(--lv-hue) 16%, var(--color-surface-raised));
+  border: 3px solid var(--lv-hue);
+  border-top-width: 6px;
+  font-weight: var(--font-weight-bold);
+}
+
+.lv__check {
+  flex: none;
 }
 
 .lv__mark:focus-visible {
@@ -301,33 +322,31 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* Wide tracks (640px and up): the marks sit under the track at their own values. */
-@container lv (min-width: 640px) {
-  .lv__ticks {
-    display: block;
-  }
+/* A short tick under the track at each preset's value, in the preset's hue. The thumb travels 11px in from each end. */
+.lv__ticks {
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  top: 25px;
+  height: 12px;
+  pointer-events: none;
+}
 
-  .lv__marks {
-    position: relative;
-    display: block;
-    order: 2;
-    height: 40px;
-    margin: 0 11px;
-  }
+.lv__tick {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 12px;
+  background: var(--lv-hue);
+  transform: translateX(-50%);
+}
 
-  .lv__mark {
-    position: absolute;
-    top: 0;
-    left: var(--lv-at);
-    transform: translateX(-50%);
-    min-width: 36px;
-    min-height: 36px;
-    padding: 0 var(--space-2);
-  }
-
-  .lv__ends {
-    order: 3;
-  }
+.lv__ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: var(--font-numeric);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -365,20 +384,6 @@
     grid-column: 2;
   }
 
-  .choices--list .choice--provider {
-    grid-template-columns: minmax(0, 1fr) 16px;
-    grid-template-rows: auto;
-  }
-
-  .choices--list .choice--provider .choice__label {
-    grid-column: 1;
-    font-size: var(--font-size-md);
-  }
-
-  .choices--list .choice--provider::after {
-    grid-row: 1;
-  }
-
   .choices--list .choice__hint {
     font-size: var(--font-size-sm);
   }
@@ -406,5 +411,118 @@
 
   .lv__affix {
     font-size: var(--font-size-lg);
+  }
+
+  .lv__mark {
+    font-size: calc(var(--font-size-sm) - 1px);
+  }
+}
+
+/*
+ * ---- Answer grid (spec 15.5, board 05) ----
+ * Cells hold a small-capitals label over a serif value with a caret and an
+ * underline, divided by rules. How many columns, and which cells are wide, is
+ * decided in Intake.tsx by the balanced-grid rule; the rules between cells are
+ * drawn here only between neighbours (answer--ends-row, answer--last-row).
+ */
+.answers {
+  display: grid;
+  border-top: 1px solid var(--color-text);
+}
+
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.answer--ends-row {
+  border-right: 0;
+}
+
+.answer--last-row {
+  border-bottom: 0;
+}
+
+.answer__label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+.answer__control {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.answer__value {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: var(--space-1) var(--space-5) var(--space-1) 0;
+  overflow: hidden;
+  background: transparent;
+  color: var(--color-accent-strong);
+  border: 0;
+  border-bottom: 1px solid var(--color-accent-strong);
+  border-radius: 0;
+  appearance: none;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.answer__value:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.answer__caret {
+  position: absolute;
+  right: var(--space-1);
+  top: 50%;
+  margin-top: -6px;
+  color: var(--color-accent-strong);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* Phones: one column, a ruled list with the label on the left and the value on the right. */
+@media (max-width: 600px) {
+  .answer {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-1);
+  }
+
+  /* The label column is as narrow as "CUSTOMERS" allows (longer labels wrap), leaving the longest value, "Software or internet company", room on one line at 1rem. */
+  .answer__label {
+    flex: none;
+    width: 5.5rem;
+  }
+
+  .answer__control {
+    flex: 1;
+  }
+
+  .answer__value {
+    font-size: var(--font-size-md);
   }
 }

@@ -35,6 +35,15 @@ function inputChars(display: string): number {
   return Math.max(2, display.length - commas * 0.5) + 0.6;
 }
 
+/**
+ * The hue of the preset at `index` (spec 15.4): one of four, in order, shared
+ * by the button's top edge and its tick on the track through one custom
+ * property, so the two cannot differ.
+ */
+export function presetHue(index: number): string {
+  return `var(--color-preset-${(index % 4) + 1})`;
+}
+
 const INVALID = "Enter a number, such as 2500, 20K or 1.5M.";
 
 /** The note shown when a typed value was snapped to a bound of the range. */
@@ -51,6 +60,7 @@ function clampNote(limit: "min" | "max", bound: number, money: boolean): string 
 export function LogSlider({ label, unit, range, marks, marksLabel, value, formatMark, money = false, onChange }: LogSliderProps) {
   const id = useId();
   const noteId = `${id}-note`;
+  const marksId = `${id}-marks`;
   const [position, setPosition] = useState(0);
   const [text, setText] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -130,7 +140,50 @@ export function LogSlider({ label, unit, range, marks, marksLabel, value, format
       <p id={noteId} className="lv__note" role="status">
         {note}
       </p>
+      {marks.length > 0 ? (
+        <div className="lv__presets">
+          <p id={marksId} className="lv__presets-label">
+            {marksLabel}
+          </p>
+          <div
+            className="lv__marks"
+            role="group"
+            aria-labelledby={marksId}
+            style={{ gridTemplateColumns: `repeat(${marks.length}, minmax(0, 1fr))` }}
+          >
+            {marks.map((m, i) => (
+              <button
+                key={m}
+                type="button"
+                className="lv__mark"
+                aria-pressed={m === value}
+                style={{ ["--lv-hue" as string]: presetHue(i) }}
+                onClick={() => {
+                  setNote("");
+                  set(m);
+                }}
+              >
+                {m === value ? (
+                  <span className="lv__check" aria-hidden="true">
+                    {"✓"}
+                  </span>
+                ) : null}
+                {formatMark(m)}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="lv__track">
+        <div className="lv__ticks" aria-hidden="true">
+          {marks.map((m, i) => (
+            <span
+              key={m}
+              className="lv__tick"
+              style={{ left: `${valueToFraction(m, range) * 100}%`, ["--lv-hue" as string]: presetHue(i) }}
+            />
+          ))}
+        </div>
         <input
           className="lv__range"
           type="range"
@@ -144,31 +197,9 @@ export function LogSlider({ label, unit, range, marks, marksLabel, value, format
           onChange={(e) => onRangeChange(Number(e.target.value))}
           onKeyDown={onRangeKey}
         />
-        <div className="lv__ticks" aria-hidden="true">
-          {marks.map((m) => (
-            <span key={m} className="lv__tick" style={{ left: `${valueToFraction(m, range) * 100}%` }} />
-          ))}
-        </div>
         <div className="lv__ends" aria-hidden="true">
           <span>{formatMark(range.min)}</span>
           <span>{formatMark(range.max)}</span>
-        </div>
-        <div className="lv__marks" role="group" aria-label={marksLabel}>
-          {marks.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className="lv__mark"
-              aria-pressed={m === value}
-              style={{ ["--lv-at" as string]: `${valueToFraction(m, range) * 100}%` }}
-              onClick={() => {
-                setNote("");
-                set(m);
-              }}
-            >
-              {formatMark(m)}
-            </button>
-          ))}
         </div>
       </div>
     </div>
