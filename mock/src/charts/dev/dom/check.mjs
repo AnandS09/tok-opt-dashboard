@@ -30,6 +30,16 @@
  * line, the caption as the accessible name, no shadow or round corner; and,
  * under another comparator, that every box names the one the selector shows.
  *
+ * And the chart rules of spec 15.10 to 15.12, read from the mounted page's
+ * computed styles: every colour token of 14.1 equals the Azure table value
+ * (read from `docs/design-v0.4/palette/generated/tokens.css`, block AZ); no
+ * element of a chart has a dashed or dotted computed border or a provenance
+ * badge; each chart's "Where these numbers come from" disclosure is closed on
+ * load, sits between the canvas and the source line, and opened shows the four
+ * headings and one row per non-measured group, with links read from the data
+ * (`--sources-real` serves one row with a real address and requires the link to
+ * follow it and the placeholder words to go); and no provenance word outside it.
+ *
  * It runs the app once as it is (must pass), then once per entry of `FAULTS`
  * with that fault put into the source by a transform (each must fail), so a
  * pass is never vacuous. Exit code 0 only when the first passes and all the
@@ -45,6 +55,25 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../../..");
 const IDS = ["C1", "C5", "C3", "C10"];
+/** The real-address run gives every offer row a real address in place of the placeholder one. */
+const REAL_PREFIX = "https://prices.example.test/real/";
+const REAL_FROM = "https://example.invalid/placeholder-invented-data/offers/";
+/** The Azure colour table of spec 14.1, read from the generated palette file (block AZ), not typed here. */
+const AZURE_TOKENS = (() => {
+  const css = fs.readFileSync(path.join(root, "docs/design-v0.4/palette/generated/tokens.css"), "utf8");
+  const block = /html\[data-pal="AZ"\]\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+  const out = {};
+  for (const m of block.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) if (!m[1].startsWith("--color-preset-")) out[m[1]] = m[2].trim().toLowerCase();
+  return out;
+})();
+/** Every address a data row holds, so a link can be checked to have been read from one. */
+const DATA_ADDRESSES = (() => {
+  const out = new Set();
+  for (const f of ["hardware.csv", "seat_plans.csv", "model_offers.csv", "buying_patterns.csv", "quality.csv"]) {
+    for (const m of fs.readFileSync(path.join(root, "public/data", f), "utf8").matchAll(/https?:\/\/[^,\s]+/g)) out.add(m[0]);
+  }
+  return out;
+})();
 // The page lists the charts in registry order.
 
 // ---------------------------------------------------------------------------
@@ -95,6 +124,16 @@ const FAULTS = [
     from: '<ul className="benefit-boxes__list">',
     to: '<ul className="benefit-boxes__list" style={{ boxShadow: "0 1px 3px black" }}>',
   },
+  // Spec 15.10 to 15.12: each rule of the disclosure and the palette is broken once and must turn the run red.
+  { name: "disclosure-open", file: "charts/ProvenanceNotes.tsx", from: '<details className="sources">', to: '<details className="sources" open>' },
+  { name: "summary-renamed", file: "charts/ProvenanceNotes.tsx", from: "<summary>Where these numbers come from</summary>", to: "<summary>Sources</summary>" },
+  { name: "badge-returns", file: "charts/ProvenanceNotes.tsx", from: '<div className="chart-notes">', to: '<div className="chart-notes"><span className="prov-badge" />' },
+  { name: "dashed-border", file: "charts/ProvenanceNotes.tsx", from: '<p className="chart-source">', to: '<p className="chart-source" style={{ borderTopStyle: "dashed" }}>' },
+  { name: "provenance-word-outside", file: "charts/ProvenanceNotes.tsx", from: "<b>Source:</b> {source.source}", to: "<b>Source:</b> modelled {source.source}" },
+  { name: "link-address-typed-in-code", file: "charts/ProvenanceNotes.tsx", from: "<a href={link.url} rel=", to: '<a href="https://invented.example/x" rel=' },
+  { name: "placeholder-words-dropped", file: "charts/ProvenanceNotes.tsx", from: '{link.placeholder ? <em className="sources__note"> {PLACEHOLDER_NOTE}</em> : null}', to: "{null}" },
+  { name: "colour-token-edited", env: { DOM_CHECK_TOKEN_FAULT: "1" } },
+  { name: "chart-on-muted-ground", env: { DOM_CHECK_GROUND_FAULT: "1" } },
 ];
 
 function findJsdom() {
@@ -119,7 +158,7 @@ async function buildApp(outFile, fault) {
     name: "put-a-fault-in",
     enforce: "pre",
     transform(code, id) {
-      if (!fault || !id.endsWith(fault.file)) return null;
+      if (!fault || !fault.file || !id.endsWith(fault.file)) return null;
       if (!code.includes(fault.from)) throw new Error(`check.mjs: ${fault.file} changed; update the "${fault.name}" fault in check.mjs`);
       return { code: code.replace(fault.from, fault.to), map: null };
     },
@@ -156,12 +195,19 @@ async function parent() {
       const out = path.join(tmp, `${name}.mjs`);
       await buildApp(out, fault);
       const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--child", out], {
-        env: { ...process.env, DOM_CHECK_JSDOM: jsdom },
+        env: { ...process.env, DOM_CHECK_JSDOM: jsdom, ...(fault?.env ?? {}) },
         encoding: "utf8",
       });
       outcomes[name] = run;
       console.log(`--- ${name} (exit ${run.status})\n${run.stdout}${run.stderr && !run.stdout ? run.stderr : ""}`);
       if (!fault) {
+        // The same build with one fixture row given a real address: its link follows it and drops the placeholder words (spec 15.10 acceptance 6).
+        const real = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--child", out, "--sources-real"], {
+          env: { ...process.env, DOM_CHECK_JSDOM: jsdom },
+          encoding: "utf8",
+        });
+        outcomes.real = real;
+        console.log(`--- one fixture row with a real address (exit ${real.status})\n${real.stdout}${real.stderr && !real.stdout ? real.stderr : ""}`);
         // The same build opened on the address of C10's speed view (spec 6.3, acceptance 5: a reload honours it).
         const reload = spawnSync(process.execPath, [fileURLToPath(import.meta.url), "--child", out, "--reload"], {
           env: { ...process.env, DOM_CHECK_JSDOM: jsdom, DOM_CHECK_HASH: "#slide=C10&goal=G1&c10=speed" },
@@ -171,10 +217,10 @@ async function parent() {
         console.log(`--- reload on #slide=C10&c10=speed (exit ${reload.status})\n${reload.stdout}${reload.stderr && !reload.stdout ? reload.stderr : ""}`);
       }
     }
-    const good = outcomes["as-is"].status === 0 && outcomes.reload.status === 0;
+    const good = outcomes["as-is"].status === 0 && outcomes.reload.status === 0 && outcomes.real.status === 0;
     const red = FAULTS.map((f) => [f.name, outcomes[f.name].status === 1]);
     const controlsRed = red.every(([, r]) => r);
-    console.log(`as-is and reload pass: ${good ? "yes" : "NO"}; negative controls that fail: ${red.map(([n, r]) => `${n} ${r ? "yes" : "NO"}`).join(", ")}`);
+    console.log(`as-is, reload and real-address runs pass: ${good ? "yes" : "NO"}; negative controls that fail: ${red.map(([n, r]) => `${n} ${r ? "yes" : "NO"}`).join(", ")}`);
     console.log(good && controlsRed ? "ALL OK" : "FAILED");
     process.exit(good && controlsRed ? 0 : 1);
   } finally {
@@ -201,7 +247,9 @@ async function child(bundle) {
 
   // jsdom drops clamp() declarations and does not resolve var(), so both are
   // evaluated here, with the viewport below, before the text becomes a <style>.
-  const strip = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "");
+  // `colour-token-edited` negative control: the accent token is changed in the stylesheet the page loads.
+  const faulty = (t) => (process.env.DOM_CHECK_TOKEN_FAULT ? t.replace(/(--color-accent:\s*)#[0-9a-f]{6}/, "$1" + "#" + "0066b0") : t);
+  const strip = (t) => faulty(t).replace(/\/\*[\s\S]*?\*\//g, "");
   const tokensText = strip(fs.readFileSync(path.join(root, "src/styles/tokens.css"), "utf8"));
   const rootBlock = /:root\s*\{([\s\S]*?)\n\}/.exec(tokensText)[1];
   const tokenMap = {};
@@ -219,6 +267,12 @@ async function child(bundle) {
   for (const f of ["tokens.css", "app.css", "intake.css", "stage.css", "compare.css", "c10.css"]) {
     const style = doc.createElement("style");
     style.textContent = evalClamp(resolveVars(strip(fs.readFileSync(path.join(root, "src/styles", f), "utf8"))));
+    doc.head.appendChild(style);
+  }
+  // `chart-on-muted-ground` negative control: a chart card is given the muted fill, which marks fall below 3:1 on.
+  if (process.env.DOM_CHECK_GROUND_FAULT) {
+    const style = doc.createElement("style");
+    style.textContent = ".chart-card { background: " + tokenMap["--color-surface-muted"] + "; }";
     doc.head.appendChild(style);
   }
 
@@ -248,7 +302,9 @@ async function child(bundle) {
   globalThis.fetch = window.fetch = async (url) => {
     const file = path.join(pub, decodeURIComponent(new URL(String(url), "http://localhost:5173/").pathname));
     if (!fs.existsSync(file)) return { ok: false, status: 404, statusText: "Not Found", text: async () => "", json: async () => ({}) };
-    const body = fs.readFileSync(file, "utf8");
+    let body = fs.readFileSync(file, "utf8");
+    // `--sources-real`: the first direct offer carries a real address, as a data update would give it.
+    if (process.argv.includes("--sources-real") && file.endsWith("model_offers.csv")) body = body.split(REAL_FROM).join(REAL_PREFIX);
     return { ok: true, status: 200, statusText: "OK", text: async () => body, json: async () => JSON.parse(body), headers: { get: () => null } };
   };
 
@@ -363,6 +419,13 @@ async function child(bundle) {
     logs.push(`error: ${label}: sizes still changing after 40 rounds (resize feedback loop)`);
   }
 
+  /** The rows of the open or closed sources table of the chart on the stage: [group, covers, basis, source cell]. */
+  const sourceRows = () =>
+    [...doc.querySelectorAll(".chart-card .sources__table tbody tr")].map((tr) => {
+      const cells = [...tr.querySelectorAll("td")];
+      return { group: cells[0]?.textContent ?? "", covers: cells[1]?.textContent ?? "", basis: cells[2]?.textContent ?? "", cell: cells[3] };
+    });
+
   // Mount the real entry point.
   await import(pathToFileURL(path.resolve(bundle)).href);
   await settle("load");
@@ -390,6 +453,28 @@ async function child(bundle) {
 
   // The page shows one chart at a time (spec 4.1): drive each slide with the Next arrow, in registry order.
   const click = (el) => el.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+  if (process.argv.includes("--sources-real")) {
+    // One row of data given a real address: its link follows it, with no code change (spec 15.10 acceptance 6).
+    let bad = 0;
+    const check = (ok, what) => {
+      if (!ok) bad++;
+      console.log(`${ok ? "PASS" : "FAIL"} ${what}`);
+    };
+    const details = doc.querySelector(".chart-card details.sources");
+    details.open = true;
+    const rows = sourceRows();
+    const comparator = rows.find((r) => r.group.startsWith("Today:"));
+    const others = rows.find((r) => r.group === "Other Today options");
+    const hrefs = (r) => [...(r?.cell?.querySelectorAll("a") ?? [])].map((a) => a.getAttribute("href"));
+    check(hrefs(comparator).length > 0 && hrefs(comparator).every((h) => h.startsWith(REAL_PREFIX)), `the comparator row's links follow the data: ${JSON.stringify(hrefs(comparator))}`);
+    check(!(comparator?.cell?.textContent ?? "").includes("placeholder, no source yet"), "the comparator row drops \"placeholder, no source yet\" for a real address");
+    check(hrefs(others).length > 0 && (others?.cell?.textContent ?? "").includes("placeholder, no source yet"), "a row whose addresses are still placeholders keeps the words");
+    const errs = logs.filter((l) => !/Not implemented/.test(l) && (l.startsWith("error:") || l.startsWith("window error:")));
+    check(errs.length === 0, `no console errors (${errs.length})`);
+    console.log(bad === 0 ? "ALL OK" : `FAILED: ${bad}`);
+    window.close();
+    process.exit(bad === 0 ? 0 : 1);
+  }
   if (process.argv.includes("--reload")) {
     // Opened on the speed view's address: C10 is in focus, the speed option is the checked one, the invented-data line is shown.
     let bad = 0;
@@ -401,7 +486,7 @@ async function child(bundle) {
     check(/(?:^|[#&])slide=C10(?:&|$)/.test(window.location.hash), `the address still names C10: ${window.location.hash}`);
     check(checked?.value === "speed", `the checked switch option is "${checked?.value}", expected "speed"`);
     check(/(?:^|&)c10=speed/.test(window.location.hash), "the address keeps c10=speed");
-    check(doc.querySelector(".prov-badge--invented") !== null, "the invented-placeholder badge is shown");
+    check(sourceRows().some((r) => r.covers.includes("Invented speeds and batch or flex prices") && r.basis === "Modelled"), "the speed view's table lists the invented rows as modelled");
     check((doc.querySelector(".chart-source")?.textContent ?? "").includes("invented placeholder data"), "the source line says invented placeholder data");
     const state = chartState(doc.querySelector(".chart-card"));
     check(state.canvases.length > 0 && state.canvases.every((c) => c.w > 0 && c.h > 0 && c.draws > 0) && !state.alert, `the chart is drawn: ${JSON.stringify(state)}`);
@@ -461,6 +546,90 @@ async function child(bundle) {
     console.log(`${boxFailed ? "FAIL" : "PASS"} ${id} benefit boxes: ${items.length} shown${boxFailed ? `; ${problems.join("; ")}` : ""}`);
     return comparators;
   };
+  /**
+   * Spec 15.10 and 15.11 on the chart on the stage, from the mounted page: no dashed or dotted border and no badge on any element
+   * of the card; the sources disclosure closed on load, between the canvas and the source line, with its summary text; opened,
+   * the four headings and a row per non-measured group, every link read from a data row and followed by the placeholder words
+   * exactly when its address is the placeholder; and no provenance word outside the disclosure.
+   */
+  const chartRules = (id) => {
+    const card = doc.querySelector(".chart-card");
+    const problems = [];
+    if (!card) return;
+    if (card.querySelector(".prov-badge, .chart-notes__badges")) problems.push("a provenance badge");
+    for (const el of card.querySelectorAll("*")) {
+      const cs = window.getComputedStyle(el);
+      for (const side of ["top", "right", "bottom", "left"]) {
+        const style = cs.getPropertyValue(`border-${side}-style`);
+        if (style === "dashed" || style === "dotted") problems.push(`${style} border-${side} on ${el.className || el.tagName}`);
+      }
+    }
+    const details = [...card.querySelectorAll("details.sources")];
+    if (details.length !== 1) problems.push(`${details.length} disclosures`);
+    const d = details[0];
+    if (d) {
+      if (d.open) problems.push("the disclosure is open on load");
+      if (d.querySelector("summary")?.textContent !== "Where these numbers come from") problems.push(`the summary reads "${d.querySelector("summary")?.textContent}"`);
+      const canvas = card.querySelector('[role="img"]');
+      const source = card.querySelector(".chart-source");
+      const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+      if (!before(canvas, d) || !before(d, source)) problems.push("the disclosure is not between the canvas and the source line");
+      d.open = true;
+      const heads = [...d.querySelectorAll("thead th")].map((th) => th.textContent);
+      if (heads.join("|") !== "Bar or group|Covers|Basis|Source") problems.push(`headings [${heads.join(", ")}]`);
+      const rows = sourceRows();
+      if (rows.length === 0) problems.push("no rows");
+      for (const r of rows) {
+        const links = [...r.cell.querySelectorAll("a")];
+        if (r.basis === "Vendor-reported" && !links.every((a) => DATA_ADDRESSES.has(a.getAttribute("href")))) problems.push(`a link in "${r.group}" is not an address of a data row`);
+        const placeholders = links.filter((a) => new URL(a.getAttribute("href")).hostname.endsWith(".invalid")).length;
+        const noted = r.cell.querySelectorAll(".sources__note").length;
+        if (r.basis === "Vendor-reported" && placeholders !== noted) problems.push(`"${r.group}": ${noted} placeholder notes for ${placeholders} placeholder links`);
+        if (r.basis === "Modelled" && links.length > 0) problems.push(`a modelled row "${r.group}" carries a link`);
+      }
+      d.open = false;
+    }
+    const copy = card.cloneNode(true);
+    for (const el of copy.querySelectorAll(".sources, .sr-only")) el.remove();
+    if (/vendor[-_ ]reported|modelled/i.test(copy.textContent ?? "")) problems.push("a provenance word outside the disclosure");
+    if (problems.length > 0) failed++;
+    console.log(`${problems.length > 0 ? "FAIL" : "PASS"} ${id} chart rules (spec 15.10, 15.11)${problems.length > 0 ? `: ${problems.join("; ")}` : ""}`);
+  };
+  /**
+   * Spec 15.11 acceptance 8: the computed background of every chart container, thumbnail and grid tile is `--color-bg` or
+   * `--color-surface`. The ground of a chart is the first ancestor with a background of its own; one with none lets the page's
+   * show through, which is the body's.
+   */
+  const toHex = (rgb) => {
+    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/.exec(rgb);
+    if (!m || (m[4] !== undefined && Number(m[4]) === 0)) return null;
+    return "#" + [m[1], m[2], m[3]].map((v) => Number(v).toString(16).padStart(2, "0")).join("");
+  };
+  const groundOf = (el) => {
+    for (let n = el; n; n = n.parentElement) {
+      const hex = toHex(window.getComputedStyle(n).backgroundColor);
+      if (hex) return hex;
+    }
+    return null;
+  };
+  const groundRules = (label) => {
+    const allowed = [AZURE_TOKENS["--color-bg"], AZURE_TOKENS["--color-surface"]];
+    const holders = [...doc.querySelectorAll('[role="img"]')];
+    const wrong = holders.map((h) => [h, groundOf(h)]).filter(([, g]) => !allowed.includes(g));
+    const ok = holders.length > 0 && wrong.length === 0;
+    if (!ok) failed++;
+    console.log(`${ok ? "PASS" : "FAIL"} ${label}: ${holders.length} chart containers sit on --color-bg or --color-surface${wrong.length ? `; on ${wrong.map(([, g]) => g).join(", ")}` : ""}`);
+  };
+  /** Spec 15.12 acceptance 1 and 14.3 acceptance 1: every colour token of 14.1 read from the page's computed styles equals its Azure table value. */
+  const tokenRules = () => {
+    const cs = window.getComputedStyle(doc.documentElement);
+    const wrong = Object.entries(AZURE_TOKENS)
+      .filter(([name, want]) => cs.getPropertyValue(name).trim().toLowerCase() !== want)
+      .map(([name, want]) => `${name} is "${cs.getPropertyValue(name).trim()}", the table says ${want}`);
+    const missing = Object.keys(AZURE_TOKENS).length < 20;
+    if (wrong.length > 0 || missing) failed++;
+    console.log(`${wrong.length > 0 || missing ? "FAIL" : "PASS"} colour tokens: ${Object.keys(AZURE_TOKENS).length} read from the computed styles${wrong.length > 0 ? `; ${wrong.join("; ")}` : ""}`);
+  };
   for (let i = 0; i < IDS.length; i++) {
     if (i > 0) {
       const next = doc.querySelector('button[aria-label="Next chart"]');
@@ -476,6 +645,20 @@ async function child(bundle) {
     }
     stage[IDS[i]] = readSlide(IDS[i]);
     readBoxes(IDS[i]);
+    chartRules(IDS[i]);
+    groundRules(`${IDS[i]} stage`);
+  }
+  tokenRules();
+  {
+    // The grid view's thumbnails: open it, read the grounds, close it again.
+    const gridButton = doc.querySelector("button.stage__grid-button");
+    if (gridButton) {
+      click(gridButton);
+      await settle("grid view");
+      groundRules("grid view tiles");
+      click(gridButton);
+      await settle("grid view closed");
+    }
   }
   for (const id of IDS) {
     const pass = drawn(stage[id]);
@@ -494,14 +677,14 @@ async function child(bundle) {
     };
     ok(radios.length === 2 && quality?.checked && speed && !speed.disabled, "opens on quality, with the speed option enabled");
     ok(!/c10=/.test(window.location.hash), `the default view is not in the address (${window.location.hash})`);
-    ok(doc.querySelector(".prov-badge--invented") === null, "the quality view shows no invented badge");
+    ok(!sourceRows().some((r) => r.covers.includes("Invented speeds and batch or flex prices")), "the quality view lists no invented rows");
     if (speed) {
       click(speed);
       await settle("c10 speed");
       await sleep(300);
       await settle("after c10 speed");
       ok(/(?:^|&)c10=speed/.test(window.location.hash), `the address has c10=speed (${window.location.hash})`);
-      ok(doc.querySelector(".prov-badge--invented") !== null, "the speed view shows the invented badge");
+      ok(sourceRows().some((r) => r.covers.includes("Invented speeds and batch or flex prices") && r.basis === "Modelled"), "the speed view's table lists the invented rows as modelled");
       ok((doc.querySelector(".chart-source")?.textContent ?? "").includes("invented placeholder data"), "the speed view's source line says invented placeholder data");
       ok(drawn(chartState(doc.querySelector(".chart-card"))), "the speed view draws a canvas");
       click(doc.querySelector('.c10-switch input[value="quality"]'));
