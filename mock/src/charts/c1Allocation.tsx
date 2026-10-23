@@ -38,6 +38,9 @@ const THUMB_BAR_SHARE = 0.58;
 /** The name of the series that draws the paper gaps between neighbouring segments. */
 export const GAP_SERIES = "Segment gaps";
 
+/** The plot's top and bottom margins in the stage grid (the budget label above, the axis labels below). */
+const C1_PHONE_MARGINS = 36 + 28;
+
 export { planBar } from "./c1Plan";
 export type { PlannedSegment } from "./c1Plan";
 
@@ -583,7 +586,7 @@ export function AllocationChart({ results, size, goalView }: ChartProps) {
     <ChartFigure
       size={size}
       height={barRowsHeight(results)}
-      phoneHeight={barRowsHeight(results, true)}
+      phoneHeight={barRowsHeight(results, true, C1_PHONE_MARGINS)}
       parts={allocationParts(results)}
       invented={goalView?.tradeoff?.invented}
       ariaLabel={allocationCaption(results)}

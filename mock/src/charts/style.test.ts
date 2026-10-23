@@ -9,7 +9,7 @@ import { realTokens } from "../test/cssTokens";
 import { buildAllocationOption } from "./c1Allocation";
 import { buildCostPerMtokOption } from "./c3CostPerMtok";
 import { buildTokensBoughtOption } from "./c5TokensBought";
-import { comparisonOf } from "./comparison";
+import { barRowsHeight, comparisonOf } from "./comparison";
 import { MAX_OPTIONS } from "./patterns";
 import {
   dataOf,
@@ -259,6 +259,18 @@ describe("the phone (spec 15.11 acceptance 7)", () => {
     const svg = renderSvg(c1, PHONE);
     for (const name of [cmp.label, "With InfraVana", ...cmp.options.map((o) => o.alt.label)]) {
       for (const word of name.split(" ").slice(0, 2)) expect(svg).toContain(word.replace(/&/g, "&amp;"));
+    }
+  });
+
+  it.each(stages)("the phone stage height makes every row exactly 84px at stage %s (C1 and C5, each with its own margins)", (stage) => {
+    const r = resultsAt(s1, stage);
+    const rows = 2 + comparisonOf(r).options.length;
+    // The stage height the chart components ask for, against the margins each stage grid keeps.
+    const c1 = buildAllocationOption(r, "stage", t, PHONE) as Obj;
+    const c5 = buildTokensBoughtOption(r, "stage", t, PHONE) as Obj;
+    for (const [option, height] of [[c1, barRowsHeight(r, true, 36 + 28)], [c5, barRowsHeight(r, true, 12 + 28)]] as const) {
+      const grid = option.grid as Obj;
+      expect((height - Number(grid.top) - Number(grid.bottom)) / rows).toBe(84);
     }
   });
 

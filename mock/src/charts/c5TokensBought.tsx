@@ -82,6 +82,9 @@ function barsOf(cmp: Comparison, figures: C5Figures): Bar[] {
   ];
 }
 
+/** The plot's top and bottom margins in the stage grid. */
+const C5_PHONE_MARGINS = 12 + 28;
+
 /** Width of the row-name column. */
 function labelColumn(width: number): number {
   const narrow = width < 600;
@@ -383,7 +386,7 @@ export function TokensBoughtChart({ results, size, goalView }: ChartProps) {
   // The "Estimated at its average price" line wraps to two more lines under a row name on a phone: give those rows room.
   // Counted from the goal, not the figures, so the box is the same before the solve answers.
   const estimatedRows = goalView?.goal === "G2" || goalView?.goal === "G3" ? figures.options.length : 0;
-  const phoneHeight = barRowsHeight(results, true) + estimatedRows * 16;
+  const phoneHeight = barRowsHeight(results, true, C5_PHONE_MARGINS) + estimatedRows * 16;
   const covered = state.notice !== null;
   return (
     // The same box in every state, so a solve in progress never moves the page: the notice sits over the chart's own area.
