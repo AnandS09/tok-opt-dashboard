@@ -1,6 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { compute } from "../compute";
+import type { Results, Scenario } from "../contract";
+import { loadFixtureScenario, loadFixtureTables, restoreFetch } from "../test/fixtures";
+import { INFRAVANA_LABEL, SAVINGS_LABEL } from "./labels";
+import { infravanaParts, optionParts, todayParts } from "./sourceParts";
 import {
   ALL_MEASURED,
   INVENTED_ROW,
@@ -186,5 +191,45 @@ describe("the disclosure's markup", () => {
 
   it("a thumbnail is nothing but the picture", () => {
     expect(markup(parts, { size: "thumb" })).toBe("");
+  });
+});
+
+describe("the parts a chart hands to the table, read from Results", () => {
+  let r: Results;
+  let s1: Scenario;
+  beforeAll(async () => {
+    const tables = await loadFixtureTables();
+    s1 = await loadFixtureScenario("s1");
+    restoreFetch();
+    r = compute(s1, tables);
+  });
+
+  it("InfraVana's parts are its spend segments and each source of saving that is not zero, with their addresses", () => {
+    const parts = infravanaParts(r);
+    const saved = r.allocation.infravana.filter((s) => s.kind === "savings" && s.usd > 0);
+    expect(saved.length).toBeGreaterThan(0);
+    for (const s of saved) {
+      if (s.kind !== "savings") continue;
+      const part = parts.find((p) => p.part === SAVINGS_LABEL[s.savings_source]);
+      expect(part, s.savings_source).toBeDefined();
+      expect(part?.provenance).toBe(s.provenance);
+      expect(part?.source_url).toBe(s.source_url);
+    }
+    expect(parts.every((p) => p.group === INFRAVANA_LABEL)).toBe(true);
+    expect(parts.length).toBe(r.allocation.infravana.filter((s) => s.kind !== "savings" || s.usd > 0).length);
+  });
+
+  it("a segment folded into 'Other' on the bar is still listed by its own name", () => {
+    expect(todayParts(r).map((p) => p.part).length).toBe(r.allocation.today.length);
+  });
+
+  it("each other Today option carries its provenance and its pattern's address", () => {
+    const parts = optionParts(r);
+    expect(parts.length).toBeGreaterThan(0);
+    for (const p of parts) {
+      const alt = r.today_alternatives.find((a) => a.label === p.part);
+      expect(p.provenance).toBe(alt?.provenance);
+      expect(p.source_url).toBe(alt?.source_url);
+    }
   });
 });

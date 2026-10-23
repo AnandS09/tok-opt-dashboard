@@ -408,6 +408,11 @@ export function structureProblemsC1(results: Results, option: EChartsCoreOption,
     }
     if (want.kind === "option") {
       const label = (s.label ?? {}) as Obj;
+      // The end label is rich text: the quality in secondary ink, the cost bold in ink (spec 15.11).
+      const lr = (label.rich ?? {}) as Record<string, Obj>;
+      if (!narrow && label.show !== false && (lr.q?.color !== t.textSecondary || lr.q?.fontWeight !== t.weightRegular || lr.v?.fontWeight !== t.weightBold || lr.v?.color !== t.text)) {
+        problems.push(`${where}: the end label of series ${i} is not the quality in secondary ink and the cost in bold`);
+      }
       // An option's label stays to the right of its own bar, never above it between two rows (on a phone the row name goes above instead).
       if (!narrow && label.show !== false && label.position !== "right") {
         problems.push(`${where}: option label of series ${i} is placed "${String(label.position)}", not to the right of its bar`);
@@ -425,6 +430,10 @@ export function structureProblemsC1(results: Results, option: EChartsCoreOption,
   if (stage) {
     if (((y.axisLine ?? {}) as Obj).show !== false) problems.push(`${where}: the y axis draws a rule`);
     const axisLabel = (y.axisLabel ?? {}) as Obj;
+    // Only the two compared bars have bold row names; the other options are plain (spec 15.11).
+    const rows = (axisLabel.rich ?? {}) as Record<string, Obj>;
+    if (rows.today?.fontWeight !== t.weightBold || rows.inf?.fontWeight !== t.weightBold) problems.push(`${where}: the names of the compared bars are not bold`);
+    if (rows.opt?.fontWeight !== t.weightRegular) problems.push(`${where}: the names of the other options are ${String(rows.opt?.fontWeight)}, not regular`);
     if (narrow) {
       if (axisLabel.show !== false) problems.push(`${where}: the row names stay on the y axis on a phone`);
       rowsDrawn?.forEach((_, r) => {
@@ -1156,6 +1165,14 @@ export function runSelfTests(tokens: Tokens, results: Results): CheckReport {
     expect("the saving block is the wrong size", c1Problems(map((s, i) => (i === savedAt ? { ...s, data: dataOf(s).map((d) => (d ? { ...d, value: Number(d.value) * 0.5 } : d)) } : s))));
     expect("a label on the saving fill is paper", c1Problems(map((s, i) => (i === savedAt ? { ...s, label: { ...(s.label as Obj), color: tokens.labelPaper } } : s))));
   }
+  const axisRich = (change: (r: Record<string, Obj>) => Record<string, Obj>) => {
+    const yAxis = (c1 as Obj).yAxis as Obj;
+    const label = yAxis.axisLabel as Obj;
+    return structureProblemsC1(results, { ...(c1 as Obj), yAxis: { ...yAxis, axisLabel: { ...label, rich: change(label.rich as Record<string, Obj>) } } } as EChartsCoreOption, tokens, "c1", dims);
+  };
+  expect("every row name is bold", axisRich((r) => ({ ...r, opt: { ...(r.opt as Obj), fontWeight: tokens.weightBold } })));
+  expect("the compared pair is not bold", axisRich((r) => ({ ...r, today: { ...(r.today as Obj), fontWeight: tokens.weightRegular } })));
+  expect("the whole end label is bold ink", c1Problems(map((x, i) => (i === firstOption ? { ...x, label: { ...(x.label as Obj), rich: { q: { ...((x.label as Obj).rich as Record<string, Obj>).q, fontWeight: tokens.weightBold, color: tokens.text }, v: ((x.label as Obj).rich as Record<string, Obj>).v } } } : x))));
   expect("option label above its bar", c1Problems(map((x, i) => (i === firstOption ? { ...x, label: { ...(x.label as Obj), position: "top" } } : x))));
   expect("the y axis draws a rule", structureProblemsC1(results, { ...(c1 as Obj), yAxis: { ...((c1 as Obj).yAxis as Obj), axisLine: { show: true } } } as EChartsCoreOption, tokens, "c1", dims));
   expect("the budget line is 1.5px ink", structureProblemsC1(results, withSeries(c1, map((s, i) => (i === 0 ? { ...s, markLine: { data: [{ lineStyle: { color: tokens.text, width: 1.5 } }] } } : s))), tokens, "c1", dims));

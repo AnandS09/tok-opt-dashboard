@@ -4,6 +4,7 @@ import { c5Figures } from "../compute/goals";
 import { compute } from "../compute";
 import type { Results, Scenario, SolveResult, Tables } from "../contract";
 import { loadFixtureScenario, loadFixtureTables, restoreFetch } from "../test/fixtures";
+import { fmtUsdSig } from "../shared/format";
 import { realTokens } from "../test/cssTokens";
 import { buildAllocationOption } from "./c1Allocation";
 import { buildCostPerMtokOption } from "./c3CostPerMtok";
@@ -199,6 +200,15 @@ describe("bars, gaps and the saving (spec 15.11 acceptance 3 and 4)", () => {
     const value = Number(dataOf(saved[0] as Obj).find((d) => d !== null)?.value);
     expect(value).toBeCloseTo(total, 6);
     expect(structureProblemsC1(r, option, t, "C1", WIDE)).toEqual([]);
+  });
+
+  it.each(stages)("C1 at stage %s draws the block as 'Saved $X' with the sum of both savings, and the row says '$X saved'", (stage) => {
+    const r = resultsAt(s1, stage);
+    const total = r.allocation.infravana.filter((s) => s.kind === "savings").reduce((sum, s) => sum + s.usd, 0);
+    const svg = renderSvg(buildAllocationOption(r, "stage", t, WIDE), WIDE);
+    const texts = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
+    expect(texts).toContain(`Saved ${fmtUsdSig(total)}`);
+    expect(texts.some((x) => x.includes(`${fmtUsdSig(total)} saved`))).toBe(true);
   });
 
   it("C5 bars are 24px with no border at stage size", () => {
